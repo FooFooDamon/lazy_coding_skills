@@ -1,0 +1,94 @@
+#
+# Basic rules for C/C++ compilation.
+#
+# Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# USAGE: Re-assign some variables in your makefile if necessary,
+#        then include this file at the end of it.
+#
+
+CC ?= gcc
+CXX ?= g++
+
+VCS ?= git
+
+ifeq ($(VCS), git)
+
+    __DIRTY_FLAG = $(shell \
+        [ -z "$$(git diff | head -n 1)" ] \
+        && echo "" \
+        || echo ".dirty")
+
+    BIZ_VERSION ?= $(shell \
+        git log --abbrev-commit --abbrev=12 --pretty=oneline \
+        | head -n 1 \
+        | awk '{ print $$1 }')$(__DIRTY_FLAG)
+
+else ifeq ($(VCS), svn)
+
+    __DIRTY_FLAG = $(shell \
+        [ -z "$$(svn status | head -n 1)" ] \
+        && echo "" \
+        || echo ".dirty")
+
+    BIZ_VERSION ?= $(shell \
+        LANG=en_US.UTF-8 LANGUAGE=en_US.EN \
+        svn info \
+        | grep 'Last Changed Rev' \
+        | sed 's/.* \([0-9]\)/\1/')$(__DIRTY_FLAG)
+
+else
+    BIZ_VERSION ?= 0123456789abcdef
+endif
+
+COMMON_COMPILE_FLAGS ?= -DBIZ_VERSION=\"$(BIZ_VERSION)\" -fPIC -Wall \
+    -ansi -Wpedantic -Wno-variadic-macros -fstack-protector-strong
+
+ifeq ($(NDEBUG), 1)
+    DEBUG_FLAGS ?= -O3
+else
+    DEBUG_FLAGS ?= -O0 -g -ggdb
+endif
+
+DEFAULT_CFLAGS ?= $(COMMON_COMPILE_FLAGS) $(DEBUG_FLAGS)
+DEFAULT_CXXFLAGS ?= $(COMMON_COMPILE_FLAGS) $(DEBUG_FLAGS)
+
+CFLAGS ?= $(DEFAULT_CFLAGS) $(C_INCLUDES) $(OTHER_CFLAGS)
+CXXFLAGS ?= $(DEFAULT_CXXFLAGS) $(CXX_INCLUDES) $(OTHER_CXXFLAGS)
+
+C_LINK ?= $(CC) -o $@ -fPIE -Wl,--start-group $^ $(C_LDFLAGS) -Wl,--end-group
+CXX_LINK ?= $(CXX) -o $@ -fPIE -Wl,--start-group $^ $(CXX_LDFLAGS) -Wl,--end-group
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c -o $@ $^
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $^
+
+%.o: %.cxx
+	$(CXX) $(CXXFLAGS) -c -o $@ $^
+
+%.o: %.cc
+	$(CXX) $(CXXFLAGS) -c -o $@ $^
+
+#
+# ================
+#   CHANGE LOG
+# ================
+#
+# >>> 2021-12-11, Man Hung-Coeng:
+#   01. Create.
+#
+

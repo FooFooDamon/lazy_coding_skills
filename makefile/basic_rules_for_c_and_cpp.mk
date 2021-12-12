@@ -21,6 +21,8 @@
 
 CC ?= gcc
 CXX ?= g++
+AR ?= ar -r -s
+STRIP ?= strip
 
 VCS ?= git
 
@@ -31,7 +33,7 @@ ifeq ($(VCS), git)
         && echo "" \
         || echo ".dirty")
 
-    BIZ_VERSION ?= $(shell \
+    VCS_VERSION ?= $(shell \
         git log --abbrev-commit --abbrev=12 --pretty=oneline \
         | head -n 1 \
         | awk '{ print $$1 }')$(__DIRTY_FLAG)
@@ -43,17 +45,19 @@ else ifeq ($(VCS), svn)
         && echo "" \
         || echo ".dirty")
 
-    BIZ_VERSION ?= $(shell \
+    VCS_VERSION ?= $(shell \
         LANG=en_US.UTF-8 LANGUAGE=en_US.EN \
         svn info \
         | grep 'Last Changed Rev' \
         | sed 's/.* \([0-9]\)/\1/')$(__DIRTY_FLAG)
 
 else
-    BIZ_VERSION ?= 0123456789abcdef
+    VCS_VERSION ?= 0123456789abcdef
 endif
 
-COMMON_COMPILE_FLAGS ?= -DBIZ_VERSION=\"$(BIZ_VERSION)\" -fPIC -Wall \
+__VER__ ?= $(VCS_VERSION)
+
+COMMON_COMPILE_FLAGS ?= -D__VER__=\"$(__VER__)\" -fPIC -Wall \
     -ansi -Wpedantic -Wno-variadic-macros -fstack-protector-strong
 
 ifeq ($(NDEBUG), 1)
@@ -90,5 +94,9 @@ CXX_LINK ?= $(CXX) -o $@ -fPIE -Wl,--start-group $^ $(CXX_LDFLAGS) -Wl,--end-gro
 #
 # >>> 2021-12-11, Man Hung-Coeng:
 #   01. Create.
+#
+# >>> 2021-12-12, Man Hung-Coeng:
+#   01. Rename variable BIZ_VERSION to VCS_VERSION.
+#   02. Add variable AR, STRIP and __VER__.
 #
 

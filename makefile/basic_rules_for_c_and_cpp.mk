@@ -26,7 +26,7 @@ STRIP ?= strip
 
 VCS ?= git
 
-ifeq ($(VCS), git)
+ifeq (${VCS}, git)
 
     __DIRTY_FLAG = $(shell \
         [ -z "$$(git diff | head -n 1)" ] \
@@ -36,9 +36,9 @@ ifeq ($(VCS), git)
     VCS_VERSION ?= $(shell \
         git log --abbrev-commit --abbrev=12 --pretty=oneline \
         | head -n 1 \
-        | awk '{ print $$1 }')$(__DIRTY_FLAG)
+        | awk '{ print $$1 }')${__DIRTY_FLAG}
 
-else ifeq ($(VCS), svn)
+else ifeq (${VCS}, svn)
 
     __DIRTY_FLAG = $(shell \
         [ -z "$$(svn status | head -n 1)" ] \
@@ -49,43 +49,47 @@ else ifeq ($(VCS), svn)
         LANG=en_US.UTF-8 LANGUAGE=en_US.EN \
         svn info \
         | grep 'Last Changed Rev' \
-        | sed 's/.* \([0-9]\)/\1/')$(__DIRTY_FLAG)
+        | sed 's/.* \([0-9]\)/\1/')${__DIRTY_FLAG}
 
 else
     VCS_VERSION ?= 0123456789abcdef
 endif
 
-__VER__ ?= $(VCS_VERSION)
+__VER__ ?= ${VCS_VERSION}
 
-COMMON_COMPILE_FLAGS ?= -D__VER__=\"$(__VER__)\" -fPIC -Wall \
+COMMON_COMPILE_FLAGS ?= -D__VER__=\"${__VER__}\" -fPIC -Wall \
     -ansi -Wpedantic -Wno-variadic-macros -fstack-protector-strong
 
-ifeq ($(NDEBUG), 1)
+ifeq (${NDEBUG}, 1)
     DEBUG_FLAGS ?= -O3
 else
     DEBUG_FLAGS ?= -O0 -g -ggdb
 endif
 
-DEFAULT_CFLAGS ?= $(COMMON_COMPILE_FLAGS) $(DEBUG_FLAGS)
-DEFAULT_CXXFLAGS ?= $(COMMON_COMPILE_FLAGS) $(DEBUG_FLAGS)
+DEFAULT_CFLAGS ?= ${COMMON_COMPILE_FLAGS} ${DEBUG_FLAGS}
+DEFAULT_CXXFLAGS ?= ${COMMON_COMPILE_FLAGS} ${DEBUG_FLAGS}
 
-CFLAGS ?= $(DEFAULT_CFLAGS) $(C_INCLUDES) $(OTHER_CFLAGS)
-CXXFLAGS ?= $(DEFAULT_CXXFLAGS) $(CXX_INCLUDES) $(OTHER_CXXFLAGS)
+CFLAGS ?= ${DEFAULT_CFLAGS} ${C_INCLUDES} ${OTHER_CFLAGS}
+CXXFLAGS ?= ${DEFAULT_CXXFLAGS} ${CXX_INCLUDES} ${OTHER_CXXFLAGS}
 
-C_LINK ?= $(CC) -o $@ -fPIE -Wl,--start-group $^ $(C_LDFLAGS) -Wl,--end-group
-CXX_LINK ?= $(CXX) -o $@ -fPIE -Wl,--start-group $^ $(CXX_LDFLAGS) -Wl,--end-group
+C_COMPILE ?= ${CC} ${CFLAGS} -c -o $@ $<
+CXX_COMPILE ?= ${CXX} ${CXXFLAGS} -c -o $@ $<
 
-%.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $^
+C_LINK ?= ${CC} -o $@ -fPIE -Wl,--start-group $^ ${C_LDFLAGS} -Wl,--end-group
+CXX_LINK ?= ${CXX} -o $@ -fPIE -Wl,--start-group $^ ${CXX_LDFLAGS} -Wl,--end-group
 
-%.o: %.cpp
-	$(CXX) $(CXXFLAGS) -c -o $@ $^
+# This is a built-in rule and needn't be written out explicitly.
+#%.o: %.c
+#	${C_COMPILE}
 
+# Another built-in rule. Also applicable to .C and .cc.
+#%.o: %.cpp
+#	${CXX_COMPILE}
+
+# Some developers like .cxx suffix for C++,
+# and there's no built-in rule for it.
 %.o: %.cxx
-	$(CXX) $(CXXFLAGS) -c -o $@ $^
-
-%.o: %.cc
-	$(CXX) $(CXXFLAGS) -c -o $@ $^
+	${CXX_COMPILE}
 
 #
 # ================
@@ -98,5 +102,11 @@ CXX_LINK ?= $(CXX) -o $@ -fPIE -Wl,--start-group $^ $(CXX_LDFLAGS) -Wl,--end-gro
 # >>> 2021-12-12, Man Hung-Coeng:
 #   01. Rename variable BIZ_VERSION to VCS_VERSION.
 #   02. Add variable AR, STRIP and __VER__.
+#
+# >>> 2021-12-14, Man Hung-Coeng:
+#   01. Use ${} instead of $() to reference a variable.
+#   02. Add variable C_COMPILE and CXX_COMPILE.
+#   03. Comment .c-to-.o, .cc-to.o and .cpp-to-.o rules,
+#       since they're built-in rules.
 #
 

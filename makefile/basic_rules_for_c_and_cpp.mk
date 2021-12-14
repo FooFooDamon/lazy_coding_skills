@@ -57,7 +57,7 @@ endif
 
 __VER__ ?= ${VCS_VERSION}
 
-COMMON_COMPILE_FLAGS ?= -D__VER__=\"${__VER__}\" -fPIC -Wall \
+COMMON_COMPILE_FLAGS ?= -D__VER__=\"${__VER__}\" -fPIC -Wall -Werror \
     -ansi -Wpedantic -Wno-variadic-macros -fstack-protector-strong
 
 ifeq (${NDEBUG}, 1)
@@ -108,5 +108,6 @@ CXX_LINK ?= ${CXX} -o $@ -fPIE -Wl,--start-group $^ ${CXX_LDFLAGS} -Wl,--end-gro
 #   02. Add variable C_COMPILE and CXX_COMPILE.
 #   03. Comment out .c-to-.o, .cc-to.o and .cpp-to-.o rules,
 #       since they're built-in rules.
+#   04. Add -Werror into COMMON_COMPILE_FLAGS to make compilation stricter.
 #
 

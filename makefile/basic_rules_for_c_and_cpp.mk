@@ -87,7 +87,7 @@ CXX_LINK ?= ${CXX} -o $@ -fPIE -Wl,--start-group $^ ${CXX_LDFLAGS} -Wl,--end-gro
 #	${CXX_COMPILE}
 
 # Some developers like .cxx suffix for C++,
-# and there's no built-in rule for it.
+# note that there's no built-in rule for it.
 %.o: %.cxx
 	${CXX_COMPILE}
 
@@ -106,7 +106,7 @@ CXX_LINK ?= ${CXX} -o $@ -fPIE -Wl,--start-group $^ ${CXX_LDFLAGS} -Wl,--end-gro
 # >>> 2021-12-14, Man Hung-Coeng:
 #   01. Use ${} instead of $() to reference a variable.
 #   02. Add variable C_COMPILE and CXX_COMPILE.
-#   03. Comment .c-to-.o, .cc-to.o and .cpp-to-.o rules,
+#   03. Comment out .c-to-.o, .cc-to.o and .cpp-to-.o rules,
 #       since they're built-in rules.
 #
 

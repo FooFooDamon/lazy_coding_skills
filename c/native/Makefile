@@ -8,19 +8,19 @@ OBJS := $(addsuffix .o, $(basename ${SRCS}))
 
 all: ${OBJS}
 
-TARGETS := $(filter-out , $(basename ${SRCS}))
+EXECS := $(filter-out , $(basename ${SRCS}))
 
-${TARGETS}: %: %.o
+${EXECS}: %: %.o
 	${CXX_LINK}
 
 test:
-	for i in ${TARGETS}; \
+	for i in ${EXECS}; \
 	do \
 		make $$i; \
 	done
 
 clean:
-	rm -f ${TARGETS} ${OBJS}
+	rm -f ${EXECS} ${OBJS}
 
 include ../../makefile/basic_rules_for_c_and_cpp.mk
 

@@ -1,5 +1,5 @@
 /*
- * Simple APIs for Windows .ini file parsing.
+ * Simple APIs for Windows .ini file manipulation.
  *
  * Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
  *
@@ -29,50 +29,85 @@ extern "C" {
 #define INI_LINE_SIZE_MAX       4096
 #endif
 
-#define INI_NODE_SECTION        1
-#define INI_NODE_ITEM           2
-#define INI_NODE_COMMENT        3
-#define INI_NODE_BLANK_LINE     4
+#define INI_NODE_BLANK_LINE     '\0'
+#define INI_NODE_COMMENT        'c'
+#define INI_NODE_SECTION        's'
+#define INI_NODE_ITEM           'i'
 
-extern char const *g_ini_newline;
+struct ini_node_t;
+typedef struct ini_node_t ini_node_t;
 
-#define INI_SET_NEWLINE(nlstr)  g_ini_newline = nlstr
+struct ini_cfg_t;
+typedef struct ini_cfg_t ini_cfg_t;
 
-struct ini_node_t
+typedef struct ini_summary_t
 {
-    char type;
-    void *detail;
-    struct ini_node_t *next;
-};
+    int error_code;
+    int success_lines;
+    int section_lines;
+    int comment_lines;
+    int blank_lines;
+} ini_summary_t;
 
-struct ini_cfg_t
-{
-    struct ini_node_t *head;
-};
+typedef int (*ini_traverval_callback_t)(const char *parent_sec_name, ini_node_t *cur_node, void *extra);
 
-struct ini_section_t
-{
-    char *name;
-    char *comment;
-    void *sub;
-};
+const char* ini_error(int error_code);
 
-struct ini_item_t
-{
-    char *key;
-    char *val;
-    char *comment;
-};
+void ini_set_newline(const char* const newline); /* \n for *nix, \r\n for Windows. */
 
-int ini_parse(const FILE *stream, struct ini_cfg_t *cfg, char *desc);
+void ini_set_item_indent_width(size_t width);
 
-int ini_dump(const struct ini_cfg_t *cfg, FILE *stream);
+char ini_node_type(const ini_node_t *node);
 
-void ini_destroy(struct ini_cfg_t *cfg);
+ini_summary_t ini_parse(const FILE *stream, ini_cfg_t *cfg);
 
-struct ini_node_t* ini_find_section(struct ini_cfg_t *cfg, const char *name);
+ini_summary_t ini_dump(const ini_cfg_t *cfg, FILE *stream);
 
-struct ini_node_t* ini_find_item(struct ini_section_t *section, const char *key);
+void ini_destroy(ini_cfg_t *cfg);
+
+ini_summary_t ini_traverse_all_nodes(ini_cfg_t *cfg, ini_traverval_callback_t cb, void *cb_arg);
+
+ini_summary_t ini_traverse_nodes_of(ini_node_t *sec, ini_traverval_callback_t cb, void *cb_arg);
+
+/*
+ * ================
+ *  SECTION
+ * ================
+ */
+
+ini_node_t* ini_section_find(const ini_cfg_t *cfg, const char *name);
+
+const char* ini_section_get_name(const ini_node_t *sec);
+
+int ini_section_rename(const char *name, size_t name_len, ini_node_t *sec);
+
+/*
+ * ================
+ *  ITEM
+ * ================
+ */
+
+
+ini_node_t* ini_item_find(const ini_node_t *sec, const char *key);
+
+const char* ini_item_get_key(const ini_node_t *item);
+
+int ini_item_set_key(const char *key, size_t key_len, ini_node_t *item);
+
+const char* ini_item_get_value(const ini_node_t *item);
+
+int ini_item_set_value(const char *val, size_t val_len, ini_node_t *item);
+
+/*
+ * ================
+ *  COMMENT
+ * ================
+ */
+
+
+const char* ini_comment_get(const ini_node_t *node);
+
+int ini_comment_set(const char *comment, size_t comment_len, ini_node_t *node);
 
 #ifdef __cplusplus
 }
@@ -87,5 +122,8 @@ struct ini_node_t* ini_find_item(struct ini_section_t *section, const char *key)
  *
  * >>> 2021-12-15, Man Hung-Coeng:
  *  01. Create.
+ *
+ * >>> 2021-12-17, Man Hung-Coeng:
+ *  01. Enrich interfaces, and hide unnecessary structs.
  */
 

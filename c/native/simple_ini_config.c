@@ -585,7 +585,7 @@ ini_node_t* ini_section_find(const ini_cfg_t *cfg, const char *name)
     for (; NULL != node; node = node->next)
     {
         if (INI_NODE_SECTION == node->type &&
-            0 == strncmp(((ini_section_t *)node->detail)->name, name, INI_LINE_SIZE_MAX))
+            0 == strncmp(((ini_section_t *)node->detail)->name, name, INI_LINE_SIZE_MAX - 2))
         {
             return node;
         }
@@ -602,7 +602,7 @@ int ini_section_is_repeated(const ini_cfg_t *cfg, const char *name)
     for (; NULL != node; node = node->next)
     {
         if (INI_NODE_SECTION == node->type &&
-            0 == strncmp(((ini_section_t *)node->detail)->name, name, INI_LINE_SIZE_MAX))
+            0 == strncmp(((ini_section_t *)node->detail)->name, name, INI_LINE_SIZE_MAX - 2))
         {
             if (NULL != first)
                 return 1;
@@ -622,7 +622,7 @@ const char* ini_section_get_name(const ini_node_t *sec)
 int ini_section_rename(const char *name, size_t name_len, ini_node_t *sec)
 {
     ini_section_t *detail = (INI_NODE_SECTION == sec->type) ? ((ini_section_t *)sec->detail) : NULL;
-    int is_too_long = (name_len > INI_LINE_SIZE_MAX);
+    int is_too_long = (name_len > INI_LINE_SIZE_MAX - 2);
     char *new_name = NULL;
     const char *head = name;
     const char *tail = name + name_len - 1;
@@ -675,7 +675,7 @@ ini_node_t* ini_item_find(const ini_node_t *sec, const char *key)
     for (; NULL != node; node = node->next)
     {
         if (INI_NODE_ITEM == node->type &&
-            0 == strncmp(((ini_item_t *)node->detail)->key, key, INI_LINE_SIZE_MAX))
+            0 == strncmp(((ini_item_t *)node->detail)->key, key, INI_KEY_SIZE_MAX))
         {
             return node;
         }
@@ -692,7 +692,7 @@ int ini_item_is_repeated(const ini_node_t *sec, const char *key)
     for (; NULL != node; node = node->next)
     {
         if (INI_NODE_ITEM == node->type &&
-            0 == strncmp(((ini_item_t *)node->detail)->key, key, INI_LINE_SIZE_MAX))
+            0 == strncmp(((ini_item_t *)node->detail)->key, key, INI_KEY_SIZE_MAX))
         {
             if (NULL != first)
                 return 1;
@@ -712,7 +712,7 @@ const char* ini_item_get_key(const ini_node_t *item)
 int ini_item_set_key(const char *key, size_t key_len, ini_node_t *item)
 {
     ini_item_t *detail = (INI_NODE_ITEM == item->type) ? ((ini_item_t *)item->detail) : NULL;
-    int is_too_long = (key_len > INI_LINE_SIZE_MAX);
+    int is_too_long = (key_len > INI_KEY_SIZE_MAX);
     char *new_key = NULL;
     const char *head = key;
     const char *tail = key + key_len - 1;
@@ -763,7 +763,7 @@ const char* ini_item_get_value(const ini_node_t *item)
 int ini_item_set_value(const char *val, size_t val_len, ini_node_t *item)
 {
     ini_item_t *detail = (INI_NODE_ITEM == item->type) ? ((ini_item_t *)item->detail) : NULL;
-    int is_too_long = (val_len > INI_LINE_SIZE_MAX);
+    int is_too_long = (val_len > INI_LINE_SIZE_MAX - INI_KEY_SIZE_MAX - 1);
     char *new_value = NULL;
     const char *head = val;
     const char *tail = val + val_len - 1;

@@ -107,6 +107,10 @@ const char* ini_section_get_name(const ini_node_t *sec);
 
 int ini_section_rename(const char *name, size_t name_len, ini_node_t *sec);
 
+int ini_section_add(const char *name, size_t name_len, ini_cfg_t *cfg);
+
+int ini_section_remove(const char *name, size_t name_len, ini_cfg_t *cfg);
+
 /*
  * ================
  *  ITEM
@@ -124,6 +128,10 @@ int ini_item_set_key(const char *key, size_t key_len, ini_node_t *item);
 const char* ini_item_get_value(const ini_node_t *item);
 
 int ini_item_set_value(const char *val, size_t val_len, ini_node_t *item);
+
+int ini_item_add(const char *key, size_t key_len, const char *val, size_t val_len, ini_node_t *sec);
+
+int ini_item_remove(const char *key, size_t key_len, const char *val, size_t val_len, ini_node_t *sec);
 
 /*
  * ================
@@ -157,7 +165,8 @@ int ini_comment_set(const char *comment, size_t comment_len, ini_node_t *node);
  *  02. Implement ini_parse() and rename it to ini_parse_from_stream();
  *      rename ini_dump() to ini_dump_to_stream().
  *  03. Add ini_item_is_repeated(), ini_section_is_repeated(),
- *      ini_traverse_all_sections(), ini_dump_to_buffer() (not implemented)
- *      and ini_parse_from_buffer() (not implemented).
+ *      ini_traverse_all_sections(), ini_dump_to_buffer() (not implemented),
+ *      ini_parse_from_buffer() (not implemented),
+ *      and ini_{section,item}_{add,remove}() (not implemented).
  */
 

@@ -27,6 +27,16 @@ extern "C" {
 
 #ifndef INI_LINE_SIZE_MAX
 #define INI_LINE_SIZE_MAX       4095
+#if INI_LINE_SIZE_MAX < 63
+#error INI_LINE_SIZE_MAX is too small!
+#endif
+#endif
+
+#ifndef INI_KEY_SIZE_MAX
+#define INI_KEY_SIZE_MAX        INI_LINE_SIZE_MAX / 6
+#if INI_KEY_SIZE_MAX < 10
+#error INI_KEY_SIZE_MAX is too small!
+#endif
 #endif
 
 #ifndef INI_INDENT_WIDTH_MAX

@@ -26,7 +26,11 @@ extern "C" {
 #endif
 
 #ifndef INI_LINE_SIZE_MAX
-#define INI_LINE_SIZE_MAX       4096
+#define INI_LINE_SIZE_MAX       4095
+#endif
+
+#ifndef INI_INDENT_WIDTH_MAX
+#define INI_INDENT_WIDTH_MAX    16
 #endif
 
 #define INI_NODE_BLANK_LINE     '\0'
@@ -49,7 +53,7 @@ typedef struct ini_summary_t
     int blank_lines;
 } ini_summary_t;
 
-typedef int (*ini_traverval_callback_t)(const char *parent_sec_name, ini_node_t *cur_node, void *extra);
+typedef int (*ini_traverval_callback_t)(const char *sec_name, ini_node_t *cur_node, void *callback_arg);
 
 const char* ini_error(int error_code);
 
@@ -59,13 +63,23 @@ void ini_set_item_indent_width(size_t width);
 
 char ini_node_type(const ini_node_t *node);
 
-ini_summary_t ini_parse(const FILE *stream, ini_cfg_t *cfg);
+ini_summary_t ini_parse_from_stream(FILE *stream, ini_cfg_t *cfg, int strip_blanks/* = 0 or 1, for item value only */);
+ini_summary_t ini_parse_from_buffer(char *buf, ini_cfg_t *cfg, int strip_blanks/* = 0 or 1, for item value only */);
 
-ini_summary_t ini_dump(const ini_cfg_t *cfg, FILE *stream);
+ini_summary_t ini_dump_to_stream(const ini_cfg_t *cfg, FILE *stream);
+ini_summary_t ini_dump_to_buffer(const ini_cfg_t *cfg, char **buf);
 
 void ini_destroy(ini_cfg_t *cfg);
 
+/*
+ * ================
+ *  TRAVERSAL
+ * ================
+ */
+
 ini_summary_t ini_traverse_all_nodes(ini_cfg_t *cfg, ini_traverval_callback_t cb, void *cb_arg);
+
+ini_summary_t ini_traverse_all_sections(ini_cfg_t *cfg, ini_traverval_callback_t cb, void *cb_arg);
 
 ini_summary_t ini_traverse_nodes_of(ini_node_t *sec, ini_traverval_callback_t cb, void *cb_arg);
 
@@ -77,6 +91,8 @@ ini_summary_t ini_traverse_nodes_of(ini_node_t *sec, ini_traverval_callback_t cb
 
 ini_node_t* ini_section_find(const ini_cfg_t *cfg, const char *name);
 
+int ini_section_is_repeated(const ini_cfg_t *cfg, const char *name);
+
 const char* ini_section_get_name(const ini_node_t *sec);
 
 int ini_section_rename(const char *name, size_t name_len, ini_node_t *sec);
@@ -87,8 +103,9 @@ int ini_section_rename(const char *name, size_t name_len, ini_node_t *sec);
  * ================
  */
 
-
 ini_node_t* ini_item_find(const ini_node_t *sec, const char *key);
+
+int ini_item_is_repeated(const ini_node_t *sec, const char *key);
 
 const char* ini_item_get_key(const ini_node_t *item);
 
@@ -103,7 +120,6 @@ int ini_item_set_value(const char *val, size_t val_len, ini_node_t *item);
  *  COMMENT
  * ================
  */
-
 
 const char* ini_comment_get(const ini_node_t *node);
 
@@ -125,5 +141,13 @@ int ini_comment_set(const char *comment, size_t comment_len, ini_node_t *node);
  *
  * >>> 2021-12-17, Man Hung-Coeng:
  *  01. Enrich interfaces, and hide unnecessary structs.
+ *
+ * >>> 2021-12-20, Man Hung-Coeng:
+ *  01. Fix errors in the existing functions.
+ *  02. Implement ini_parse() and rename it to ini_parse_from_stream();
+ *      rename ini_dump() to ini_dump_to_stream().
+ *  03. Add ini_item_is_repeated(), ini_section_is_repeated(),
+ *      ini_traverse_all_sections(), ini_dump_to_buffer() (not implemented)
+ *      and ini_parse_from_buffer() (not implemented).
  */
 

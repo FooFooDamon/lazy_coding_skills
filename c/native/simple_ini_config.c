@@ -237,8 +237,8 @@ ini_summary_t ini_parse_from_stream(FILE *stream, ini_cfg_t *cfg, int strip_blan
             --tail;
             while (IS_BLANK(*head)) ++head;
             RETURN_IF_TRUE(head > tail, -INI_ERR_NULL_SECTION_NAME, free(this);free(buf));
-            length = tail - head + 1;
             while (IS_BLANK(*tail)) --tail;
+            RETURN_IF_TRUE(head > tail, -INI_ERR_NULL_SECTION_NAME, free(this);free(buf));
             length = tail - head + 1;
             while (counter < length && '[' != head[counter] && ']' != head[counter]) ++counter;
             has_extra_brackets = (counter < length);
@@ -928,7 +928,7 @@ int main(int argc, char **argv)
 {
     char buf[INI_LINE_SIZE_MAX + 1] = { 0 };
     const char* const NEWLINE_TYPES[] = { "\n", "\r\n" };
-    const char* const DEFAULT_RESULT_PATH = "./simple_ini_config_test.ini";
+    const char* const DEFAULT_RESULT_PATH = "simple_ini_config_test.ini";
     char path[INI_LINE_SIZE_MAX + 1] = { 0 };
     char *begin = NULL, *end = NULL;
     FILE *wstream = NULL, *rstream = NULL;

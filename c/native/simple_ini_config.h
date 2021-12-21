@@ -73,13 +73,17 @@ void ini_set_item_indent_width(size_t width);
 
 char ini_node_type(const ini_node_t *node);
 
-ini_summary_t ini_parse_from_stream(FILE *stream, ini_cfg_t *cfg, int strip_blanks/* = 0 or 1, for item value only */);
-ini_summary_t ini_parse_from_buffer(char *buf, ini_cfg_t *cfg, int strip_blanks/* = 0 or 1, for item value only */);
+ini_cfg_t* ini_parse_from_stream(FILE *stream, int strip_blanks/* = 0 or 1, for item value only */,
+    ini_summary_t *nullable_summary/* = NULL if failure reason not cared*/);
+
+ini_cfg_t* ini_parse_from_buffer(char *buf, int strip_blanks/* = 0 or 1, for item value only */,
+    ini_summary_t *nullable_summary/* = NULL if failure reason not cared*/);
 
 ini_summary_t ini_dump_to_stream(const ini_cfg_t *cfg, FILE *stream);
+
 ini_summary_t ini_dump_to_buffer(const ini_cfg_t *cfg, char **buf);
 
-void ini_destroy(ini_cfg_t *cfg);
+void ini_destroy(ini_cfg_t **cfg);
 
 /*
  * ================
@@ -109,7 +113,7 @@ int ini_section_rename(const char *name, size_t name_len, ini_node_t *sec);
 
 int ini_section_add(const char *name, size_t name_len, ini_cfg_t *cfg);
 
-int ini_section_remove(const char *name, size_t name_len, ini_cfg_t *cfg);
+int ini_section_remove(const char *name, ini_cfg_t *cfg);
 
 /*
  * ================
@@ -131,7 +135,7 @@ int ini_item_set_value(const char *val, size_t val_len, ini_node_t *item);
 
 int ini_item_add(const char *key, size_t key_len, const char *val, size_t val_len, ini_node_t *sec);
 
-int ini_item_remove(const char *key, size_t key_len, const char *val, size_t val_len, ini_node_t *sec);
+int ini_item_remove(const char *key, ini_node_t *sec);
 
 /*
  * ================
@@ -164,9 +168,16 @@ int ini_comment_set(const char *comment, size_t comment_len, ini_node_t *node);
  *  01. Fix errors in the existing functions.
  *  02. Implement ini_parse() and rename it to ini_parse_from_stream();
  *      rename ini_dump() to ini_dump_to_stream().
- *  03. Add ini_item_is_repeated(), ini_section_is_repeated(),
- *      ini_traverse_all_sections(), ini_dump_to_buffer() (not implemented),
+ *  03. Add ini_{section,item}_is_repeated(), ini_traverse_all_sections(),
+ *      ini_dump_to_buffer() (not implemented),
  *      ini_parse_from_buffer() (not implemented),
  *      and ini_{section,item}_{add,remove}() (not implemented).
+ *
+ * >>> 2021-12-21, Man Hung-Coeng:
+ *  01. Remove unnecessary parameters from ini_{section,item}_remove().
+ *  02. Change return type of ini_parse_from_{stream,buffer}() to ini_cfg_t*
+ *      in order to solve the "incomplete type" error of ini_cfg_t
+ *      when the two functions are called outside this file.
+ *  03. Change parameter type of ini_destroy() from ini_cfg_t* to ini_cfg_t**.
  */
 

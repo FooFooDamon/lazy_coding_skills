@@ -147,24 +147,30 @@ char ini_node_type(const ini_node_t *node)
 #define IS_NEWLINE(ch)          ('\n' == (ch) || '\r' == (ch))
 #define IS_COMMENT_TAG(ch)      (';' == (ch) || '#' == (ch))
 
-ini_summary_t ini_parse_from_stream(FILE *stream, ini_cfg_t *cfg, int strip_blanks/* = 0 or 1, for item value only */)
+ini_cfg_t* ini_parse_from_stream(FILE *stream, int strip_blanks/* = 0 or 1, for item value only */,
+    ini_summary_t *nullable_summary/* = NULL if failure reason not cared*/)
 {
-    ini_summary_t summary = { 0 };
-    ini_node_t *section = cfg->section;
+    ini_summary_t summary = { 0 }; /* Use it instead of nullable_summary for reducing the "if" statements. */
+    ini_cfg_t *cfg = calloc(1, sizeof(ini_cfg_t));
+    ini_node_t *section = (NULL == cfg) ? NULL : cfg->section;
     ini_node_t *prev = NULL;
-    int has_residual_config = (NULL != cfg->preamble || NULL != section);
-    char *buf = has_residual_config ? NULL : calloc(INI_LINE_SIZE_MAX + 1, sizeof(char));
+    char *buf = (NULL == cfg) ? NULL : calloc(INI_LINE_SIZE_MAX + 1, sizeof(char));
 
     #define RETURN_IF_TRUE(conditions, errcode, free_mem_statements)   do { \
         if (conditions) { \
-            summary.error_code = errcode; \
+            if (NULL != cfg) {\
+                ini_destroy(&cfg); \
+            } \
             free_mem_statements; \
-            return summary; \
+            if (NULL != nullable_summary) { \
+                memcpy(nullable_summary, &summary, sizeof(ini_summary_t)); \
+                nullable_summary->error_code = errcode; \
+            } \
+            return NULL; \
         } \
     } while (0)
 
-    RETURN_IF_TRUE(has_residual_config || NULL == buf,
-        has_residual_config ? -INI_ERR_RESIDUAL_CFG : -INI_ERR_MEM_ALLOC, free(buf));
+    RETURN_IF_TRUE(NULL == cfg, -INI_ERR_MEM_ALLOC, ;);
 
     while (NULL != fgets(buf, INI_LINE_SIZE_MAX + 1, stream))
     {
@@ -315,16 +321,19 @@ ini_summary_t ini_parse_from_stream(FILE *stream, ini_cfg_t *cfg, int strip_blan
 
     free(buf);
 
-    return summary;
+    if (NULL != nullable_summary)
+        memcpy(nullable_summary, &summary, sizeof(ini_summary_t));
+
+    return cfg;
 }
 
-ini_summary_t ini_parse_from_buffer(char *buf, ini_cfg_t *cfg, int strip_blanks/* = 0 or 1, for item value only */)
+ini_cfg_t* ini_parse_from_buffer(char *buf, int strip_blanks/* = 0 or 1, for item value only */,
+    ini_summary_t *nullable_summary/* = NULL if failure reason not cared*/)
 {
-    ini_summary_t summary = { 0 };
+    if (NULL != nullable_summary)
+        nullable_summary->error_code = -INI_ERR_NOT_IMPLEMENTED; /* TODO */
 
-    summary.error_code = -INI_ERR_NOT_IMPLEMENTED; /* TODO */
-
-    return summary;
+    return NULL;
 }
 
 /*
@@ -527,12 +536,15 @@ static int __do_nothing_but_trigger_summary(const char *sec_name, ini_node_t *cu
     return 0;
 }
 
-void ini_destroy(ini_cfg_t *cfg)
+void ini_destroy(ini_cfg_t **cfg)
 {
-    if (__traverse_all_nodes(cfg, 1, __do_nothing_but_trigger_summary, NULL).success_lines > 0)
+    if (NULL != cfg && NULL != *cfg &&
+        __traverse_all_nodes(*cfg, 1, __do_nothing_but_trigger_summary, NULL).success_lines > 0)
     {
-        cfg->preamble = NULL;
-        cfg->section = NULL;
+        (*cfg)->preamble = NULL;
+        (*cfg)->section = NULL;
+        free(*cfg);
+        *cfg = NULL;
     }
 }
 
@@ -660,6 +672,16 @@ int ini_section_rename(const char *name, size_t name_len, ini_node_t *sec)
     detail->name = new_name;
 
     return name_len;
+}
+
+int ini_section_add(const char *name, size_t name_len, ini_cfg_t *cfg)
+{
+    return -INI_ERR_NOT_IMPLEMENTED; /* TODO */
+}
+
+int ini_section_remove(const char *name, ini_cfg_t *cfg)
+{
+    return -INI_ERR_NOT_IMPLEMENTED; /* TODO */
 }
 
 /*
@@ -794,6 +816,16 @@ int ini_item_set_value(const char *val, size_t val_len, ini_node_t *item)
     detail->val = new_value;
 
     return val_len;
+}
+
+int ini_item_add(const char *key, size_t key_len, const char *val, size_t val_len, ini_node_t *sec)
+{
+    return -INI_ERR_NOT_IMPLEMENTED; /* TODO */
+}
+
+int ini_item_remove(const char *key, ini_node_t *sec)
+{
+    return -INI_ERR_NOT_IMPLEMENTED; /* TODO */
 }
 
 /*
@@ -932,7 +964,7 @@ int main(int argc, char **argv)
     char path[INI_LINE_SIZE_MAX + 1] = { 0 };
     char *begin = NULL, *end = NULL;
     FILE *wstream = NULL, *rstream = NULL;
-    ini_cfg_t cfg = { NULL };
+    ini_cfg_t *cfg = NULL;
     ini_summary_t summary = { 0 };
 
     printf("Step 1: Please specify the indent width (from 0 to 16) [0]: ");
@@ -953,7 +985,7 @@ int main(int argc, char **argv)
         strncpy(path, DEFAULT_RESULT_PATH, sizeof(path));
 
     printf("Step 4: Please enter contents of your .ini file, and press Ctrl+D to start test:\n");
-    summary = ini_parse_from_stream(stdin, &cfg, /*strip_blanks = */0);
+    cfg = ini_parse_from_stream(stdin, /*strip_blanks = */0, &summary);
     print_summary(&summary, "Parse[1] summary", (summary.error_code < 0) ? stderr : stdout);
     if (summary.error_code < 0)
     {
@@ -962,7 +994,7 @@ int main(int argc, char **argv)
         goto TEST_END;
     }
 
-    summary = ini_dump_to_stream(&cfg, stdout);
+    summary = ini_dump_to_stream(cfg, stdout);
     print_summary(&summary, "Dump[1] summary", (summary.error_code < 0) ? stderr : stdout);
     if (summary.error_code < 0)
     {
@@ -971,7 +1003,7 @@ int main(int argc, char **argv)
         goto TEST_END;
     }
 
-    summary = ini_traverse_all_nodes(&cfg, test_getters_and_setters, &cfg);
+    summary = ini_traverse_all_nodes(cfg, test_getters_and_setters, cfg);
     print_summary(&summary, "Getters-and-setters test summary", (summary.error_code < 0) ? stderr : stdout);
     if (summary.error_code < 0)
     {
@@ -988,7 +1020,7 @@ int main(int argc, char **argv)
         goto TEST_END;
     }
 
-    summary = ini_dump_to_stream(&cfg, wstream);
+    summary = ini_dump_to_stream(cfg, wstream);
     print_summary(&summary, "Dump[2] summary", (summary.error_code < 0) ? stderr : stdout);
     if (summary.error_code < 0)
     {
@@ -1012,7 +1044,7 @@ int main(int argc, char **argv)
     }
 
     ini_destroy(&cfg);
-    summary = ini_parse_from_stream(rstream, &cfg, /*strip_blanks =*/1);
+    cfg = ini_parse_from_stream(rstream, /*strip_blanks =*/1, &summary);
     print_summary(&summary, "Parse[2] summary", (summary.error_code < 0) ? stderr : stdout);
     if (summary.error_code < 0)
     {
@@ -1021,7 +1053,7 @@ int main(int argc, char **argv)
         goto TEST_END;
     }
 
-    summary = ini_dump_to_stream(&cfg, stdout);
+    summary = ini_dump_to_stream(cfg, stdout);
     print_summary(&summary, "Dump[3] summary", (summary.error_code < 0) ? stderr : stdout);
     if (summary.error_code < 0)
     {
@@ -1063,9 +1095,16 @@ TEST_END:
  *  01. Fix errors in the existing functions.
  *  02. Implement ini_parse() and rename it to ini_parse_from_stream();
  *      rename ini_dump() to ini_dump_to_stream().
- *  03. Add ini_item_is_repeated(), ini_section_is_repeated(),
- *      ini_traverse_all_sections(), ini_dump_to_buffer() (not implemented)
+ *  03. Add ini_{section,item}_is_repeated(), ini_traverse_all_sections(),
+ *      ini_dump_to_buffer() (not implemented)
  *      and ini_parse_from_buffer() (not implemented).
  *  04. Finish test function.
+ *
+ * >>> 2021-12-21, Man Hung-Coeng:
+ *  01. Remove unnecessary parameters from ini_{section,item}_remove().
+ *  02. Change return type of ini_parse_from_{stream,buffer}() to ini_cfg_t*
+ *      in order to solve the "incomplete type" error of ini_cfg_t
+ *      when the two functions are called outside this file.
+ *  03. Change parameter type of ini_destroy() from ini_cfg_t* to ini_cfg_t**.
  */
 

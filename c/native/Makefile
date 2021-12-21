@@ -24,7 +24,7 @@ PARALLEL_OPTION ?= -j $(shell grep -c "processor" /proc/cpuinfo)
 
 check:
 	cppcheck --enable=all --language=c --std=c89 ${PARALLEL_OPTION} ${C_DEFINES} ${C_INCLUDES} .
-	clang --analyze $(SRCS) ${CFLAGS}
+	clang --analyze ${SRCS} ${CFLAGS}
 
 clean:
 	rm -f ${EXECS} ${OBJS} *.plist

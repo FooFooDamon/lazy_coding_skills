@@ -110,4 +110,7 @@ CXX_LINK ?= ${CXX} -o $@ -fPIE -Wl,--start-group $^ ${CXX_LDFLAGS} -Wl,--end-gro
 #       since they're built-in rules.
 #   04. Add -Werror into COMMON_COMPILE_FLAGS to make compilation stricter.
 #
+# >>> 2021-12-21, Man Hung-Coeng:
+#   01. Add ${C_DEFINES} into CFLAGS, ${CXX_DEFINES} into CXXFLAGS.
+#
 

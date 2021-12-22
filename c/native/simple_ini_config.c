@@ -500,11 +500,11 @@ static int __dump_node(const char *sec_name, ini_node_t *cur_node, void *stream)
         else
             bytes_written = fputs(s_indent_spaces, stream);
         if (bytes_written >= 0)
-            bytes_written = fputs(((ini_item_t *)cur_node->detail)->key, stream);
+            bytes_written += fputs(((ini_item_t *)cur_node->detail)->key, stream);
         if (bytes_written > 0)
-            bytes_written = fputs(" =", stream);
+            bytes_written += fputs("=", stream);
         if (bytes_written > 0)
-            bytes_written = fputs(((ini_item_t *)cur_node->detail)->val, stream);
+            bytes_written += fputs(((ini_item_t *)cur_node->detail)->val, stream);
         break;
 
     default:
@@ -1106,5 +1106,8 @@ TEST_END:
  *      in order to solve the "incomplete type" error of ini_cfg_t
  *      when the two functions are called outside this file.
  *  03. Change parameter type of ini_destroy() from ini_cfg_t* to ini_cfg_t**.
+ *
+ * >>> 2021-12-22, Man Hung-Coeng:
+ *  01. Fix errors in INI_NODE_ITEM case of __dump_node().
  */
 

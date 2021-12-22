@@ -76,12 +76,12 @@ char ini_node_type(const ini_node_t *node);
 ini_cfg_t* ini_parse_from_stream(FILE *stream, int strip_blanks/* = 0 or 1, for item value only */,
     ini_summary_t *nullable_summary/* = NULL if failure reason not cared*/);
 
-ini_cfg_t* ini_parse_from_buffer(char *buf, int strip_blanks/* = 0 or 1, for item value only */,
+ini_cfg_t* ini_parse_from_buffer(char *buf, size_t buf_len, int strip_blanks/* = 0 or 1, for item value only */,
     ini_summary_t *nullable_summary/* = NULL if failure reason not cared*/);
 
 ini_summary_t ini_dump_to_stream(const ini_cfg_t *cfg, FILE *stream);
 
-ini_summary_t ini_dump_to_buffer(const ini_cfg_t *cfg, char **buf);
+ini_summary_t ini_dump_to_buffer(const ini_cfg_t *cfg, char **buf, size_t *buf_len, int allow_resizing);
 
 void ini_destroy(ini_cfg_t **cfg);
 
@@ -103,9 +103,9 @@ ini_summary_t ini_traverse_nodes_of(ini_node_t *sec, ini_traverval_callback_t cb
  * ================
  */
 
-ini_node_t* ini_section_find(const ini_cfg_t *cfg, const char *name);
+ini_node_t* ini_section_find(const ini_cfg_t *cfg, const char *name, size_t name_len/* = 0 if auto calculated later */);
 
-int ini_section_is_repeated(const ini_cfg_t *cfg, const char *name);
+int ini_section_is_repeated(const ini_cfg_t *cfg, const char *name, size_t name_len/* = 0 if auto calculated later */);
 
 const char* ini_section_get_name(const ini_node_t *sec);
 
@@ -113,7 +113,7 @@ int ini_section_rename(const char *name, size_t name_len, ini_node_t *sec);
 
 int ini_section_add(const char *name, size_t name_len, ini_cfg_t *cfg);
 
-int ini_section_remove(const char *name, ini_cfg_t *cfg);
+int ini_section_remove(const char *name, size_t name_len/* = 0 if auto calculated later */, ini_cfg_t *cfg);
 
 /*
  * ================
@@ -121,9 +121,9 @@ int ini_section_remove(const char *name, ini_cfg_t *cfg);
  * ================
  */
 
-ini_node_t* ini_item_find(const ini_node_t *sec, const char *key);
+ini_node_t* ini_item_find(const ini_node_t *sec, const char *key, size_t key_len/* = 0 if auto calculated later */);
 
-int ini_item_is_repeated(const ini_node_t *sec, const char *key);
+int ini_item_is_repeated(const ini_node_t *sec, const char *key, size_t key_len/* = 0 if auto calculated later */);
 
 const char* ini_item_get_key(const ini_node_t *item);
 
@@ -135,7 +135,7 @@ int ini_item_set_value(const char *val, size_t val_len, ini_node_t *item);
 
 int ini_item_add(const char *key, size_t key_len, const char *val, size_t val_len, ini_node_t *sec);
 
-int ini_item_remove(const char *key, ini_node_t *sec);
+int ini_item_remove(const char *key, size_t key_len/* = 0 if auto calculated later */, ini_node_t *sec);
 
 /*
  * ================
@@ -179,5 +179,9 @@ int ini_comment_set(const char *comment, size_t comment_len, ini_node_t *node);
  *      in order to solve the "incomplete type" error of ini_cfg_t
  *      when the two functions are called outside this file.
  *  03. Change parameter type of ini_destroy() from ini_cfg_t* to ini_cfg_t**.
+ *
+ * >>> 2021-12-22, Man Hung-Coeng:
+ *  01. Implement ini_parse_from_buffer() and ini_dump_to_buffer().
+ *  02. Re-add *_len parameter to some functions for future optimization.
  */
 

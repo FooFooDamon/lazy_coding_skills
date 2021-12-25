@@ -14,6 +14,9 @@ EXECS := $(filter-out , $(basename ${SRCS}))
 ${EXECS}: %: %.o
 	${CXX_LINK}
 
+./signal_handling.o: ./signal_handling.c
+	${CC} ${CFLAGS} -std=gnu89 -c -o $@ $<
+
 test:
 	for i in ${EXECS}; \
 	do \

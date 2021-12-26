@@ -58,7 +58,7 @@ endif
 __VER__ ?= ${VCS_VERSION}
 
 COMMON_COMPILE_FLAGS ?= -D__VER__=\"${__VER__}\" -fPIC -Wall -Werror \
-    -ansi -Wpedantic -Wno-variadic-macros -fstack-protector-strong
+    -ansi -Wpedantic -Wno-variadic-macros # -fstack-protector-strong
 
 ifeq (${NDEBUG}, 1)
     DEBUG_FLAGS ?= -O3
@@ -75,8 +75,10 @@ CXXFLAGS ?= ${DEFAULT_CXXFLAGS} ${CXX_DEFINES} ${CXX_INCLUDES} ${OTHER_CXXFLAGS}
 C_COMPILE ?= ${CC} ${CFLAGS} -c -o $@ $<
 CXX_COMPILE ?= ${CXX} ${CXXFLAGS} -c -o $@ $<
 
-C_LINK ?= ${CC} -o $@ -fPIE -Wl,--start-group $^ ${C_LDFLAGS} -Wl,--end-group
-CXX_LINK ?= ${CXX} -o $@ -fPIE -Wl,--start-group $^ ${CXX_LDFLAGS} -Wl,--end-group
+#C_LINK ?= ${CC} -o $@ -fPIE -Wl,--start-group $^ ${C_LDFLAGS} -Wl,--end-group
+C_LINK ?= ${CC} -o $@ -fPIE $^ ${C_LDFLAGS}
+#CXX_LINK ?= ${CXX} -o $@ -fPIE -Wl,--start-group $^ ${CXX_LDFLAGS} -Wl,--end-group
+CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS}
 
 # This is a built-in rule and needn't be written out explicitly.
 #%.o: %.c
@@ -112,5 +114,9 @@ CXX_LINK ?= ${CXX} -o $@ -fPIE -Wl,--start-group $^ ${CXX_LDFLAGS} -Wl,--end-gro
 #
 # >>> 2021-12-21, Man Hung-Coeng:
 #   01. Add ${C_DEFINES} into CFLAGS, ${CXX_DEFINES} into CXXFLAGS.
+#
+# >>> 2021-12-26, Man Hung-Coeng:
+#   01. Remove some flags like -fstack-protector-strong and -Wl,--start-group,
+#   	which may not be supported on other platforms (e.g., MinGW and OS X).
 #
 

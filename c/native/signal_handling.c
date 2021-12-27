@@ -65,19 +65,19 @@ const char* sig_error(int error_code)
 }
 
 #ifndef SIG_NAME_LEN_MAX
-#define SIG_NAME_LEN_MAX        15
+#define SIG_NAME_LEN_MAX            15
 #endif
 
 #ifndef SIG_NUM_START
-#define SIG_NUM_START           1
+#define SIG_NUM_START               1
 #endif
 
 #ifndef SIG_NUM_END
-#define SIG_NUM_END             64
+#define SIG_NUM_END                 64
 #endif
 
 #ifndef SIG_INVALID_NUM
-#define SIG_INVALID_NUM         -1
+#define SIG_INVALID_NUM             -1
 #endif
 
 typedef struct sig_info_t
@@ -89,8 +89,8 @@ typedef struct sig_info_t
 
 static sig_info_t *s_sig_info_tables = NULL;
 
-#define SIG_INFO_READY()        (NULL != s_sig_info_tables)
-#define SIG_INFO_AT(num)        s_sig_info_tables[num - SIG_NUM_START]
+#define SIG_INFO_READY()            (NULL != s_sig_info_tables)
+#define SIG_INFO_AT(num)            s_sig_info_tables[num - SIG_NUM_START]
 
 int sig_global_init(void)
 {
@@ -127,17 +127,24 @@ int sig_global_init(void)
     || defined(__linux) || defined(__linux__) || defined(linux) || defined(__gnu_linux__) \
     || defined(__APPLE__) || defined(__MACH__) || defined(macintosh)
 
+/*
+ * If "kill -l" is executed in a real terminal, use one of the two commaneds below.
+ * Note that the one using awk to do string replacement is more compatible and works well on OS X
+ * while the other may not!
+#define SIG_GET_NUMS_AND_NAMES_CMD  "kill -l | awk '{ gsub(\"\\t\", \"\\n\", $0); gsub(\"SIG\", \"\", $0); print; }'"
+#define SIG_GET_NUMS_AND_NAMES_CMD  "kill -l | sed 's/\\t/\\n/g' | sed -e 's/SIG//'"
+*/
+/* If "kill -l" is executed within a program, use this. */
+#define SIG_GET_NUMS_AND_NAMES_CMD  "for i in `seq %d %d`; do printf '%%d %%s\\n' $i `kill -l $i 2> /dev/null`; done"
+
 #ifdef __STRICT_ANSI__
 #pragma message("Oops, popen() is not available in ANSI C!")
-    sprintf(cmd, "for i in $(seq %d %d); do printf '%%d %%s\\n' $i $(kill -l $i); done > .signal_handling_init.tmp",
-        SIG_NUM_START, SIG_NUM_END);
+    sprintf(cmd, SIG_GET_NUMS_AND_NAMES_CMD" > .signal_handling_init.tmp", SIG_NUM_START, SIG_NUM_END);
     system(cmd);
-    /*system("kill -l | sed 's/\\t/\\n/g' | sed -e 's/SIG//' -e 's/)//g' -e 's/^ //' > .signal_handling_init.tmp");*/
     stream = fopen(".signal_handling_init.tmp", "r");
 #else
-    sprintf(cmd, "for i in $(seq %d %d); do printf '%%d %%s\\n' $i $(kill -l $i); done", SIG_NUM_START, SIG_NUM_END);
+    sprintf(cmd, SIG_GET_NUMS_AND_NAMES_CMD, SIG_NUM_START, SIG_NUM_END);
     stream = popen(cmd, "r");
-    /*stream = popen("kill -l | sed 's/\\t/\\n/g' | sed -e 's/SIG//' -e 's/)//g' -e 's/^ //'", "r");*/
 #endif
     if (NULL == stream)
         return -(errno + SIG_ERR_END);
@@ -394,5 +401,9 @@ int main(int argc, char **argv)
  *
  * >>> 2021-12-25, Man Hung-Coeng:
  *  01. Create.
+ *
+ * >>> 2021-12-27, Man Hung-Coeng:
+ *  01. Eliminate errors appeared in terminal
+ *      while sig_global_init() is used on OS X.
  */
 

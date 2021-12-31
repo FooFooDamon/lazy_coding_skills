@@ -1,5 +1,5 @@
 /*
- * Simple APIs for Windows .ini file manipulation.
+ * APIs for Windows .ini file manipulation.
  *
  * Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
  *
@@ -16,7 +16,7 @@
  * limitations under the License.
 */
 
-#include "simple_ini_config.h"
+#include "ini_file.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -1082,7 +1082,7 @@ int main(int argc, char **argv)
 {
     char buf[INI_LINE_SIZE_MAX + 1] = { 0 };
     const char* const NEWLINE_TYPES[] = { "\n", "\r\n" };
-    const char* const DEFAULT_RESULT_PATH = "simple_ini_config_test.ini";
+    const char* const DEFAULT_RESULT_PATH = "ini_file_test.ini";
     char path[INI_LINE_SIZE_MAX + 1] = { 0 };
     char *begin = NULL, *end = NULL;
     FILE *wstream = NULL, *rstream = NULL;
@@ -1258,5 +1258,8 @@ TEST_END:
  *  01. Fix errors in INI_NODE_ITEM case of __dump_node().
  *  02. Implement ini_parse_from_buffer() and ini_dump_to_buffer().
  *  03. Re-add *_len parameter to some functions for future optimization.
+ *
+ * >>> 2021-12-31, Man Hung-Coeng:
+ *  01. Rename simple_ini_config.{c,h} to ini_file.{c,h}.
  */
 

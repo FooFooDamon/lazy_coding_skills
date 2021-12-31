@@ -1,5 +1,5 @@
 /*
- * Simple APIs for Windows .ini file manipulation.
+ * APIs for Windows .ini file manipulation.
  *
  * Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
  *
@@ -16,8 +16,8 @@
  * limitations under the License.
 */
 
-#ifndef __SIMPLE_INI_CONFIG_H__
-#define __SIMPLE_INI_CONFIG_H__
+#ifndef __INI_FILE_H__
+#define __INI_FILE_H__
 
 #include <stdio.h>
 
@@ -151,7 +151,7 @@ int ini_comment_set(const char *comment, size_t comment_len, ini_node_t *node);
 }
 #endif
 
-#endif /* #ifndef __SIMPLE_INI_CONFIG_H__ */
+#endif /* #ifndef __INI_FILE_H__ */
 
 /*
  * ================
@@ -183,5 +183,8 @@ int ini_comment_set(const char *comment, size_t comment_len, ini_node_t *node);
  * >>> 2021-12-22, Man Hung-Coeng:
  *  01. Implement ini_parse_from_buffer() and ini_dump_to_buffer().
  *  02. Re-add *_len parameter to some functions for future optimization.
+ *
+ * >>> 2021-12-31, Man Hung-Coeng:
+ *  01. Rename simple_ini_config.{c,h} to ini_file.{c,h}.
  */
 

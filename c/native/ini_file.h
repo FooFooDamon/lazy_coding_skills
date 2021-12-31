@@ -51,8 +51,8 @@ extern "C" {
 struct ini_node_t;
 typedef struct ini_node_t ini_node_t;
 
-struct ini_cfg_t;
-typedef struct ini_cfg_t ini_cfg_t;
+struct ini_doc_t;
+typedef struct ini_doc_t ini_doc_t;
 
 typedef struct ini_summary_t
 {
@@ -73,17 +73,17 @@ void ini_set_item_indent_width(size_t width);
 
 char ini_node_type(const ini_node_t *node);
 
-ini_cfg_t* ini_parse_from_stream(FILE *stream, int strip_blanks/* = 0 or 1, for item value only */,
+ini_doc_t* ini_parse_from_stream(FILE *stream, int strip_blanks/* = 0 or 1, for item value only */,
     ini_summary_t *nullable_summary/* = NULL if failure reason not cared*/);
 
-ini_cfg_t* ini_parse_from_buffer(char *buf, size_t buf_len, int strip_blanks/* = 0 or 1, for item value only */,
+ini_doc_t* ini_parse_from_buffer(char *buf, size_t buf_len, int strip_blanks/* = 0 or 1, for item value only */,
     ini_summary_t *nullable_summary/* = NULL if failure reason not cared*/);
 
-ini_summary_t ini_dump_to_stream(const ini_cfg_t *cfg, FILE *stream);
+ini_summary_t ini_dump_to_stream(const ini_doc_t *doc, FILE *stream);
 
-ini_summary_t ini_dump_to_buffer(const ini_cfg_t *cfg, char **buf, size_t *buf_len, int allow_resizing);
+ini_summary_t ini_dump_to_buffer(const ini_doc_t *doc, char **buf, size_t *buf_len, int allow_resizing);
 
-void ini_destroy(ini_cfg_t **cfg);
+void ini_destroy(ini_doc_t **doc);
 
 /*
  * ================
@@ -91,9 +91,9 @@ void ini_destroy(ini_cfg_t **cfg);
  * ================
  */
 
-ini_summary_t ini_traverse_all_nodes(ini_cfg_t *cfg, ini_traverval_callback_t cb, void *cb_arg);
+ini_summary_t ini_traverse_all_nodes(ini_doc_t *doc, ini_traverval_callback_t cb, void *cb_arg);
 
-ini_summary_t ini_traverse_all_sections(ini_cfg_t *cfg, ini_traverval_callback_t cb, void *cb_arg);
+ini_summary_t ini_traverse_all_sections(ini_doc_t *doc, ini_traverval_callback_t cb, void *cb_arg);
 
 ini_summary_t ini_traverse_nodes_of(ini_node_t *sec, ini_traverval_callback_t cb, void *cb_arg);
 
@@ -103,17 +103,17 @@ ini_summary_t ini_traverse_nodes_of(ini_node_t *sec, ini_traverval_callback_t cb
  * ================
  */
 
-ini_node_t* ini_section_find(const ini_cfg_t *cfg, const char *name, size_t name_len/* = 0 if auto calculated later */);
+ini_node_t* ini_section_find(const ini_doc_t *doc, const char *name, size_t name_len/* = 0 if auto calculated later */);
 
-int ini_section_is_repeated(const ini_cfg_t *cfg, const char *name, size_t name_len/* = 0 if auto calculated later */);
+int ini_section_is_repeated(const ini_doc_t *doc, const char *name, size_t name_len/* = 0 if auto calculated later */);
 
 const char* ini_section_get_name(const ini_node_t *sec);
 
 int ini_section_rename(const char *name, size_t name_len, ini_node_t *sec);
 
-int ini_section_add(const char *name, size_t name_len, ini_cfg_t *cfg);
+int ini_section_add(const char *name, size_t name_len, ini_doc_t *doc);
 
-int ini_section_remove(const char *name, size_t name_len/* = 0 if auto calculated later */, ini_cfg_t *cfg);
+int ini_section_remove(const char *name, size_t name_len/* = 0 if auto calculated later */, ini_doc_t *doc);
 
 /*
  * ================
@@ -185,6 +185,7 @@ int ini_comment_set(const char *comment, size_t comment_len, ini_node_t *node);
  *  02. Re-add *_len parameter to some functions for future optimization.
  *
  * >>> 2021-12-31, Man Hung-Coeng:
- *  01. Rename simple_ini_config.{c,h} to ini_file.{c,h}.
+ *  01. Rename file simple_ini_config.{c,h} to ini_file.{c,h}.
+ *  02. Rename structure ini_cfg_t to ini_doc_t.
  */
 

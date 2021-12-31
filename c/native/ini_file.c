@@ -728,7 +728,7 @@ ini_node_t* ini_section_find(const ini_doc_t *doc, const char *name, size_t name
     return NULL;
 }
 
-int ini_section_is_repeated(const ini_doc_t *doc, const char *name, size_t name_len/* = 0 if auto calculated later */)
+bool ini_section_is_repeated(const ini_doc_t *doc, const char *name, size_t name_len/* = 0 if auto calculated later */)
 {
     ini_node_t *first = NULL;
     ini_node_t *node = doc->section;
@@ -739,13 +739,13 @@ int ini_section_is_repeated(const ini_doc_t *doc, const char *name, size_t name_
             0 == strncmp(((ini_section_t *)node->detail)->name, name, INI_LINE_SIZE_MAX - 2))
         {
             if (NULL != first)
-                return 1;
+                return true;
 
             first = node;
         }
     }
 
-    return 0;
+    return false;
 }
 
 const char* ini_section_get_name(const ini_node_t *sec)
@@ -828,7 +828,7 @@ ini_node_t* ini_item_find(const ini_node_t *sec, const char *key, size_t key_len
     return NULL;
 }
 
-int ini_item_is_repeated(const ini_node_t *sec, const char *key, size_t key_len/* = 0 if auto calculated later */)
+bool ini_item_is_repeated(const ini_node_t *sec, const char *key, size_t key_len/* = 0 if auto calculated later */)
 {
     ini_node_t *first = NULL;
     ini_node_t *node = (INI_NODE_SECTION == sec->type) ? (((ini_section_t *)sec->detail)->sub) : NULL;
@@ -839,13 +839,13 @@ int ini_item_is_repeated(const ini_node_t *sec, const char *key, size_t key_len/
             0 == strncmp(((ini_item_t *)node->detail)->key, key, INI_KEY_SIZE_MAX))
         {
             if (NULL != first)
-                return 1;
+                return true;
 
             first = node;
         }
     }
 
-    return 0;
+    return false;
 }
 
 const char* ini_item_get_key(const ini_node_t *item)
@@ -1262,5 +1262,6 @@ TEST_END:
  * >>> 2021-12-31, Man Hung-Coeng:
  *  01. Rename file simple_ini_config.{c,h} to ini_file.{c,h}.
  *  02. Rename structure ini_cfg_t to ini_doc_t.
+ *  03. Change return type of ini_{section,item}_is_repeated() to bool.
  */
 

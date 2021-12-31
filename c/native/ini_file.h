@@ -19,7 +19,8 @@
 #ifndef __INI_FILE_H__
 #define __INI_FILE_H__
 
-#include <stdio.h>
+#include <stdbool.h> /* For bool, true and false. */
+#include <stdio.h> /* For size_t and FILE */
 
 #ifdef __cplusplus
 extern "C" {
@@ -105,7 +106,7 @@ ini_summary_t ini_traverse_nodes_of(ini_node_t *sec, ini_traverval_callback_t cb
 
 ini_node_t* ini_section_find(const ini_doc_t *doc, const char *name, size_t name_len/* = 0 if auto calculated later */);
 
-int ini_section_is_repeated(const ini_doc_t *doc, const char *name, size_t name_len/* = 0 if auto calculated later */);
+bool ini_section_is_repeated(const ini_doc_t *doc, const char *name, size_t name_len/* = 0 if auto calculated later */);
 
 const char* ini_section_get_name(const ini_node_t *sec);
 
@@ -123,7 +124,7 @@ int ini_section_remove(const char *name, size_t name_len/* = 0 if auto calculate
 
 ini_node_t* ini_item_find(const ini_node_t *sec, const char *key, size_t key_len/* = 0 if auto calculated later */);
 
-int ini_item_is_repeated(const ini_node_t *sec, const char *key, size_t key_len/* = 0 if auto calculated later */);
+bool ini_item_is_repeated(const ini_node_t *sec, const char *key, size_t key_len/* = 0 if auto calculated later */);
 
 const char* ini_item_get_key(const ini_node_t *item);
 
@@ -187,5 +188,6 @@ int ini_comment_set(const char *comment, size_t comment_len, ini_node_t *node);
  * >>> 2021-12-31, Man Hung-Coeng:
  *  01. Rename file simple_ini_config.{c,h} to ini_file.{c,h}.
  *  02. Rename structure ini_cfg_t to ini_doc_t.
+ *  03. Change return type of ini_{section,item}_is_repeated() to bool.
  */
 

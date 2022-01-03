@@ -85,6 +85,7 @@ typedef struct sig_info_t
     int num;
     char name[SIG_NAME_LEN_MAX + 1];
     volatile sig_atomic_t happened;
+    void (*handler)(int);
 } sig_info_t;
 
 static sig_info_t *s_sig_info_tables = NULL;
@@ -103,12 +104,12 @@ int sig_global_init(void)
     const size_t MAX_SIG_COUNT = SIG_NUM_END - SIG_NUM_START + 1;
 #else /* For example: Windows. */
     const sig_info_t MIN_INFO_TABLES[] = {
-        { SIGABRT, "ABRT", 0 }
-        , { SIGFPE, "FPE", 0 }
-        , { SIGILL, "ILL", 0 }
-        , { SIGINT, "INT", 0 }
-        , { SIGSEGV, "SEGV", 0 }
-        , { SIGTERM, "TERM", 0 }
+        { SIGABRT, "ABRT", 0, NULL }
+        , { SIGFPE, "FPE", 0, NULL }
+        , { SIGILL, "ILL", 0, NULL }
+        , { SIGINT, "INT", 0, NULL }
+        , { SIGSEGV, "SEGV", 0, NULL }
+        , { SIGTERM, "TERM", 0, NULL }
     };
     const size_t MAX_SIG_COUNT = sizeof(MIN_INFO_TABLES) / sizeof(sig_info_t);
     size_t i = 0;
@@ -193,12 +194,14 @@ void sig_global_reset(void)
     }
 }
 
-static void sig_set_happen_flag(int signum)
+static void sig_set_happen_flag_and_call_handler(int signum)
 {
     SIG_INFO_AT(signum).happened = 1;
+    if (NULL != SIG_INFO_AT(signum).handler)
+        SIG_INFO_AT(signum).handler(signum);
 }
 
-int sig_register(int signum)
+int sig_register(int signum, void (*nullable_handler)(int))
 {
 #if (defined(__unix) || defined(__unix__) || defined(unix) \
     || defined(__linux) || defined(__linux__) || defined(linux) || defined(__gnu_linux__) \
@@ -213,12 +216,14 @@ int sig_register(int signum)
     if (signum < SIG_NUM_START || signum > SIG_NUM_END || SIG_INVALID_NUM == SIG_INFO_AT(signum).num)
         return -SIG_ERR_INVALID_SIGNAL_NUM;
 
+    SIG_INFO_AT(signum).handler = nullable_handler;
+
 #if (defined(__unix) || defined(__unix__) || defined(unix) \
     || defined(__linux) || defined(__linux__) || defined(linux) || defined(__gnu_linux__) \
     || defined(__APPLE__) || defined(__MACH__) || defined(macintosh)) \
     && !defined(__STRICT_ANSI__)
 #pragma message("sig_register(): Using new sigaction().")
-    act.sa_handler = sig_set_happen_flag;
+    act.sa_handler = sig_set_happen_flag_and_call_handler;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
 #if defined(SA_INTERRUPT) || defined(SA_RESTART)
@@ -227,7 +232,7 @@ int sig_register(int signum)
     if (sigaction(signum, &act, NULL) < 0)
 #else
 #pragma message("sig_register(): Using old signal().")
-    if (SIG_ERR == signal(signum, sig_set_happen_flag))
+    if (SIG_ERR == signal(signum, sig_set_happen_flag_and_call_handler))
 #endif /* A bunch of Unix-like system macros and __STRICT_ANSI__. */
         return -(errno + SIG_ERR_END);
 
@@ -298,7 +303,7 @@ int sig_name_to_number(const char *signame, size_t name_len)
 
     for (; i <= SIG_NUM_END; ++i)
     {
-        if (SIG_INVALID_NUM != SIG_INFO_AT(i).num && 0 == strncmp(signame, SIG_INFO_AT(i).name, name_len))
+        if (SIG_INVALID_NUM != SIG_INFO_AT(i).num && 0 == strncmp(signame, SIG_INFO_AT(i).name, SIG_NAME_LEN_MAX))
             return i;
     }
 
@@ -313,6 +318,19 @@ int sig_name_to_number(const char *signame, size_t name_len)
 #else
 #include <unistd.h>
 #endif
+
+static bool s_should_exit = false;
+
+static void set_exit_flag(int signum)
+{
+    if (SIGINT == signum)
+        s_should_exit = true;
+}
+
+static bool should_exit(void)
+{
+    return s_should_exit;
+}
 
 int main(int argc, char **argv)
 {
@@ -331,7 +349,7 @@ int main(int argc, char **argv)
         const char *signame = sig_number_to_name(i);
         int signum = (NULL == signame) ? SIG_INVALID_NUM : sig_name_to_number(signame, strlen(signame));
 
-        err = sig_register(i);
+        err = sig_register(i, (SIGINT == signum) ? set_exit_flag : NULL);
 
         fprintf((err < 0) ? stderr : stdout, "sig_register() for [%d -> %s -> %d]: %s\n",
             i, signame, signum, sig_error(err));
@@ -339,8 +357,6 @@ int main(int argc, char **argv)
 
     while(1)
     {
-        bool should_exit = false;
-
         for (i = SIG_NUM_START; i < SIG_NUM_END / 2; ++i) /* NOTE: Some undefined signals will kill the process! */
         {
 #if defined(__unix) || defined(__unix__) || defined(unix) \
@@ -362,12 +378,10 @@ int main(int argc, char **argv)
             {
                 printf("Received: %d|%s\n", i, sig_number_to_name(i));
                 sig_clear_happen_flag(i);
-                if (SIGINT == i)
-                    should_exit = true;
             }
         }
 
-        if (should_exit)
+        if (should_exit())
             break;
 
         printf("-------- Press Ctrl+C if you want to finish. --------\n");
@@ -405,5 +419,11 @@ int main(int argc, char **argv)
  * >>> 2021-12-27, Man Hung-Coeng:
  *  01. Eliminate errors appeared in terminal
  *      while sig_global_init() is used on OS X.
+ *
+ * >>> 2022-01-03, Man Hung-Coeng:
+ *  01. Add a function pointer to the parameter list of sig_register()
+ *      to support user-defined operations.
+ *  02. Correct wrong outputs from sig_name_to_number()
+ *      when converting SIGRTMAX-1 and SIGRTMAX.
  */
 

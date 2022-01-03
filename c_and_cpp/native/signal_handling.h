@@ -26,17 +26,13 @@
 extern "C" {
 #endif
 
-/*#define true    1
-#define false   0
-typedef char    bool;*/
-
 const char* sig_error(int error_code);
 
 int sig_global_init(void);
 
 void sig_global_reset(void);
 
-int sig_register(int signum);
+int sig_register(int signum, void (*nullable_handler)(int));
 
 int sig_deregister(int signum);
 
@@ -61,6 +57,10 @@ int sig_name_to_number(const char *signame, size_t name_len);
  *
  * >>> 2021-12-25, Man Hung-Coeng:
  *  01. Create.
+ *
+ * >>> 2022-01-03, Man Hung-Coeng:
+ *  01. Add a function pointer to the parameter list of sig_register()
+ *      to support user-defined operations.
  */
 
 

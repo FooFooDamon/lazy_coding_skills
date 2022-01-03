@@ -29,8 +29,8 @@ _tmp_
 *.tmp
 core.*
 tags
-/c/native/ini_file
-/c/native/ini_file_test.ini
-/c/native/signal_handling
-/c/native/string_enhancements
+/c_and_cpp/native/ini_file
+/c_and_cpp/native/ini_file_test.ini
+/c_and_cpp/native/signal_handling
+/c_and_cpp/native/string_enhancements
 

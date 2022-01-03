@@ -1,5 +1,5 @@
 /*
- * A tiny class based on std::map and the relative C APIs
+ * A read-only class based on std::map and the relative C APIs
  * to make it easier to access parsed INI data.
  *
  * Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
@@ -39,59 +39,103 @@ private:
 
     typedef char_less_than_operator char_lt_op;
 
-    typedef std::map<const char*, const char*, char_lt_op> cstr_map;
+    class cstr_map : public std::map<const char*, const char*, char_lt_op>
+    {
+    public:
+        const char* operator[](const char *key) const
+        {
+            cstr_map::const_iterator iter = this->find(key);
+
+            if (this->end() == iter)
+                throw ("Key not found");
+
+            return iter->second;
+        }
+    };
 
     typedef std::map<const char*, cstr_map, char_lt_op> section_map;
 
     enum
     {
         ERR_NULL_PARAM = 1
+        , INI_ERR_NOT_IMPLEMENTED
         , ERR_MEM_ALLOC
     };
 
 public:
     ini_map() = delete;
-    ini_map(const ini_map&) = delete;
-    ini_map(const ini_map&&) = delete;
-    ini_map& operator=(const ini_map&) = delete;
-    ini_map& operator=(const ini_map&&) = delete;
 
-    ini_map(ini_doc_t *doc, const char *path = nullptr)
+    explicit ini_map(ini_doc_t *doc, const char *path = nullptr)
         : err_(-ERR_NULL_PARAM)
         , doc_(doc)
         , path_(nullptr)
         , map_(nullptr)
     {
-        if (nullptr == doc_)
-            return;
+        construct(doc, path);
+    }
 
-        if (nullptr != path)
+    ini_map(const ini_map &src)
+        : err_(-ERR_NULL_PARAM)
+        , doc_(nullptr)
+        , path_(nullptr)
+        , map_(nullptr)
+    {
+        construct(src.doc_, src.path_);
+    }
+
+    ini_map(ini_map &&src)
+        : err_(src.err_)
+        , doc_(src.doc_)
+        , path_(src.path_)
+        , map_(src.map_)
+    {
+        src.path_ = nullptr;
+        src.map_ = nullptr;
+    }
+
+    ini_map& operator=(const ini_map &src)
+    {
+        if (this != &src)
         {
-            if (nullptr == (path_ = new char[strlen(path) + 1]))
-            {
-                err_ = -ERR_MEM_ALLOC;
-                return;
-            }
+            ini_doc_t *doc_bak = src.doc_;
+            const char *path_bak = src.path_;
 
-            strcpy(path_, path);
+            this->~ini_map();
+
+            construct(doc_bak, path_bak);
         }
 
-        if (nullptr == (map_ = new section_map()))
+        return *this;
+    }
+
+    ini_map& operator=(ini_map &&src)
+    {
+        if (this != &src)
         {
-            err_ = -ERR_MEM_ALLOC;
-            return;
+            this->err_ = src.err_;
+            this->doc_ = src.doc_;
+            this->path_ = src.path_;
+            src.path_ = nullptr;
+            this->map_ = src.map_;
+            src.map_ = nullptr;
         }
 
-        err_ = ini_traverse_all_nodes(doc_, save_node_into_map, map_).error_code;
+        return *this;
     }
 
     ~ini_map()
     {
         if (nullptr != map_)
+        {
             delete map_;
+            map_ = nullptr;
+        }
 
         if (nullptr != path_)
+        {
             delete[] path_;
+            path_ = nullptr;
+        }
     }
 
     inline int error_code(void) const
@@ -131,25 +175,25 @@ public:
 
     inline const cstr_map& operator[](const char *section) const
     {
-        return (*map_)[section];
+        section_map::const_iterator iter = map_->find(section);
+
+        if (map_->end() == iter)
+            throw ("Section not found");
+
+        return iter->second;
     }
 
-    inline cstr_map& operator[](const char *section) // TODO: Set to private?
-    {
-        return (*map_)[section];
-    }
-
-    section_map::iterator begin(void)
+    inline section_map::const_iterator begin(void) const
     {
         return map_->begin();
     }
 
-    section_map::iterator end(void)
+    inline section_map::const_iterator end(void) const
     {
         return map_->end();
     }
 
-    int refresh(void)
+    inline int sync(void)
     {
         if (err_ < 0)
             return err_;
@@ -160,12 +204,54 @@ public:
     }
 
 private:
-    static int save_node_into_map(const char *sec_name, ini_node_t *cur_node, void *map)
+    void construct(ini_doc_t *doc, const char *path)
     {
+        err_ = -ERR_NULL_PARAM;
+
+        if (nullptr == doc_)
+            return;
+
+        if (nullptr != path)
+        {
+            if (nullptr == (path_ = new char[strlen(path) + 1]))
+            {
+                err_ = -ERR_MEM_ALLOC;
+                return;
+            }
+
+            strcpy(path_, path);
+        }
+
+        if (nullptr == (map_ = new section_map()))
+        {
+            err_ = -ERR_MEM_ALLOC;
+            return;
+        }
+
+        err_ = ini_traverse_all_nodes(doc_, save_node_into_map, map_).error_code;
+    }
+
+    static int save_node_into_map(const char *section, ini_node_t *cur_node, void *map)
+    {
+        section_map *sec_map = (section_map *)map;
+
         switch (ini_node_type(cur_node))
         {
+        case INI_NODE_SECTION:
+            if (sec_map->end() == sec_map->find(section))
+                sec_map->insert(std::make_pair(section, cstr_map()));
+
+            break;
+
         case INI_NODE_ITEM:
-            (*((section_map *)map))[sec_name][ini_item_get_key(cur_node)] = ini_item_get_value(cur_node);
+            {
+                cstr_map &item_map = sec_map->find(section)->second;
+                const char *key = ini_item_get_key(cur_node);
+
+                if (item_map.end() == item_map.find(key))
+                    item_map.insert(std::make_pair(key, ini_item_get_value(cur_node)));
+            }
+
             break;
 
         default:
@@ -191,6 +277,13 @@ private:
  *
  * >>> 2021-12-31, Man Hung-Coeng:
  *  01. Create.
+ *
+ * >>> 2022-01-03, Man Hung-Coeng:
+ *  01. Re-declare copy/move constructors and copy/move assignment operators
+ *      and implement them.
+ *  02. Turn the index operator [] into a read-only one
+ *      to avoid producing unexpected data.
+ *  03. Rename refresh() to sync().
  */
 
 

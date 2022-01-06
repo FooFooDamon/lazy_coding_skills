@@ -1,5 +1,5 @@
 /*
- * Enhancements of string operation that ANSI C does not provide.
+ * Supplements to string operation that ANSI C does not provide.
  *
  * Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
  *
@@ -43,6 +43,9 @@ char** str_split(const char *str, size_t str_len, const char *delimiter, size_t 
  *
  * >>> 2021-12-30, Man Hung-Coeng:
  *  01. Create.
+ *
+ * >>> 2022-01-06, Man Hung-Coeng:
+ *  01. Rename this file from string_enhancements.h to string_supplements.h.
  */
 
 

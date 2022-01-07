@@ -17,6 +17,9 @@ ${EXECS}: %: %.o
 ./signal_handling.o: ./signal_handling.c
 	${CC} ${CFLAGS} -std=gnu89 -c -o $@ $<
 
+./sleeps.o: ./sleeps.c
+	${CC} ${CFLAGS} -std=gnu89 -c -o $@ $<
+
 test:
 	for i in ${EXECS}; \
 	do \

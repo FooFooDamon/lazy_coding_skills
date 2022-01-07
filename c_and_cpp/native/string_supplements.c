@@ -16,7 +16,7 @@
  * limitations under the License.
 */
 
-#include "string_enhancements.h"
+#include "string_supplements.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -268,6 +268,9 @@ int main(int argc, char **argv)
  *
  * >>> 2022-01-06, Man Hung-Coeng:
  *  01. Rename this file from string_enhancements.c to string_supplements.c.
+ *
+ * >>> 2022-01-07, Man Hung-Coeng:
+ *  01. Correct the typo of header inclusion.
  */
 
 

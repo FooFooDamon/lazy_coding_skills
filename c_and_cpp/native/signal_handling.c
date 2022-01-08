@@ -58,7 +58,7 @@ const char* sig_error(int error_code)
     if (error_code >= 0)
         return "OK";
 
-    if (error_code < -SIG_ERR_END)
+    if (error_code <= -SIG_ERR_END)
         return strerror(-error_code - SIG_ERR_END);
 
     return S_ERRORS[-error_code - 1];
@@ -352,7 +352,7 @@ int main(int argc, char **argv)
         err = sig_register(i, (SIGINT == signum) ? set_exit_flag : NULL);
 
         fprintf((err < 0) ? stderr : stdout, "sig_register() for [%d -> %s -> %d]: %s\n",
-            i, signame, signum, sig_error(err));
+            i, ((NULL == signame) ? "<UNKNOWN>" : signame), signum, sig_error(err));
     }
 
     while(1)
@@ -425,5 +425,9 @@ int main(int argc, char **argv)
  *      to support user-defined operations.
  *  02. Correct wrong outputs from sig_name_to_number()
  *      when converting SIGRTMAX-1 and SIGRTMAX.
+ *
+ * >>> 2022-01-08, Man Hung-Coeng:
+ *  01. Fix the out-of-bounds error in sig_error().
+ *  02. Improve code style according to the suggest of cppcheck.
  */
 

@@ -14,23 +14,22 @@ EXECS := $(filter-out , $(basename ${SRCS}))
 ${EXECS}: %: %.o
 	${C_LINK}
 
-./signal_handling.o: ./signal_handling.c
-	${CC} ${CFLAGS} -std=gnu89 -c -o $@ $<
-
-./sleeps.o: ./sleeps.c
-	${CC} ${CFLAGS} -std=gnu89 -c -o $@ $<
-
 test:
 	for i in ${EXECS}; \
 	do \
 		make $$i; \
 	done
 
+NON_ANSI_C_SRCS = ./signal_handling.c ./sleeps.c
+
+${NON_ANSI_C_SRCS:.c=.o}: %.o: %.c
+	${CC} ${CFLAGS} -std=gnu89 -c -o $@ $<
+
 PARALLEL_OPTION ?= -j $(shell grep -c "processor" /proc/cpuinfo)
 
 check:
-	cppcheck --enable=all --language=c --std=c89 ${PARALLEL_OPTION} ${C_DEFINES} ${C_INCLUDES} .
-	clang --analyze ${SRCS} ${CFLAGS}
+	cppcheck --enable=all --language=c --std=c89 --std=posix ${PARALLEL_OPTION} ${C_DEFINES} ${C_INCLUDES} ${SRCS}
+	clang --analyze ${SRCS} ${CFLAGS} -std=gnu89
 
 clean:
 	rm -f ${EXECS} ${OBJS} *.plist

@@ -51,7 +51,7 @@ const char* watchdog_error(int error_code)
     if (error_code >= 0)
         return "OK";
 
-    if (error_code < -WDOG_ERR_END)
+    if (error_code <= -WDOG_ERR_END)
         return strerror(-error_code - WDOG_ERR_END);
 
     return S_ERRORS[-error_code - 1];
@@ -175,5 +175,8 @@ int main(int argc, char **argv)
  *
  * >>> 2022-01-05, Man Hung-Coeng:
  *  01. Create.
+ *
+ * >>> 2022-01-08, Man Hung-Coeng:
+ *  01. Fix the out-of-bounds error in watchdog_error().
  */
 

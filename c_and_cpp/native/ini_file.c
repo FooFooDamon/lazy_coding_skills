@@ -1283,6 +1283,6 @@ TEST_END:
  *      allocated memory on exit.
  *  03. Use the allow_resizing parameter within the str_buf argument to decide
  *      whether memory re-allocation is allowed within __dump_node_to_buffer().
- *  04. Improve code style according to the suggestions from cppcheck and clang.
+ *  04. Improve code style according to suggestions from cppcheck and clang.
  */
 

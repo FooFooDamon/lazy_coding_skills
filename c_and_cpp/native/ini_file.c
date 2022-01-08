@@ -119,10 +119,21 @@ void ini_set_newline(const char* const newline)
             ('\r' == newline[0] && '\n' == newline[1] && '\0' == newline[2])
         )
     )
-    s_newline = newline;
+    {
+        s_newline = newline;
+    }
 }
 
 static char *s_indent_spaces = NULL;
+
+static void free_indent_spaces(void)
+{
+    if (NULL != s_indent_spaces)
+    {
+        free(s_indent_spaces);
+        s_indent_spaces = NULL;
+    }
+}
 
 void ini_set_item_indent_width(size_t width)
 {
@@ -131,11 +142,12 @@ void ini_set_item_indent_width(size_t width)
     if (width > INI_INDENT_WIDTH_MAX)
         return;
 
-    if (NULL != (tmp = realloc(s_indent_spaces, (0 == width) ? 0 : width + 1)))
+    if (NULL != (tmp = realloc(s_indent_spaces, width + 1)))
     {
         s_indent_spaces = tmp;
         memset(s_indent_spaces, ' ', width);
         s_indent_spaces[width] = '\0';
+        atexit(free_indent_spaces);
     }
 }
 
@@ -179,12 +191,13 @@ ini_doc_t* __parse_from(void *target, int target_size, char* (*getline_func)(cha
     ini_node_t *prev = NULL;
     char *buf = (NULL == doc) ? NULL : calloc(INI_LINE_SIZE_MAX + 1, sizeof(char));
     int is_str = (target_size > 0);
-    char *pos = target;
+    char *pos = NULL;
 
     #define RETURN_IF_TRUE(conditions, errcode, free_mem_statements)   do { \
         if (conditions) { \
             if (NULL != doc) {\
-                ini_destroy(&doc); \
+                ini_destroy(doc); \
+                doc = NULL; \
             } \
             free_mem_statements; \
             if (NULL != nullable_summary) { \
@@ -382,7 +395,7 @@ static ini_summary_t __traverse_nodes_of(ini_node_t *sec, int should_free_memory
     ini_summary_t summary = { 0 };
     int is_section = (NULL != sec && INI_NODE_SECTION == sec->type);
     ini_node_t *node = is_section ? ((ini_section_t *)sec->detail)->sub : NULL;
-    const char *sec_name = is_section ? ((ini_section_t *)sec->detail)->name : NULL;
+    const char *sec_name = is_section ? ((ini_section_t *)sec->detail)->name : "";
 
     while (NULL != node)
     {
@@ -449,7 +462,7 @@ static ini_summary_t __traverse_all_nodes(ini_doc_t *doc, int should_free_memory
         {
             char node_type = node->type;
             ini_node_t *node_ptr = node;
-            const char *sec_name = (INI_NODE_SECTION == node_type) ? ((ini_section_t *)node->detail)->name : NULL;
+            const char *sec_name = (INI_NODE_SECTION == node_type) ? ((ini_section_t *)node->detail)->name : "";
 
             node = node->next;
 
@@ -581,10 +594,11 @@ static int __dump_node_to_buffer(const char *sec_name, ini_node_t *cur_node, voi
         : ((INI_NODE_SECTION == node_type)
             ? (name_len + 2 + newline_len)
             : ((INI_NODE_COMMENT == node_type) ? (comment_len + newline_len) : newline_len));
+    int buf_not_enough = (buf->used + expected_len > buf->total);
 
-    if (NULL == *(buf->pptr) || buf->used + expected_len > buf->total) /* TODO: Use allow_resizing, too. */
+    if (NULL == *(buf->pptr) || buf_not_enough)
     {
-        char *tmp = realloc(*buf->pptr, buf->total * 2);
+        char *tmp = (buf_not_enough && !buf->allow_resizing) ? NULL : realloc(*buf->pptr, buf->total * 2);
 
         if (NULL == tmp)
             return -INI_ERR_MEM_ALLOC;
@@ -640,7 +654,7 @@ static int __dump_node_to_buffer(const char *sec_name, ini_node_t *cur_node, voi
 ini_summary_t ini_dump_to_buffer(const ini_doc_t *doc, char **buf, size_t *buf_len, int allow_resizing)
 {
     str_buf_t arg = { 0 };
-    ini_summary_t summary = { 0 };
+    ini_summary_t summary;
 
     arg.pptr = buf;
     arg.total = (NULL == *buf || 0 == *buf_len) ? 64 : *buf_len;
@@ -658,15 +672,13 @@ static int __do_nothing_but_trigger_summary(const char *sec_name, ini_node_t *cu
     return 0;
 }
 
-void ini_destroy(ini_doc_t **doc)
+void ini_destroy(ini_doc_t *doc)
 {
-    if (NULL != doc && NULL != *doc &&
-        __traverse_all_nodes(*doc, 1, __do_nothing_but_trigger_summary, NULL).success_lines > 0)
+    if (NULL != doc && __traverse_all_nodes(doc, 1, __do_nothing_but_trigger_summary, NULL).success_lines > 0)
     {
-        (*doc)->preamble = NULL;
-        (*doc)->section = NULL;
-        free(*doc);
-        *doc = NULL;
+        doc->preamble = NULL;
+        doc->section = NULL;
+        free(doc);
     }
 }
 
@@ -1137,7 +1149,7 @@ int main(int argc, char **argv)
     }
     printf("Capacity of ini_str_buf has expanded from 0 to %d, contents:\n%s\n", (int)ini_str_len, ini_str_buf);
 
-    ini_destroy(&doc);
+    ini_destroy(doc);
     doc = ini_parse_from_buffer(ini_str_buf, strlen(ini_str_buf), /*strip_blanks =*/1, &summary);
     print_summary(&summary, "Parse[2] summary", (summary.error_code < 0) ? stderr : stdout);
     if (summary.error_code < 0)
@@ -1187,7 +1199,7 @@ int main(int argc, char **argv)
         goto TEST_END;
     }
 
-    ini_destroy(&doc);
+    ini_destroy(doc);
     doc = ini_parse_from_stream(rstream, /*strip_blanks =*/1, &summary);
     print_summary(&summary, "Parse[3] summary", (summary.error_code < 0) ? stderr : stdout);
     if (summary.error_code < 0)
@@ -1210,7 +1222,7 @@ TEST_END:
     if (NULL != ini_str_buf)
         free(ini_str_buf);
 
-    ini_destroy(&doc);
+    ini_destroy(doc);
 
     if (NULL != wstream)
         fclose(wstream);
@@ -1263,5 +1275,14 @@ TEST_END:
  *  01. Rename file simple_ini_config.{c,h} to ini_file.{c,h}.
  *  02. Rename structure ini_cfg_t to ini_doc_t.
  *  03. Change return type of ini_{section,item}_is_repeated() to bool.
+ *
+ * >>> 2022-01-08, Man Hung-Coeng:
+ *  01. Change parameter type of ini_destroy() back to ini_cfg_t*.
+ *  02. Use atexit() to register the newly added function free_indent_spaces()
+ *      within ini_set_item_indent_width() in order to free the dynamically
+ *      allocated memory on exit.
+ *  03. Use the allow_resizing parameter within the str_buf argument to decide
+ *      whether memory re-allocation is allowed within __dump_node_to_buffer().
+ *  04. Improve code style according to the suggestions from cppcheck and clang.
  */
 

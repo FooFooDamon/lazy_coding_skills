@@ -84,7 +84,7 @@ ini_summary_t ini_dump_to_stream(const ini_doc_t *doc, FILE *stream);
 
 ini_summary_t ini_dump_to_buffer(const ini_doc_t *doc, char **buf, size_t *buf_len, int allow_resizing);
 
-void ini_destroy(ini_doc_t **doc);
+void ini_destroy(ini_doc_t *doc);
 
 /*
  * ================

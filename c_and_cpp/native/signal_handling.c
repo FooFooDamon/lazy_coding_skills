@@ -428,6 +428,6 @@ int main(int argc, char **argv)
  *
  * >>> 2022-01-08, Man Hung-Coeng:
  *  01. Fix the out-of-bounds error in sig_error().
- *  02. Improve code style according to the suggest of cppcheck.
+ *  02. Improve code style according to suggestions from cppcheck.
  */
 

@@ -51,7 +51,7 @@ const char* str_error(int error_code)
     if (error_code >= 0)
         return "OK";
 
-    if (error_code < -STR_ERR_END)
+    if (error_code <= -STR_ERR_END)
         return strerror(-error_code - STR_ERR_END);
 
     return S_ERRORS[-error_code - 1];
@@ -67,7 +67,6 @@ char** str_split(const char *str, size_t str_len, const char *delimiter, size_t 
     {
         const size_t MAX_SPLITS = (NULL != nullable_splits && *nullable_splits > 0) ? *nullable_splits + 1 : (size_t)-1;
         size_t capacity = 1;
-        size_t len = 0;
         const char *head = str;
         const char *tail = head;
         const char *STOP = str + str_len;
@@ -78,6 +77,8 @@ char** str_split(const char *str, size_t str_len, const char *delimiter, size_t 
 
         while (++splits <= MAX_SPLITS)
         {
+            size_t len = 0;
+
             if (head > STOP)
                 break;
 
@@ -271,6 +272,10 @@ int main(int argc, char **argv)
  *
  * >>> 2022-01-07, Man Hung-Coeng:
  *  01. Correct the typo of header inclusion.
+ *
+ * >>> 2022-01-08, Man Hung-Coeng:
+ *  01. Fix the out-of-bounds error in str_error().
+ *  02. Improve code style according to the suggest of cppcheck.
  */
 
 

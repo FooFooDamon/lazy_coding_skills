@@ -1,5 +1,5 @@
 /*
- * Supplements to string operation that ANSI C does not provide.
+ * Supplements to string operation of ANSI C.
  *
  * Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
  *
@@ -28,7 +28,12 @@ extern "C" {
 const char* str_error(int error_code);
 
 char** str_split(const char *str, size_t str_len, const char *delimiter, size_t delimiter_len,
-    size_t *nullable_splits, char **nullable_result_holder, int *nullable_errcode);
+    size_t max_splits_if_not_zero, int *nullable_errcode_or_splits_output);
+
+int str_split_destroy(char **pptr);
+
+int str_split_to_fixed_buffer(const char *str, size_t str_len, const char *delimiter, size_t delimiter_len,
+    char **buf, size_t buf_items, size_t capacity_per_item);
 
 #ifdef __cplusplus
 }
@@ -46,6 +51,12 @@ char** str_split(const char *str, size_t str_len, const char *delimiter, size_t 
  *
  * >>> 2022-01-06, Man Hung-Coeng:
  *  01. Rename this file from string_enhancements.h to string_supplements.h.
+ *
+ * >>> 2022-01-09, Man Hung-Coeng:
+ *  01. Change str_split() to a function returning dynamically allocated memory
+ *      result only, and add a new one named str_split_to_fixed_buffer()
+ *      for storing the result in the static buffer specified by the parameter.
+ *  02. Add str_split_destroy() for releasing the memory from str_split().
  */
 
 

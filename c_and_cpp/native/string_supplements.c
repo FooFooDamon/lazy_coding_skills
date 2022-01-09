@@ -1,5 +1,5 @@
 /*
- * Supplements to string operation that ANSI C does not provide.
+ * Supplements to string operation of ANSI C.
  *
  * Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
  *
@@ -57,23 +57,23 @@ const char* str_error(int error_code)
     return S_ERRORS[-error_code - 1];
 }
 
-char** str_split(const char *str, size_t str_len, const char *delimiter, size_t delimiter_len,
-    size_t *nullable_splits, char **nullable_result_holder, int *nullable_errcode)
+static char** __str_split(const char *str, size_t str_len, const char *delimiter, size_t delimiter_len,
+    size_t *inout_splits, char **nullable_result_holder, size_t capacity_per_holder_item, int *errcode)
 {
     size_t splits = 0;
     char **pptr = nullable_result_holder;
 
     if (delimiter_len < str_len)
     {
-        const size_t MAX_SPLITS = (NULL != nullable_splits && *nullable_splits > 0) ? *nullable_splits + 1 : (size_t)-1;
+        const int is_dynamic_alloc = (NULL == nullable_result_holder);
+        const size_t MAX_SPLITS = (*inout_splits > 0) ? *inout_splits + 1 : (size_t)-1;
         size_t capacity = 1;
         const char *head = str;
         const char *tail = head;
         const char *STOP = str + str_len;
         char **tmp = NULL;
 
-        if (NULL != nullable_errcode)
-            *nullable_errcode = 0;
+        *errcode = 0;
 
         while (++splits <= MAX_SPLITS)
         {
@@ -91,14 +91,13 @@ char** str_split(const char *str, size_t str_len, const char *delimiter, size_t 
                     tail = STOP;
             }
 
-            if ((NULL == nullable_result_holder) && (NULL == pptr || splits > capacity))
+            if (is_dynamic_alloc && (NULL == pptr || splits + 1 > capacity))
             {
                 capacity *= 2;
                 tmp = (char **)realloc(pptr, sizeof(char *) * capacity);
                 if (NULL == tmp)
                 {
-                    if (NULL != nullable_errcode)
-                        *nullable_errcode = -STR_ERR_MEM_ALLOC;
+                    *errcode = -STR_ERR_MEM_ALLOC;
 
                     break;
                 }
@@ -106,146 +105,192 @@ char** str_split(const char *str, size_t str_len, const char *delimiter, size_t 
             }
 
             len = (splits < MAX_SPLITS) ? (tail - head) : (STOP - head);
-            if ((NULL == nullable_result_holder) && (NULL == (pptr[splits - 1] = malloc(len + 1))))
+            if (is_dynamic_alloc)
             {
-                if (NULL != nullable_errcode)
-                    *nullable_errcode = -STR_ERR_MEM_ALLOC;
+                if (NULL == (pptr[splits - 1] = malloc(len + 1)))
+                {
+                    *errcode = -STR_ERR_MEM_ALLOC;
 
-                break;
+                    break;
+                }
+            }
+            else
+            {
+                if (len >= capacity_per_holder_item)
+                    len = capacity_per_holder_item - 1;
             }
             memcpy(pptr[splits - 1], head, len);
             pptr[splits - 1][len] = '\0';
 
             tail += delimiter_len;
             head = tail;
-        } /* while ((0 == MAX_SPLITS) || (++splits <= MAX_SPLITS)) */
+        } /* while (++splits <= MAX_SPLITS) */
 
-        if (NULL == nullable_result_holder && capacity > splits - 1 &&
-            (NULL != (tmp = realloc(pptr, sizeof(char *) * (splits - 1)))))
-        {
+        if (is_dynamic_alloc)
+            pptr[splits - 1] = NULL;
+
+        if (is_dynamic_alloc && capacity > splits && (NULL != (tmp = realloc(pptr, sizeof(char *) * splits))))
             pptr = tmp;
-        }
-    } /* delimiter_len < str_len */
+    }
     else
     {
-        if (NULL != nullable_errcode)
-            *nullable_errcode = -STR_ERR_SPLITTING_SKIPPED;
-    }
+        *errcode = -STR_ERR_SPLITTING_SKIPPED;
+    } /* if (delimiter_len < str_len) */
 
-    if (NULL != nullable_splits)
-        *nullable_splits = (delimiter_len < str_len) ? (splits - 2) : 0;
+    *inout_splits = (delimiter_len < str_len) ? (splits - 2) : 0;
 
     return pptr;
+}
+
+char** str_split(const char *str, size_t str_len, const char *delimiter, size_t delimiter_len,
+    size_t max_splits_if_not_zero, int *nullable_errno_or_splits_output)
+{
+    size_t splits = max_splits_if_not_zero;
+    int err = 0;
+    char **pptr = __str_split(str, str_len, delimiter, delimiter_len, &splits, NULL, 0, &err);
+
+    if (NULL != nullable_errno_or_splits_output)
+        *nullable_errno_or_splits_output = (err < 0) ? err : splits;
+
+    return pptr;
+}
+
+int str_split_destroy(char **pptr)
+{
+    if (NULL != pptr)
+    {
+        char **tmp = pptr;
+        int i = 1;
+
+        for (; NULL != *tmp; ++tmp, ++i)
+        {
+            free(*tmp);
+        }
+
+        free(pptr);
+
+        return i;
+    }
+
+    return 0;
+}
+
+int str_split_to_fixed_buffer(const char *str, size_t str_len, const char *delimiter, size_t delimiter_len,
+    char **buf, size_t buf_items, size_t capacity_per_item)
+{
+    size_t splits = buf_items - 1;
+    int err = (0 == buf_items || 0 == capacity_per_item) ? -STR_ERR_ZERO_LENGTH : 0;
+
+    if (0 == err)
+        __str_split(str, str_len, delimiter, delimiter_len, &splits, buf, capacity_per_item, &err);
+
+    return (err < 0) ? err : splits;
 }
 
 #ifdef TEST
 
 #include <stdio.h>
 
+#define BUF_ITEM_COUNT      8
+#define BUF_ITEM_SIZE       4
+
 int main(int argc, char **argv)
 {
-    const char *simple_str = "/aa//bb/cc//";
+    const char *simple_str = "/aa//bbbbb/cccc//";
     size_t simple_len = strlen(simple_str);
-    const char *complex_str = "*|*a*|**|*bb*|*ccc*|dd*|*e*|*ff*|*ggg*|*";
+    const char *complex_str = "*|*a*|**|*bbb*|*ccccc*|ddd*|*e*|*fff*|*ggggg*|*";
     size_t complex_len = strlen(complex_str);
-    size_t splits = 0;
+    int splits = 0;
     char **result_pptr = NULL;
-    char buf[8][32] = { 0 };
-    char *buf_ptr[8]; /* TODO: Any easier initialization ?? */
+    char **pptr = NULL;
+    char buf[BUF_ITEM_COUNT][BUF_ITEM_SIZE] = { 0 };
+    char *buf_ptr[BUF_ITEM_COUNT]; /* TODO: Any easier initialization ?? */
     size_t i = 0;
-    int err = 0;
 
     for (i = 0; i < sizeof(buf_ptr) / sizeof(char *); ++i)
     {
         buf_ptr[i] = buf[i];
     }
 
-    result_pptr = str_split(simple_str, simple_len, "/", 1, &splits, NULL, NULL);
+    result_pptr = str_split(simple_str, simple_len, "/", 1, 0, NULL);
     printf(">>> Case 1: dynamic allocated result; ignored error code.\n");
-    printf("str_split(%s, /): %d splits\n", simple_str, (int)splits);
-    if (NULL != result_pptr)
-    {
-        for (i = 0; i <= splits; ++i)
-        {
-            printf("    [%d]: %s\n", (int)i, result_pptr[i]);
-            free(result_pptr[i]);
-        }
-        free(result_pptr);
-    }
-
-    str_split(simple_str, simple_len, "/", 1, NULL, buf_ptr, NULL);
-    printf(">>> Case 2: buffer on stack; ignored error code.\n");
     printf("str_split(%s, /):\n", simple_str);
+    if (NULL != result_pptr)
+    {
+        for (pptr = result_pptr, i = 0; NULL != *pptr; ++pptr, ++i)
+        {
+            printf("    [%d]: %s\n", (int)i, *pptr);
+        }
+        str_split_destroy(result_pptr);
+    }
+
+    str_split_to_fixed_buffer(simple_str, simple_len, "/", 1, buf_ptr, BUF_ITEM_COUNT, BUF_ITEM_SIZE);
+    printf(">>> Case 2: fixed buffer on stack; ignored error code.\n");
+    printf("str_split_to_fixed_buffer(%s, /):\n", simple_str);
     for (i = 0; i < sizeof(buf_ptr) / sizeof(char *); ++i)
     {
         printf("    [%d]: %s\n", (int)i, buf[i]);
     }
 
     splits = 0;
-    result_pptr = str_split(complex_str, complex_len, "*|*", 3, &splits, NULL, &err);
+    result_pptr = str_split(complex_str, complex_len, "*|*", 3, 0, &splits);
     printf(">>> Case 3: dynamic allocated result; with error code handling.\n");
-    printf("str_split(%s, *|*): %d splits, err: %s\n", complex_str, (int)splits, str_error(err));
+    printf("str_split(%s, *|*): %d splits, err: %s\n", complex_str, splits, str_error(splits));
     if (NULL != result_pptr)
     {
-        for (i = 0; i <= splits; ++i)
+        for (i = 0; i <= (size_t)splits; ++i) /* Or: (pptr = result_pptr, i = 0; NULL != *pptr; ++pptr, ++i) */
         {
             printf("    [%d]: %s\n", (int)i, result_pptr[i]);
-            free(result_pptr[i]);
         }
-        free(result_pptr);
+        str_split_destroy(result_pptr);
     }
 
-    splits = sizeof(buf_ptr) / sizeof(char *) - 1;
-    str_split(complex_str, complex_len, "*|*", 3, &splits, buf_ptr, &err);
-    printf(">>> Case 4: with maximum split times; buffer on stack; with error code handling.\n");
-    printf("str_split(%s, *|*): %d splits, err: %s\n", complex_str, (int)splits, str_error(err));
-    for (i = 0; i < sizeof(buf_ptr) / sizeof(char *); ++i)
+    splits = str_split_to_fixed_buffer(complex_str, complex_len, "*|*", 3, buf_ptr, BUF_ITEM_COUNT, BUF_ITEM_SIZE);
+    printf(">>> Case 4: fixed buffer on stack; with error code handling.\n");
+    printf("str_split_to_fixed_buffer(%s, *|*): %d splits, err: %s\n", complex_str, splits, str_error(splits));
+    for (i = 0; i < sizeof(buf_ptr) / sizeof(char *); ++i) /* Only if splits > 0 */
     {
         printf("    [%d]: %s\n", (int)i, buf[i]);
     }
 
     splits = 0;
-    result_pptr = str_split(complex_str, complex_len, "\t\t", 2, &splits, NULL, &err);
+    result_pptr = str_split(complex_str, complex_len, "\t\t", 2, 0, &splits);
     printf(">>> Case 5: delimiter not hit; dynamic allocated result; with error code handling.\n");
-    printf("str_split(%s, \\t\\t): %d splits, err: %s\n", complex_str, (int)splits, str_error(err));
+    printf("str_split(%s, \\t\\t): %d splits, err: %s\n", complex_str, splits, str_error(splits));
     if (NULL != result_pptr)
     {
-        for (i = 0; i <= splits; ++i)
+        for (i = 0; i <= (size_t)splits; ++i) /* Or: (pptr = result_pptr, i = 0; NULL != *pptr; ++pptr, ++i) */
         {
             printf("    [%d]: %s\n", (int)i, result_pptr[i]);
-            free(result_pptr[i]);
         }
-        free(result_pptr);
+        str_split_destroy(result_pptr);
     }
 
-    splits = sizeof(buf_ptr) / sizeof(char *) - 1;
-    str_split(complex_str, complex_len, "\t\t", 2, &splits, buf_ptr, &err);
-    printf(">>> Case 6: delimiter not hit; with maximum split times; buffer on stack; with error code handling.\n");
-    printf("str_split(%s, \\t\\t): %d splits, err: %s\n", complex_str, (int)splits, str_error(err));
-    for (i = 0; i < sizeof(buf_ptr) / sizeof(char *); ++i)
+    splits = str_split_to_fixed_buffer(complex_str, complex_len, "\t\t", 2, buf_ptr, BUF_ITEM_COUNT, BUF_ITEM_SIZE);
+    printf(">>> Case 6: delimiter not hit; fixed buffer on stack; with error code handling.\n");
+    printf("str_split_to_fixed_buffer(%s, \\t\\t): %d splits, err: %s\n", complex_str, splits, str_error(splits));
+    for (i = 0; i < sizeof(buf_ptr) / sizeof(char *); ++i) /* Only if splits > 0 */
     {
         printf("    [%d]: %s\n", (int)i, buf[i]);
     }
 
     splits = 0;
-    result_pptr = str_split("", 0, "\t", 1, &splits, NULL, &err);
+    result_pptr = str_split("", 0, "\t", 1, 0, &splits);
     printf(">>> Case 7: empty target; dynamic allocated result; with error code handling.\n");
-    printf("str_split('', \\t): %d splits, err: %s\n", (int)splits, str_error(err));
+    printf("str_split('', \\t): %d splits, err: %s\n", splits, str_error(splits));
     if (NULL != result_pptr)
     {
-        for (i = 0; i <= splits; ++i)
+        for (i = 0; i <= (size_t)splits; ++i) /* Or: (pptr = result_pptr, i = 0; NULL != *pptr; ++pptr, ++i) */
         {
             printf("    [%d]: %s\n", (int)i, result_pptr[i]);
-            free(result_pptr[i]);
         }
-        free(result_pptr);
+        str_split_destroy(result_pptr);
     }
 
-    splits = sizeof(buf_ptr) / sizeof(char *) - 1;
-    str_split("", 0, "\t", 1, &splits, buf_ptr, &err);
-    printf(">>> Case 8: empty target; with maximum split times; buffer on stack; with error code handling.\n");
-    printf("str_split('', \\t): %d splits, err: %s\n", (int)splits, str_error(err));
-    for (i = 0; i < sizeof(buf_ptr) / sizeof(char *); ++i)
+    splits = str_split_to_fixed_buffer("", 0, "\t", 1, buf_ptr, BUF_ITEM_COUNT, BUF_ITEM_SIZE);
+    printf(">>> Case 8: empty target; fixed buffer on stack; with error code handling.\n");
+    printf("str_split_to_fixed_buffer('', \\t): %d splits, err: %s\n", splits, str_error(splits));
+    for (i = 0; i < sizeof(buf_ptr) / sizeof(char *); ++i) /* Only if splits > 0 */
     {
         printf("    [%d]: %s\n", (int)i, buf[i]);
     }
@@ -276,6 +321,11 @@ int main(int argc, char **argv)
  * >>> 2022-01-08, Man Hung-Coeng:
  *  01. Fix the out-of-bounds error in str_error().
  *  02. Improve code style according to suggestions from cppcheck.
+ *
+ * >>> 2022-01-09, Man Hung-Coeng:
+ *  01. Change str_split() to a function returning dynamically allocated memory
+ *      result only, and add a new one named str_split_to_fixed_buffer()
+ *      for storing the result in the static buffer specified by the parameter.
+ *  02. Add str_split_destroy() for releasing the memory from str_split().
  */
-
 

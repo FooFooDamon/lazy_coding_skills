@@ -20,6 +20,7 @@ cmake_install.cmake
 gccdump.s
 __pycache__
 *.pyc
+.~*
 
 # ---- Project-specific rules below ----
 

@@ -1,6 +1,6 @@
 CC := gcc
 
-C_DEFINES := -DTEST
+C_DEFINES := -DTEST -DCOMMPROTO_BIG_ENDIAN
 C_INCLUDES :=
 OTHER_CFLAGS :=
 
@@ -28,7 +28,9 @@ ${NON_ANSI_C_SRCS:.c=.o}: %.o: %.c
 PARALLEL_OPTION ?= -j $(shell grep -c "processor" /proc/cpuinfo)
 
 check:
-	cppcheck --enable=all --language=c --std=c89 --std=posix ${PARALLEL_OPTION} ${C_DEFINES} ${C_INCLUDES} ${SRCS}
+	cppcheck --enable=all --language=c --std=c89 --std=posix ${PARALLEL_OPTION} ${C_DEFINES} \
+		-D__ORDER_LITTLE_ENDIAN__=1234 -D__ORDER_BIG_ENDIAN__=4321 -D__BYTE_ORDER__=__ORDER_LITTLE_ENDIAN__ \
+		${C_INCLUDES} ${SRCS}
 	clang --analyze ${SRCS} ${CFLAGS} -std=gnu89
 
 clean:

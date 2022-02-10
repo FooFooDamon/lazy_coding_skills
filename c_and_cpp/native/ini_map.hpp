@@ -25,6 +25,7 @@
 #include "ini_file.h"
 
 #include <map>
+#include <exception>
 
 class ini_map final
 {
@@ -45,9 +46,10 @@ private:
         const char* operator[](const char *key) const
         {
             cstr_map::const_iterator iter = this->find(key);
+            const char *safe_key = ((nullptr == key) ? "<nullptr>" : key);
 
             if (this->end() == iter)
-                throw ("Key not found");
+                throw std::invalid_argument(std::string("INI configuration key not found: ") + safe_key);
 
             return iter->second;
         }
@@ -176,9 +178,10 @@ public:
     inline const cstr_map& operator[](const char *section) const
     {
         section_map::const_iterator iter = map_->find(section);
+        const char *safe_sec = ((nullptr == section) ? "<nullptr>" : section);
 
         if (map_->end() == iter)
-            throw ("Section not found");
+            throw std::invalid_argument(std::string("INI configuration section not found: [") + safe_sec + "]");
 
         return iter->second;
     }
@@ -284,6 +287,11 @@ private:
  *  02. Turn the index operator [] into a read-only one
  *      to avoid producing unexpected data.
  *  03. Rename refresh() to sync().
+ *
+ * >>> 2022-02-10, Man Hung-Coeng:
+ *  01. Change the exception type of operator [] from const char*
+ *      to std::invalid_argument to make the exception reason displayable
+ *      even if the exception is not catched.
  */
 
 

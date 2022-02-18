@@ -130,10 +130,10 @@ int commproto_init(void)
 #error COMMPROTO_INITIAL_BUFSIZE must be 4, 8, 16, 32, 64, 128!
 #endif
 
-static int16_t calculate_struct_size(int16_t struct_field_count, const int8_t *meta_ptr,
-    int16_t meta_len, int8_t **nullable_meta_pptr)
+static int16_t calculate_struct_size(int16_t struct_field_count, const uint8_t *meta_ptr,
+    uint16_t meta_len, uint8_t **nullable_meta_pptr)
 {
-    const int8_t *meta_start_ptr = meta_ptr;
+    const uint8_t *meta_start_ptr = meta_ptr;
     int16_t result = 0;
     int16_t i = 0;
 
@@ -179,7 +179,7 @@ static int16_t calculate_struct_size(int16_t struct_field_count, const int8_t *m
 
         if (COMMPROTO_STRUCT_FIXED_ARRAY == type)
         {
-            int8_t *sub_meta_ptr = (int8_t *)meta_ptr + sizeof(int8_t) + sizeof(int16_t) * 2;
+            uint8_t *sub_meta_ptr = (uint8_t *)meta_ptr + sizeof(int8_t) + sizeof(int16_t) * 2;
             int16_t sub_struct_count = *((int16_t *)(meta_ptr + sizeof(int8_t) + sizeof(int16_t)));
             int16_t sub_struct_size = calculate_struct_size(
                 *((int16_t *)(meta_ptr + sizeof(int8_t))), sub_meta_ptr,
@@ -205,7 +205,7 @@ static int16_t calculate_struct_size(int16_t struct_field_count, const int8_t *m
 
         if (COMMPROTO_STRUCT_DYNAMIC_ARRAY == type)
         {
-            int8_t *sub_meta_ptr = (int8_t *)meta_ptr + sizeof(int8_t) + sizeof(int16_t);
+            uint8_t *sub_meta_ptr = (uint8_t *)meta_ptr + sizeof(int8_t) + sizeof(int16_t);
             int16_t sub_struct_size = calculate_struct_size(
                 *((int16_t *)(meta_ptr + sizeof(int8_t))), sub_meta_ptr,
                 meta_len, &sub_meta_ptr
@@ -229,35 +229,35 @@ static int16_t calculate_struct_size(int16_t struct_field_count, const int8_t *m
         }
 
         if (NULL != nullable_meta_pptr)
-            *nullable_meta_pptr = (int8_t *)meta_ptr;
+            *nullable_meta_pptr = (uint8_t *)meta_ptr;
 
         return -COMMPROTO_ERR_WRONG_META_DATA;
     } /* for (; i < struct_field_count; ++i) */
 
     if (NULL != nullable_meta_pptr)
-        *nullable_meta_pptr = (int8_t *)meta_ptr;
+        *nullable_meta_pptr = (uint8_t *)meta_ptr;
 
     COMMPROTO_DPRINT("struct size: %d\n", result);
 
     return result;
 }
 
-static int general_serialization(int16_t fields, int16_t loops, const int8_t *meta_start_ptr,
-    int16_t meta_len, int8_t **meta_pptr, int8_t **struct_pptr,
+static int general_serialization(int16_t fields, int16_t loops, const uint8_t *meta_start_ptr,
+    uint16_t meta_len, uint8_t **meta_pptr, uint8_t **struct_pptr,
     bool can_have_inner_struct, bool is_static_buf, uint16_t max_buf_len,
-    char **buf_pptr, uint16_t *buf_capacity_ptr, uint16_t *handled_len_ptr)
+    uint8_t **buf_pptr, uint16_t *buf_capacity_ptr, uint16_t *handled_len_ptr)
 {
-    int16_t loop = 1;
     int16_t simple_array_len = -1;
     int16_t struct_array_len = -1;
     int16_t struct_field_count = -1;
-    int8_t *inner_struct_ptr = NULL;
-    int8_t *meta_ptr_per_round = *meta_pptr;
+    uint8_t *inner_struct_ptr = NULL;
+    uint8_t *meta_ptr_per_round = *meta_pptr;
 #if defined(COMMPROTO_DEBUG) || defined(TEST)
-    int8_t *struct_ptr_start = *struct_pptr;
+    uint8_t *struct_ptr_start = *struct_pptr;
 #endif
-    char *new_buf = NULL;
+    uint8_t *new_buf = NULL;
     int err = 0;
+    int16_t loop = 1;
 
     for (; loop <= loops && err >= 0; ++loop)
     {
@@ -355,7 +355,7 @@ static int general_serialization(int16_t fields, int16_t loops, const int8_t *me
                     continue;
                 }
 
-                if (NULL == (new_buf = (char *)realloc(*buf_pptr, *buf_capacity_ptr)))
+                if (NULL == (new_buf = (uint8_t *)realloc(*buf_pptr, *buf_capacity_ptr)))
                 {
                     err = -COMMPROTO_ERR_MEM_ALLOC;
                     continue;
@@ -373,7 +373,7 @@ static int general_serialization(int16_t fields, int16_t loops, const int8_t *me
             case COMMPROTO_INT8_FIXED_ARRAY:
             case COMMPROTO_INT8_DYNAMIC_ARRAY:
                 COMMPROTO_SET_INT8_ARRAY(((COMMPROTO_INT8 == type) ? 1 : simple_array_len),
-                    ((COMMPROTO_INT8_DYNAMIC_ARRAY == type) ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr),
+                    ((COMMPROTO_INT8_DYNAMIC_ARRAY == type) ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr),
                     *buf_pptr + *handled_len_ptr - data_offset);
                 *struct_pptr += ((COMMPROTO_INT8_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset);
                 break;
@@ -383,7 +383,7 @@ static int general_serialization(int16_t fields, int16_t loops, const int8_t *me
             case COMMPROTO_INT16_FIXED_ARRAY:
             case COMMPROTO_INT16_DYNAMIC_ARRAY:
                 COMMPROTO_SET_INT16_ARRAY(((COMMPROTO_INT16 == type || COMMPROTO_ARRAY_LEN == type) ? 1 : simple_array_len),
-                    ((COMMPROTO_INT16_DYNAMIC_ARRAY == type) ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr),
+                    ((COMMPROTO_INT16_DYNAMIC_ARRAY == type) ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr),
                     *buf_pptr + *handled_len_ptr - data_offset);
                 *struct_pptr += ((COMMPROTO_INT16_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset);
                 break;
@@ -392,7 +392,7 @@ static int general_serialization(int16_t fields, int16_t loops, const int8_t *me
             case COMMPROTO_INT32_FIXED_ARRAY:
             case COMMPROTO_INT32_DYNAMIC_ARRAY:
                 COMMPROTO_SET_INT32_ARRAY(((COMMPROTO_INT32 == type) ? 1 : simple_array_len),
-                    ((COMMPROTO_INT32_DYNAMIC_ARRAY == type) ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr),
+                    ((COMMPROTO_INT32_DYNAMIC_ARRAY == type) ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr),
                     *buf_pptr + *handled_len_ptr - data_offset);
                 *struct_pptr += ((COMMPROTO_INT32_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset);
                 break;
@@ -401,7 +401,7 @@ static int general_serialization(int16_t fields, int16_t loops, const int8_t *me
             case COMMPROTO_INT64_FIXED_ARRAY:
             case COMMPROTO_INT64_DYNAMIC_ARRAY:
                 COMMPROTO_SET_INT64_ARRAY(((COMMPROTO_INT64 == type) ? 1 : simple_array_len),
-                    ((COMMPROTO_INT64_DYNAMIC_ARRAY == type) ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr),
+                    ((COMMPROTO_INT64_DYNAMIC_ARRAY == type) ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr),
                     *buf_pptr + *handled_len_ptr - data_offset);
                 *struct_pptr += ((COMMPROTO_INT64_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset);
                 break;
@@ -410,7 +410,7 @@ static int general_serialization(int16_t fields, int16_t loops, const int8_t *me
             case COMMPROTO_FLOAT32_FIXED_ARRAY:
             case COMMPROTO_FLOAT32_DYNAMIC_ARRAY:
                 COMMPROTO_SET_FLOAT32_ARRAY(((COMMPROTO_FLOAT32 == type) ? 1 : simple_array_len),
-                    ((COMMPROTO_FLOAT32_DYNAMIC_ARRAY == type) ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr),
+                    ((COMMPROTO_FLOAT32_DYNAMIC_ARRAY == type) ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr),
                     *buf_pptr + *handled_len_ptr - data_offset);
                 *struct_pptr += ((COMMPROTO_FLOAT32_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset);
                 break;
@@ -419,13 +419,13 @@ static int general_serialization(int16_t fields, int16_t loops, const int8_t *me
             case COMMPROTO_FLOAT64_FIXED_ARRAY:
             case COMMPROTO_FLOAT64_DYNAMIC_ARRAY:
                 COMMPROTO_SET_FLOAT64_ARRAY(((COMMPROTO_FLOAT64 == type) ? 1 : simple_array_len),
-                    ((COMMPROTO_FLOAT64_DYNAMIC_ARRAY == type) ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr),
+                    ((COMMPROTO_FLOAT64_DYNAMIC_ARRAY == type) ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr),
                     *buf_pptr + *handled_len_ptr - data_offset);
                 *struct_pptr += ((COMMPROTO_FLOAT64_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset);
                 break;
 
             default:
-                inner_struct_ptr = (is_dynamic_struct_array ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : NULL);
+                inner_struct_ptr = (is_dynamic_struct_array ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : NULL);
                 err = (0 == struct_field_count || 0 == struct_array_len) ? 0
                     : general_serialization(struct_field_count, struct_array_len, meta_start_ptr,
                         meta_len, meta_pptr, (is_dynamic_struct_array ? &inner_struct_ptr : struct_pptr),
@@ -455,17 +455,17 @@ static int general_serialization(int16_t fields, int16_t loops, const int8_t *me
     return err;
 }
 
-char* commproto_serialize(const int8_t *protocol_meta_array, int16_t meta_len, const void *one_byte_aligned_struct,
-    char *nullable_buf, uint16_t buf_len, uint16_t *nullable_handled_len, int *nullable_error_code)
+uint8_t* commproto_serialize(const uint8_t *struct_meta_data, uint16_t meta_len, const void *one_byte_aligned_struct,
+    uint8_t *nullable_buf, uint16_t buf_len, uint16_t *nullable_handled_len, int *nullable_error_code)
 {
-    int8_t *meta_ptr = (int8_t *)protocol_meta_array;
-    int8_t *struct_ptr = (int8_t *)one_byte_aligned_struct;
+    uint8_t *meta_ptr = (uint8_t *)struct_meta_data;
+    uint8_t *struct_ptr = (uint8_t *)one_byte_aligned_struct;
     bool is_static_buf = (NULL != nullable_buf);
     const uint16_t MAX_BUF_LEN = is_static_buf ? buf_len : COMMPROTO_MAX_BUFSIZE;
     uint16_t result_len = 0;
     uint16_t buf_capacity = is_static_buf ? buf_len : COMMPROTO_INITIAL_BUFSIZE;
-    char *buf_ptr = is_static_buf ? nullable_buf : (char *)malloc(buf_capacity);
-    char *new_buf = NULL;
+    uint8_t *buf_ptr = is_static_buf ? nullable_buf : (uint8_t *)malloc(buf_capacity);
+    uint8_t *new_buf = NULL;
     int err = s_is_initialized
         ? (
             is_static_buf
@@ -477,7 +477,7 @@ char* commproto_serialize(const int8_t *protocol_meta_array, int16_t meta_len, c
     if (err < 0)
         goto SERIALIZE_END;
 
-    if ((err = general_serialization(/* fields = */0xffff / 2, /* loops = */1, protocol_meta_array,
+    if ((err = general_serialization(/* fields = */0xffff / 2, /* loops = */1, struct_meta_data,
         meta_len, &meta_ptr, &struct_ptr,
         /* can_have_inner_struct = */true, is_static_buf, MAX_BUF_LEN,
         &buf_ptr, &buf_capacity, &result_len)) < 0)
@@ -485,7 +485,7 @@ char* commproto_serialize(const int8_t *protocol_meta_array, int16_t meta_len, c
         goto SERIALIZE_END;
     }
 
-    if ((!is_static_buf) && result_len < buf_capacity && NULL != (new_buf = (char *)realloc(buf_ptr, result_len)))
+    if ((!is_static_buf) && result_len < buf_capacity && NULL != (new_buf = (uint8_t *)realloc(buf_ptr, result_len)))
         buf_ptr = new_buf;
 
 SERIALIZE_END:
@@ -499,20 +499,20 @@ SERIALIZE_END:
     return buf_ptr;
 }
 
-static int general_deserialization(int16_t fields, int16_t loops, const int8_t *meta_start_ptr,
-    int16_t meta_len, int8_t **meta_pptr, const char *buf_ptr,
-    uint16_t buf_len, int8_t **struct_pptr, int16_t struct_size,
+static int general_deserialization(int16_t fields, int16_t loops, const uint8_t *meta_start_ptr,
+    uint16_t meta_len, uint8_t **meta_pptr, const uint8_t *buf_ptr,
+    uint16_t buf_len, uint8_t **struct_pptr, int16_t struct_size,
     bool can_have_inner_struct, uint16_t *handled_len_ptr)
 {
-    int16_t loop = 1;
     int16_t simple_array_len = -1;
     int16_t struct_array_len = -1;
     int16_t struct_field_count = -1;
-    int8_t *inner_struct_ptr = NULL;
+    uint8_t *inner_struct_ptr = NULL;
     bool should_expand_dynamic_array = false;
-    int8_t *meta_ptr_per_round = *meta_pptr;
-    int8_t *struct_ptr_start = *struct_pptr;
+    uint8_t *meta_ptr_per_round = *meta_pptr;
+    uint8_t *struct_ptr_start = *struct_pptr;
     int err = 0;
+    int16_t loop = 1;
 
     for (; loop <= loops && err >= 0; ++loop)
     {
@@ -629,7 +629,7 @@ static int general_deserialization(int16_t fields, int16_t loops, const int8_t *
             case COMMPROTO_INT8_DYNAMIC_ARRAY:
                 COMMPROTO_SET_INT8_ARRAY(((COMMPROTO_INT8 == type) ? 1 : simple_array_len),
                     buf_ptr + *handled_len_ptr - data_offset,
-                    ((COMMPROTO_INT8_DYNAMIC_ARRAY == type) ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr));
+                    ((COMMPROTO_INT8_DYNAMIC_ARRAY == type) ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr));
                 *struct_pptr += ((COMMPROTO_INT8_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset);
                 break;
 
@@ -638,7 +638,7 @@ static int general_deserialization(int16_t fields, int16_t loops, const int8_t *
             case COMMPROTO_INT16_DYNAMIC_ARRAY:
                 COMMPROTO_SET_INT16_ARRAY(((COMMPROTO_INT16 == type) ? 1 : simple_array_len),
                     buf_ptr + *handled_len_ptr - data_offset,
-                    ((COMMPROTO_INT16_DYNAMIC_ARRAY == type) ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr));
+                    ((COMMPROTO_INT16_DYNAMIC_ARRAY == type) ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr));
                 *struct_pptr += ((COMMPROTO_INT16_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset);
                 break;
 
@@ -647,7 +647,7 @@ static int general_deserialization(int16_t fields, int16_t loops, const int8_t *
             case COMMPROTO_INT32_DYNAMIC_ARRAY:
                 COMMPROTO_SET_INT32_ARRAY(((COMMPROTO_INT32 == type) ? 1 : simple_array_len),
                     buf_ptr + *handled_len_ptr - data_offset,
-                    ((COMMPROTO_INT32_DYNAMIC_ARRAY == type) ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr));
+                    ((COMMPROTO_INT32_DYNAMIC_ARRAY == type) ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr));
                 *struct_pptr += ((COMMPROTO_INT32_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset);
                 break;
 
@@ -656,7 +656,7 @@ static int general_deserialization(int16_t fields, int16_t loops, const int8_t *
             case COMMPROTO_INT64_DYNAMIC_ARRAY:
                 COMMPROTO_SET_INT64_ARRAY(((COMMPROTO_INT64 == type) ? 1 : simple_array_len),
                     buf_ptr + *handled_len_ptr - data_offset,
-                    ((COMMPROTO_INT64_DYNAMIC_ARRAY == type) ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr));
+                    ((COMMPROTO_INT64_DYNAMIC_ARRAY == type) ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr));
                 *struct_pptr += ((COMMPROTO_INT64_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset);
                 break;
 
@@ -665,7 +665,7 @@ static int general_deserialization(int16_t fields, int16_t loops, const int8_t *
             case COMMPROTO_FLOAT32_DYNAMIC_ARRAY:
                 COMMPROTO_SET_FLOAT32_ARRAY(((COMMPROTO_FLOAT32 == type) ? 1 : simple_array_len),
                     buf_ptr + *handled_len_ptr - data_offset,
-                    ((COMMPROTO_FLOAT32_DYNAMIC_ARRAY == type) ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr));
+                    ((COMMPROTO_FLOAT32_DYNAMIC_ARRAY == type) ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr));
                 *struct_pptr += ((COMMPROTO_FLOAT32_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset);
                 break;
 
@@ -674,7 +674,7 @@ static int general_deserialization(int16_t fields, int16_t loops, const int8_t *
             case COMMPROTO_FLOAT64_DYNAMIC_ARRAY:
                 COMMPROTO_SET_FLOAT64_ARRAY(((COMMPROTO_FLOAT64 == type) ? 1 : simple_array_len),
                     buf_ptr + *handled_len_ptr - data_offset,
-                    ((COMMPROTO_FLOAT64_DYNAMIC_ARRAY == type) ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr));
+                    ((COMMPROTO_FLOAT64_DYNAMIC_ARRAY == type) ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : *struct_pptr));
                 *struct_pptr += ((COMMPROTO_FLOAT64_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset);
                 break;
 
@@ -686,7 +686,7 @@ static int general_deserialization(int16_t fields, int16_t loops, const int8_t *
                 break;
 
             default:
-                inner_struct_ptr = (is_dynamic_struct_array ? ((int8_t *)**(ptrdiff_t **)struct_pptr) : NULL);
+                inner_struct_ptr = (is_dynamic_struct_array ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : NULL);
                 err = (0 == struct_field_count || 0 == struct_array_len) ? 0
                     : general_deserialization(struct_field_count, struct_array_len, meta_start_ptr,
                         meta_len, meta_pptr, buf_ptr,
@@ -722,11 +722,11 @@ static int general_deserialization(int16_t fields, int16_t loops, const int8_t *
     return err;
 }
 
-int commproto_parse(const int8_t *protocol_meta_array, int16_t meta_len, const char *buf, uint16_t buf_len,
+int commproto_parse(const uint8_t *struct_meta_data, uint16_t meta_len, const uint8_t *buf, uint16_t buf_len,
     void *one_byte_aligned_struct, uint16_t *nullable_handled_len)
 {
-    int8_t *meta_ptr = (int8_t *)protocol_meta_array;
-    int8_t *struct_ptr = (int8_t *)one_byte_aligned_struct;
+    uint8_t *meta_ptr = (uint8_t *)struct_meta_data;
+    uint8_t *struct_ptr = (uint8_t *)one_byte_aligned_struct;
     const int16_t STRUCT_SIZE = calculate_struct_size(0xffff / 2, meta_ptr, meta_len, NULL);
     uint16_t parsed_len = 0;
     int err = s_is_initialized
@@ -734,7 +734,7 @@ int commproto_parse(const int8_t *protocol_meta_array, int16_t meta_len, const c
             (0 == buf_len)
             ? -COMMPROTO_ERR_ZERO_LENGTH
             : general_deserialization(
-                /* fields = */0xffff / 2, /* loops = */1, protocol_meta_array,
+                /* fields = */0xffff / 2, /* loops = */1, struct_meta_data,
                 meta_len, &meta_ptr, buf,
                 buf_len, &struct_ptr, STRUCT_SIZE,
                 /* can_have_inner_struct = */true, &parsed_len
@@ -748,7 +748,7 @@ int commproto_parse(const int8_t *protocol_meta_array, int16_t meta_len, const c
     return err;
 }
 
-void commproto_dump_buffer(const char *buf, uint16_t size, FILE *nullable_stream, char *nullable_holder)
+void commproto_dump_buffer(const uint8_t *buf, uint16_t size, FILE *nullable_stream, char *nullable_holder)
 {
     char hex1[3 * 8 + 1] = { 0 };
     char hex2[3 * 8 + 1] = { 0 };
@@ -763,16 +763,14 @@ void commproto_dump_buffer(const char *buf, uint16_t size, FILE *nullable_stream
         if (remainder < 8)
         {
             hex1[3 * remainder] = ' ';
-            /* NOTE: Redundant "ff"s may be generated for negative numbers without unsigned-char-cast! */
-            sprintf(hex1 + 3 * remainder + 1, "%02x", (unsigned char)buf[i]);
+            sprintf(hex1 + 3 * remainder + 1, "%02x", buf[i]);
 
             str1[remainder] = isgraph(buf[i]) ? buf[i] : '.';
         }
         else
         {
             hex2[3 * (remainder - 8)] = ' ';
-            /* NOTE: Same as the previous note! */
-            sprintf(hex2 + 3 * (remainder - 8) + 1, "%02x", (unsigned char)buf[i]);
+            sprintf(hex2 + 3 * (remainder - 8) + 1, "%02x", buf[i]);
 
             str2[remainder - 8] = isgraph(buf[i]) ? buf[i] : '.';
         }
@@ -844,5 +842,9 @@ void commproto_dump_buffer(const char *buf, uint16_t size, FILE *nullable_stream
  *
  * >>> 2022-02-03, Man Hung-Coeng:
  *  01. Create.
+ *
+ * >>> 2022-02-18, Man Hung-Coeng:
+ *  01. Change some parameter and return value types from int*_t to uint*_t.
+ *  02. Add some macros to make defining and using struct meta variables easier.
  */
 

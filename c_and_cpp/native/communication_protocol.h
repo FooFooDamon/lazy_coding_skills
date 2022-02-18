@@ -23,8 +23,39 @@
 #include <stdio.h> /* For FILE type. */
 
 #ifdef __cplusplus
-extern "C" {
+
+#if __cplusplus >= 201103L /* C++11 or above. */
+#define COMMPROTO_CPP_CONSTEXPR                         constexpr
+#else
+#define COMMPROTO_CPP_CONSTEXPR                         const
 #endif
+
+#define COMMPROTO_DEFINE_META_FUNCTIONS_IN_STRUCT()     \
+    static inline const uint8_t* meta_data(void) \
+    { \
+        return (uint8_t *)__META_DATA__; \
+    } \
+\
+    static inline COMMPROTO_CPP_CONSTEXPR uint16_t meta_size(void) \
+    { \
+        return sizeof(__META_DATA__); \
+    }
+
+#define COMMPROTO_META_VAR_IN_STRUCT                    static COMMPROTO_CPP_CONSTEXPR uint8_t __META_DATA__[]
+
+#define COMMPROTO_META_VAR_OUT_OF_STRUCT(struct_name)   COMMPROTO_CPP_CONSTEXPR uint8_t struct_name::__META_DATA__[]
+
+#define COMMPROTO_CPP_SERIALIZE(struct_name, struct_ptr, buf, buf_len, handled_len_ptr, error_code_ptr)     \
+    commproto_serialize(struct_name::meta_data(), struct_name::meta_size(),                                 \
+        struct_ptr, buf, buf_len, handled_len_ptr, error_code_ptr)
+
+#define COMMPROTO_CPP_PARSE(struct_name, buf, buf_len, struct_ptr, handled_len_ptr)                         \
+    commproto_parse(struct_name::meta_data(), struct_name::meta_size(),                                     \
+        buf, buf_len, struct_ptr, handled_len_ptr)
+
+extern "C" {
+
+#endif /* #ifdef __cplusplus */
 
 typedef float       float32_t;  /* TODO: To be more portable. */
 typedef double      float64_t;  /* TODO: Same as above. */
@@ -33,13 +64,28 @@ const char* commproto_error(int error_code);
 
 int commproto_init(void);
 
-char* commproto_serialize(const int8_t *protocol_meta_array, int16_t meta_len, const void *one_byte_aligned_struct,
-    char *nullable_buf, uint16_t buf_len, uint16_t *nullable_handled_len, int *nullable_error_code);
+uint8_t* commproto_serialize(const uint8_t *struct_meta_data, uint16_t meta_len, const void *one_byte_aligned_struct,
+    uint8_t *nullable_buf, uint16_t buf_len, uint16_t *nullable_handled_len, int *nullable_error_code);
 
-int commproto_parse(const int8_t *protocol_meta_array, int16_t meta_len, const char *buf, uint16_t buf_len,
+int commproto_parse(const uint8_t *struct_meta_data, uint16_t meta_len, const uint8_t *buf, uint16_t buf_len,
     void *one_byte_aligned_struct, uint16_t *nullable_handled_len);
 
-void commproto_dump_buffer(const char *buf, uint16_t size, FILE *nullable_stream, char *nullable_holder);
+void commproto_dump_buffer(const uint8_t *buf, uint16_t size, FILE *nullable_stream, char *nullable_holder);
+
+#define COMMPROTO_META_VAR(struct_name)                 META_DATA_##struct_name
+#define COMMPROTO_DECLARE_META_VAR(struct_name)         const uint8_t META_DATA_##struct_name[]
+
+#define COMMPROTO_META_SIZE(struct_name)                META_SIZE_##struct_name
+#define COMMPROTO_DECLARE_META_SIZE(struct_name)        const uint16_t META_SIZE_##struct_name
+#define COMMPROTO_DEFINE_META_SIZE(struct_name)         const uint16_t META_SIZE_##struct_name = sizeof(META_DATA_##struct_name)
+
+#define COMMPROTO_SERIALIZE(struct_name, struct_ptr, buf, buf_len, handled_len_ptr, error_code_ptr)     \
+    commproto_serialize(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name),              \
+        struct_ptr, buf, buf_len, handled_len_ptr, error_code_ptr)
+
+#define COMMPROTO_PARSE(struct_name, buf, buf_len, struct_ptr, handled_len_ptr)                         \
+    commproto_parse(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name),                  \
+        buf, buf_len, struct_ptr, handled_len_ptr)
 
 enum
 {
@@ -106,20 +152,20 @@ enum
 #define COMMPROTO_SAME_TYPE_ASSIGN(type, src_ptr, dest_ptr)     *((type *)(dest_ptr)) = *((type *)(src_ptr))
 
 #define COMMPROTO_REVERSED_ASSIGN(count, src_ptr, dest_ptr)     do { \
-    int16_t _i_ = 0; \
+    uint16_t _i_ = 0; \
     for (; _i_ < count; ++_i_) { \
-        *(((int8_t *)(dest_ptr)) + _i_) = *(((int8_t *)(src_ptr)) + (count - _i_ - 1)); \
+        *(((uint8_t *)(dest_ptr)) + _i_) = *(((uint8_t *)(src_ptr)) + (count - _i_ - 1)); \
     } \
 } while(0)
 
-#define COMMPROTO_SET_INT8(src_ptr, dest_ptr)       COMMPROTO_SAME_TYPE_ASSIGN(int8_t, src_ptr, dest_ptr)
+#define COMMPROTO_SET_INT8(src_ptr, dest_ptr)       COMMPROTO_SAME_TYPE_ASSIGN(uint8_t, src_ptr, dest_ptr)
 
 #if ((__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && defined(COMMPROTO_LITTLE_ENDIAN)) \
     || ((__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) && defined(COMMPROTO_BIG_ENDIAN))
 
-#define COMMPROTO_SET_INT16(src_ptr, dest_ptr)      COMMPROTO_SAME_TYPE_ASSIGN(int16_t, src_ptr, dest_ptr)
-#define COMMPROTO_SET_INT32(src_ptr, dest_ptr)      COMMPROTO_SAME_TYPE_ASSIGN(int32_t, src_ptr, dest_ptr)
-#define COMMPROTO_SET_INT64(src_ptr, dest_ptr)      COMMPROTO_SAME_TYPE_ASSIGN(int64_t, src_ptr, dest_ptr)
+#define COMMPROTO_SET_INT16(src_ptr, dest_ptr)      COMMPROTO_SAME_TYPE_ASSIGN(uint16_t, src_ptr, dest_ptr)
+#define COMMPROTO_SET_INT32(src_ptr, dest_ptr)      COMMPROTO_SAME_TYPE_ASSIGN(uint32_t, src_ptr, dest_ptr)
+#define COMMPROTO_SET_INT64(src_ptr, dest_ptr)      COMMPROTO_SAME_TYPE_ASSIGN(uint64_t, src_ptr, dest_ptr)
 
 #else
 
@@ -130,28 +176,28 @@ enum
 #endif
 
 #define COMMPROTO_SET_INT8_ARRAY(count, src_ptr, dest_ptr)     do { \
-    int16_t _ii_ = 0; \
+    uint16_t _ii_ = 0; \
     for (; _ii_ < count; ++_ii_) { \
         COMMPROTO_SET_INT8(src_ptr + sizeof(int8_t) * _ii_, dest_ptr + sizeof(int8_t) * _ii_); \
     } \
 } while (0)
 
 #define COMMPROTO_SET_INT16_ARRAY(count, src_ptr, dest_ptr)     do { \
-    int16_t _ii_ = 0; \
+    uint16_t _ii_ = 0; \
     for (; _ii_ < count; ++_ii_) { \
         COMMPROTO_SET_INT16(src_ptr + sizeof(int16_t) * _ii_, dest_ptr + sizeof(int16_t) * _ii_); \
     } \
 } while (0)
 
 #define COMMPROTO_SET_INT32_ARRAY(count, src_ptr, dest_ptr)     do { \
-    int16_t _ii_ = 0; \
+    uint16_t _ii_ = 0; \
     for (; _ii_ < count; ++_ii_) { \
         COMMPROTO_SET_INT32(src_ptr + sizeof(int32_t) * _ii_, dest_ptr + sizeof(int32_t) * _ii_); \
     } \
 } while (0)
 
 #define COMMPROTO_SET_INT64_ARRAY(count, src_ptr, dest_ptr)     do { \
-    int16_t _ii_ = 0; \
+    uint16_t _ii_ = 0; \
     for (; _ii_ < count; ++_ii_) { \
         COMMPROTO_SET_INT64(src_ptr + sizeof(int64_t) * _ii_, dest_ptr + sizeof(int64_t) * _ii_); \
     } \
@@ -171,14 +217,14 @@ enum
 #endif
 
 #define COMMPROTO_SET_FLOAT32_ARRAY(count, src_ptr, dest_ptr)     do { \
-    int16_t _ii_ = 0; \
+    uint16_t _ii_ = 0; \
     for (; _ii_ < count; ++_ii_) { \
         COMMPROTO_SET_FLOAT32(src_ptr + sizeof(float32_t) * _ii_, dest_ptr + sizeof(float32_t) * _ii_); \
     } \
 } while (0)
 
 #define COMMPROTO_SET_FLOAT64_ARRAY(count, src_ptr, dest_ptr)     do { \
-    int16_t _ii_ = 0; \
+    uint16_t _ii_ = 0; \
     for (; _ii_ < count; ++_ii_) { \
         COMMPROTO_SET_FLOAT64(src_ptr + sizeof(float64_t) * _ii_, dest_ptr + sizeof(float64_t) * _ii_); \
     } \
@@ -274,7 +320,7 @@ typedef struct demo_struct_main_t
     , COMMPROTO_ARRAY_LEN/* f64_dynamic_array_len */ \
     , COMMPROTO_FLOAT64_DYNAMIC_ARRAY/* f64_dynamic_array */
 
-const int8_t DEMO_STRUCT_META_DATA[] = {
+COMMPROTO_DECLARE_META_VAR(demo_struct_main_t) = {
     COMMPROTO_INT8/* i8 */
     , COMMPROTO_INT16/* i16 */
     , COMMPROTO_INT32/* i32 */
@@ -312,7 +358,7 @@ const int8_t DEMO_STRUCT_META_DATA[] = {
     , _SUB2_STRUCT_META_DATA
 };
 
-const uint16_t DEMO_STRUCT_META_DATA_LEN = sizeof(DEMO_STRUCT_META_DATA);
+COMMPROTO_DEFINE_META_SIZE(demo_struct_main_t);
 
 static void fill_demo_struct(demo_struct_main_t *demo_struct)
 {
@@ -826,7 +872,7 @@ static bool check_struct_differences(const demo_struct_main_t *struct1, const de
     return true;
 }
 
-static bool check_buffer_differences(const char *buf1, const char *buf2, uint16_t size)
+static bool check_buffer_differences(const uint8_t *buf1, const uint8_t *buf2, uint16_t size)
 {
     uint16_t i = 0;
 
@@ -954,8 +1000,8 @@ int main(int argc, char **argv)
     uint16_t serialized_len = 0;
     uint16_t parsed_len = 0;
     demo_struct_main_t src = { 0 };
-    char buf[4096] = { 0 };
-    char *buf_ptr = NULL;
+    uint8_t buf[4096] = { 0 };
+    uint8_t *buf_ptr = NULL;
     demo_struct_main_t dest1 = { 0 };
     demo_struct_main_t dest2 = { 0 };
 
@@ -969,9 +1015,9 @@ int main(int argc, char **argv)
     if (NULL == getenv("COMMPROTO_DEBUG"))
         printf("\n!!! NOTE: To output more details, run (in bash, for example): COMMPROTO_DEBUG=1 %s !!!\n\n", argv[0]);
 
-    printf("DEMO_STRUCT_META_DATA_LEN = %d, sizeof(demo_struct_main_t) = %d,"
+    printf("COMMPROTO_META_SIZE(demo_struct_main_t) = %d, sizeof(demo_struct_main_t) = %d,"
         " sizeof(demo_struct_sub1_t) = %d, sizeof(demo_struct_sub2_t)[] = %d\n",
-        (int)DEMO_STRUCT_META_DATA_LEN, (int)sizeof(demo_struct_main_t),
+        (int)COMMPROTO_META_SIZE(demo_struct_main_t), (int)sizeof(demo_struct_main_t),
         (int)sizeof(demo_struct_sub1_t), (int)sizeof(src.sub2_fixed_array));
 
     COMMPROTO_DPRINT("src struct addr = %p, buf addr = %p, dest1 struct addr = %p, dest2 struct addr = %p\n",
@@ -980,8 +1026,7 @@ int main(int argc, char **argv)
     fill_demo_struct(&src);
     print_demo_struct(&src, "src struct");
 
-    commproto_serialize(DEMO_STRUCT_META_DATA, DEMO_STRUCT_META_DATA_LEN, &src, buf, sizeof(buf),
-        &serialized_len, &err);
+    COMMPROTO_SERIALIZE(demo_struct_main_t, &src, buf, sizeof(buf), &serialized_len, &err);
     if (err < 0)
     {
         fprintf(stderr, "*** Data serialization to static buffer failed after %d bytes: %s!\n",
@@ -993,8 +1038,7 @@ int main(int argc, char **argv)
     printf("Serialized %d bytes to static buffer.\n", serialized_len);
     commproto_dump_buffer(buf, serialized_len, stdout, NULL);
 
-    err = commproto_parse(DEMO_STRUCT_META_DATA, DEMO_STRUCT_META_DATA_LEN, buf, serialized_len,
-        &dest1, &parsed_len);
+    err = COMMPROTO_PARSE(demo_struct_main_t, buf, serialized_len, &dest1, &parsed_len);
     if (err < 0)
     {
         fprintf(stderr, "*** Data deserialization from static buffer failed after %d bytes: %s!\n",
@@ -1015,8 +1059,7 @@ int main(int argc, char **argv)
         return -1;
     }
 
-    buf_ptr = commproto_serialize(DEMO_STRUCT_META_DATA, DEMO_STRUCT_META_DATA_LEN, &dest1, NULL, 0,
-        &serialized_len, &err);
+    buf_ptr = COMMPROTO_SERIALIZE(demo_struct_main_t, &dest1, NULL, 0, &serialized_len, &err);
     if (NULL == buf_ptr || err < 0)
     {
         fprintf(stderr, "*** Data serialization to dynamic buffer failed after %d bytes: %s!\n",
@@ -1031,8 +1074,7 @@ int main(int argc, char **argv)
 
     release_demo_struct_dynamic_fields(&dest1);
 
-    err = commproto_parse(DEMO_STRUCT_META_DATA, DEMO_STRUCT_META_DATA_LEN, buf_ptr, serialized_len,
-        &dest2, &parsed_len);
+    err = COMMPROTO_PARSE(demo_struct_main_t, buf_ptr, serialized_len, &dest2, &parsed_len);
     if (err < 0)
     {
         fprintf(stderr, "*** Data deserialization from dynamic buffer failed after %d bytes: %s!\n",
@@ -1088,5 +1130,9 @@ int main(int argc, char **argv)
  *
  * >>> 2022-02-03, Man Hung-Coeng:
  *  01. Create.
+ *
+ * >>> 2022-02-18, Man Hung-Coeng:
+ *  01. Change some parameter and return value types from int*_t to uint*_t.
+ *  02. Add some macros to make defining and using struct meta variables easier.
  */
 

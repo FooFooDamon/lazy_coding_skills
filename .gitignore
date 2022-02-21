@@ -35,6 +35,7 @@ tags
 /c_and_cpp/native/ini_file_test.ini
 /c_and_cpp/native/signal_handling
 /c_and_cpp/native/sleeps
+/c_and_cpp/native/socket_supplements
 /c_and_cpp/native/string_supplements
 /c_and_cpp/native/watchdog
 

@@ -57,7 +57,7 @@ endif
 
 __VER__ ?= ${VCS_VERSION}
 
-COMMON_COMPILE_FLAGS ?= -D__VER__=\"${__VER__}\" -fPIC -Wall -Werror \
+COMMON_COMPILE_FLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC -Wall -Werror \
     -ansi -Wpedantic -Wno-variadic-macros # -fstack-protector-strong
 
 ifeq (${NDEBUG}, 1)
@@ -118,5 +118,8 @@ CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS}
 # >>> 2021-12-26, Man Hung-Coeng:
 #   01. Remove some flags like -fstack-protector-strong and -Wl,--start-group,
 #   	which may not be supported on other platforms (e.g., MinGW and OS X).
+#
+# >>> 2022-02-21, Man Hung-Coeng:
+#   01. Add -D_REENTRANT into COMMON_COMPILE_FLAGS.
 #
 

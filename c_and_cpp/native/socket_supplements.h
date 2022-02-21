@@ -20,12 +20,14 @@
 #define __SOCKET_SUPPLEMENTS_H__
 
 #include <stddef.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 struct sockaddr;
+typedef void* socklen_ptr_t; /* The argument type should be "socklen_t *". */
 
 enum
 {
@@ -38,6 +40,12 @@ enum
 #define SOCK_IS_WRITABLE(status_bits)               (status_bits & SOCK_STATUS_WRITABLE)
 
 const char* sock_error(int error_code);
+
+int sock_create(int domain, int type, int protocol, bool is_nonblocking);
+
+int sock_destroy(int fd);
+
+int sock_set_nonblocking(int fd);
 
 /*
  * Usage example 1:
@@ -63,14 +71,18 @@ const char* sock_error(int error_code);
  */
 int sock_check_status(int fd, int types, int timeout_usecs);
 
-int sock_set_nonblocking(int fd);
+int sock_bind(int fd, bool allow_addr_reuse, const struct sockaddr *addr, size_t addr_len);
+
+int sock_listen(int fd, int backlog);
+
+int sock_accept(int fd, bool is_nonblocking, bool allow_self_connection, struct sockaddr *addr, socklen_ptr_t addr_len);
 
 int sock_connect(int fd, const struct sockaddr *addr, size_t addr_len, int timeout_usecs);
 
-/* NOTE: It's recommended to sock_set_nonblocking() or/and setsockopt(SO_SNDTIMEO) before this function. */
+/* NOTE: It's recommended to sock_set_nonblocking() and select()/poll()/epoll() before this function. */
 size_t sock_send(int fd, const void *buf, size_t len, int flags, int *nullable_error_code);
 
-/* NOTE: It's recommended to sock_set_nonblocking() or/and setsockopt(SO_RCVTIMEO) before this function. */
+/* NOTE: It's recommended to sock_set_nonblocking() and select()/poll()/epoll() before this function. */
 size_t sock_recv(int fd, const void *buf, size_t len, int flags, int *nullable_error_code);
 
 #ifdef __cplusplus
@@ -86,5 +98,9 @@ size_t sock_recv(int fd, const void *buf, size_t len, int flags, int *nullable_e
  *
  * >>> 2022-02-20, Man Hung-Coeng:
  *  01. Create.
+ *
+ * >>> 2022-02-21, Man Hung-Coeng:
+ *  01. Add sock_create(), sock_destroy(), sock_bind(), sock_listen()
+ *      and sock_accept().
  */
 

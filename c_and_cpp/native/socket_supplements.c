@@ -262,7 +262,10 @@ size_t sock_recv(int fd, const void *buf, size_t len, int flags, int *nullable_e
     {
         int ret = recv(fd, (char *)buf + handled_len, len - handled_len, flags);
 
-        if ((0 == ret) || (ret < 0 && EINTR != errno))
+        if (0 == ret)
+            break;
+
+        if (ret < 0 && EINTR != errno)
         {
             *err_ptr = -(errno + SOCK_ERR_END);
             break;
@@ -302,5 +305,9 @@ int main(int argc, char **argv)
  * >>> 2022-02-21, Man Hung-Coeng:
  *  01. Add sock_create(), sock_destroy(), sock_bind(), sock_listen()
  *      and sock_accept().
+ *
+ * >>> 2022-02-24, Man Hung-Coeng:
+ *  01. Fix the incorrect error code of sock_recv()
+ *      when the inside recv() returns 0.
  */
 

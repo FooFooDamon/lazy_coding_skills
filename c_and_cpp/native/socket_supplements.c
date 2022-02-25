@@ -262,7 +262,7 @@ size_t sock_recv(int fd, const void *buf, size_t len, int flags, int *nullable_e
     {
         int ret = recv(fd, (char *)buf + handled_len, len - handled_len, flags);
 
-        if (0 == ret)
+        if (0 == ret || ECONNRESET == errno)
             break;
 
         if (ret < 0 && EINTR != errno)
@@ -309,5 +309,8 @@ int main(int argc, char **argv)
  * >>> 2022-02-24, Man Hung-Coeng:
  *  01. Fix the incorrect error code of sock_recv()
  *      when the inside recv() returns 0.
+ *
+ * >>> 2022-02-25, Man Hung-Coeng:
+ *  01. Add the handling of "Connection reset by peer" error for sock_recv().
  */
 

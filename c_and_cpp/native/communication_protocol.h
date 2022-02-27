@@ -20,6 +20,7 @@
 #define __COMMUNICATION_PROTOCOL_H__
 
 #include <stdint.h> /* For int8_t, int16_t, etc. */
+#include <string.h> /* For memcpy(). */
 #include <stdio.h> /* For FILE type. */
 
 #ifdef __cplusplus
@@ -149,105 +150,112 @@ enum
 #error One and only one of COMMPROTO_LITTLE_ENDIAN and COMMPROTO_BIG_ENDIAN should be defined!
 #endif
 
-#define COMMPROTO_SAME_TYPE_ASSIGN(type, src_ptr, dest_ptr)     *((type *)(dest_ptr)) = *((type *)(src_ptr))
+#if 0 /* Will cause alignment fault on some platforms. */
+#define COMMPROTO_SAME_ENDIAN_ASSIGN(type, src_ptr, dest_ptr)       *((type *)(dest_ptr)) = *((type *)(src_ptr))
+#else
+#define COMMPROTO_SAME_ENDIAN_ASSIGN(type, src_ptr, dest_ptr)       memcpy((dest_ptr), (src_ptr), sizeof(type))
+#endif
 
-#define COMMPROTO_REVERSED_ASSIGN(count, src_ptr, dest_ptr)     do { \
+#define COMMPROTO_SAME_ENDIAN_SET(type, count, src_ptr, dest_ptr)   memcpy((dest_ptr), (src_ptr), sizeof(type) * (count))
+
+#define COMMPROTO_DIFF_ENDIAN_ASSIGN(type, src_ptr, dest_ptr)       do { \
     uint16_t _i_ = 0; \
-    for (; _i_ < count; ++_i_) { \
-        *(((uint8_t *)(dest_ptr)) + _i_) = *(((uint8_t *)(src_ptr)) + (count - _i_ - 1)); \
+    for (; _i_ < sizeof(type); ++_i_) { \
+        *(((uint8_t *)(dest_ptr)) + _i_) = *(((uint8_t *)(src_ptr)) + (sizeof(type) - _i_ - 1)); \
     } \
 } while(0)
 
-#define COMMPROTO_SET_INT8(src_ptr, dest_ptr)       COMMPROTO_SAME_TYPE_ASSIGN(uint8_t, src_ptr, dest_ptr)
+#define COMMPROTO_DIFF_ENDIAN_SET(type, count, src_ptr, dest_ptr)   do { \
+    uint16_t _ii_ = 0, _count_ = (count); \
+    for (; _ii_ < _count_; ++_ii_) { \
+        uint8_t *_src_ptr_ = ((uint8_t *)(src_ptr)) + sizeof(type) * _ii_; \
+        uint8_t *_dest_ptr_ = ((uint8_t *)(dest_ptr)) + sizeof(type) * _ii_; \
+        COMMPROTO_DIFF_ENDIAN_ASSIGN(type, _src_ptr_, _dest_ptr_); \
+    } \
+} while (0)
+
+#define COMMPROTO_SET_INT8(src_ptr, dest_ptr)                   *((uint8_t *)(dest_ptr)) = *((uint8_t *)(src_ptr))
+
+#define COMMPROTO_SET_INT8_ARRAY(count, src_ptr, dest_ptr)      COMMPROTO_SAME_ENDIAN_SET(uint8_t, count, src_ptr, dest_ptr)
 
 #if ((__BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__) && defined(COMMPROTO_LITTLE_ENDIAN)) \
     || ((__BYTE_ORDER__ == __ORDER_BIG_ENDIAN__) && defined(COMMPROTO_BIG_ENDIAN))
 
-#define COMMPROTO_SET_INT16(src_ptr, dest_ptr)      COMMPROTO_SAME_TYPE_ASSIGN(uint16_t, src_ptr, dest_ptr)
-#define COMMPROTO_SET_INT32(src_ptr, dest_ptr)      COMMPROTO_SAME_TYPE_ASSIGN(uint32_t, src_ptr, dest_ptr)
-#define COMMPROTO_SET_INT64(src_ptr, dest_ptr)      COMMPROTO_SAME_TYPE_ASSIGN(uint64_t, src_ptr, dest_ptr)
+#define COMMPROTO_SET_INT16(src_ptr, dest_ptr)                  do { \
+    *((uint8_t *)(dest_ptr)) = *((uint8_t *)(src_ptr)); \
+    *(((uint8_t *)(dest_ptr)) + 1) = *(((uint8_t *)(src_ptr)) + 1); \
+} while (0)
+
+#define COMMPROTO_SET_INT16_ARRAY(count, src_ptr, dest_ptr)     COMMPROTO_SAME_ENDIAN_SET(uint16_t, count, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_INT32(src_ptr, dest_ptr)                  COMMPROTO_SAME_ENDIAN_ASSIGN(uint32_t, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_INT32_ARRAY(count, src_ptr, dest_ptr)     COMMPROTO_SAME_ENDIAN_SET(uint32_t, count, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_INT64(src_ptr, dest_ptr)                  COMMPROTO_SAME_ENDIAN_ASSIGN(uint64_t, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_INT64_ARRAY(count, src_ptr, dest_ptr)     COMMPROTO_SAME_ENDIAN_SET(uint64_t, count, src_ptr, dest_ptr)
 
 #else
 
-#define COMMPROTO_SET_INT16(src_ptr, dest_ptr)      COMMPROTO_REVERSED_ASSIGN(2, src_ptr, dest_ptr)
-#define COMMPROTO_SET_INT32(src_ptr, dest_ptr)      COMMPROTO_REVERSED_ASSIGN(4, src_ptr, dest_ptr)
-#define COMMPROTO_SET_INT64(src_ptr, dest_ptr)      COMMPROTO_REVERSED_ASSIGN(8, src_ptr, dest_ptr)
+#define COMMPROTO_SET_INT16(src_ptr, dest_ptr)                  do { \
+    *((uint8_t *)(dest_ptr)) = *(((uint8_t *)(src_ptr)) + 1); \
+    *(((uint8_t *)(dest_ptr)) + 1) = *((uint8_t *)(src_ptr)); \
+} while (0)
+
+#define COMMPROTO_SET_INT16_ARRAY(count, src_ptr, dest_ptr)     COMMPROTO_DIFF_ENDIAN_SET(uint16_t, count, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_INT32(src_ptr, dest_ptr)                  COMMPROTO_DIFF_ENDIAN_ASSIGN(uint32_t, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_INT32_ARRAY(count, src_ptr, dest_ptr)     COMMPROTO_DIFF_ENDIAN_SET(uint32_t, count, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_INT64(src_ptr, dest_ptr)                  COMMPROTO_DIFF_ENDIAN_ASSIGN(uint64_t, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_INT64_ARRAY(count, src_ptr, dest_ptr)     COMMPROTO_DIFF_ENDIAN_SET(uint64_t, count, src_ptr, dest_ptr)
 
 #endif
-
-#define COMMPROTO_SET_INT8_ARRAY(count, src_ptr, dest_ptr)     do { \
-    uint16_t _ii_ = 0; \
-    for (; _ii_ < count; ++_ii_) { \
-        COMMPROTO_SET_INT8(src_ptr + sizeof(int8_t) * _ii_, dest_ptr + sizeof(int8_t) * _ii_); \
-    } \
-} while (0)
-
-#define COMMPROTO_SET_INT16_ARRAY(count, src_ptr, dest_ptr)     do { \
-    uint16_t _ii_ = 0; \
-    for (; _ii_ < count; ++_ii_) { \
-        COMMPROTO_SET_INT16(src_ptr + sizeof(int16_t) * _ii_, dest_ptr + sizeof(int16_t) * _ii_); \
-    } \
-} while (0)
-
-#define COMMPROTO_SET_INT32_ARRAY(count, src_ptr, dest_ptr)     do { \
-    uint16_t _ii_ = 0; \
-    for (; _ii_ < count; ++_ii_) { \
-        COMMPROTO_SET_INT32(src_ptr + sizeof(int32_t) * _ii_, dest_ptr + sizeof(int32_t) * _ii_); \
-    } \
-} while (0)
-
-#define COMMPROTO_SET_INT64_ARRAY(count, src_ptr, dest_ptr)     do { \
-    uint16_t _ii_ = 0; \
-    for (; _ii_ < count; ++_ii_) { \
-        COMMPROTO_SET_INT64(src_ptr + sizeof(int64_t) * _ii_, dest_ptr + sizeof(int64_t) * _ii_); \
-    } \
-} while (0)
 
 #if ((__FLOAT_WORD_ORDER__ == __ORDER_LITTLE_ENDIAN__) && defined(COMMPROTO_LITTLE_ENDIAN)) \
     || ((__FLOAT_WORD_ORDER__ == __ORDER_BIG_ENDIAN__) && defined(COMMPROTO_BIG_ENDIAN))
 
-#define COMMPROTO_SET_FLOAT32(src_ptr, dest_ptr)    COMMPROTO_SAME_TYPE_ASSIGN(float32_t, src_ptr, dest_ptr)
-#define COMMPROTO_SET_FLOAT64(src_ptr, dest_ptr)    COMMPROTO_SAME_TYPE_ASSIGN(float64_t, src_ptr, dest_ptr)
+#define COMMPROTO_SET_FLOAT32(src_ptr, dest_ptr)                COMMPROTO_SAME_ENDIAN_ASSIGN(float32_t, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_FLOAT32_ARRAY(count, src_ptr, dest_ptr)   COMMPROTO_SAME_ENDIAN_SET(float32_t, count, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_FLOAT64(src_ptr, dest_ptr)                COMMPROTO_SAME_ENDIAN_ASSIGN(float64_t, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_FLOAT64_ARRAY(count, src_ptr, dest_ptr)   COMMPROTO_SAME_ENDIAN_SET(float64_t, count, src_ptr, dest_ptr)
 
 #else
 
-#define COMMPROTO_SET_FLOAT32(src_ptr, dest_ptr)    COMMPROTO_REVERSED_ASSIGN(4, src_ptr, dest_ptr)
-#define COMMPROTO_SET_FLOAT64(src_ptr, dest_ptr)    COMMPROTO_REVERSED_ASSIGN(8, src_ptr, dest_ptr)
+#define COMMPROTO_SET_FLOAT32(src_ptr, dest_ptr)                COMMPROTO_DIFF_ENDIAN_ASSIGN(float32_t, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_FLOAT32_ARRAY(count, src_ptr, dest_ptr)   COMMPROTO_DIFF_ENDIAN_SET(float32_t, count, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_FLOAT64(src_ptr, dest_ptr)                COMMPROTO_DIFF_ENDIAN_ASSIGN(float64_t, src_ptr, dest_ptr)
+
+#define COMMPROTO_SET_FLOAT64_ARRAY(count, src_ptr, dest_ptr)   COMMPROTO_DIFF_ENDIAN_SET(float64_t, count, src_ptr, dest_ptr)
 
 #endif
 
-#define COMMPROTO_SET_FLOAT32_ARRAY(count, src_ptr, dest_ptr)     do { \
-    uint16_t _ii_ = 0; \
-    for (; _ii_ < count; ++_ii_) { \
-        COMMPROTO_SET_FLOAT32(src_ptr + sizeof(float32_t) * _ii_, dest_ptr + sizeof(float32_t) * _ii_); \
-    } \
-} while (0)
-
-#define COMMPROTO_SET_FLOAT64_ARRAY(count, src_ptr, dest_ptr)     do { \
-    uint16_t _ii_ = 0; \
-    for (; _ii_ < count; ++_ii_) { \
-        COMMPROTO_SET_FLOAT64(src_ptr + sizeof(float64_t) * _ii_, dest_ptr + sizeof(float64_t) * _ii_); \
-    } \
-} while (0)
-
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 
-#define COMMPROTO_STRUCT_FIELD_COUNT(positive_num)          (positive_num) & 0xff, ((positive_num) >> 8) & 0xff
+#define COMMPROTO_STRUCT_FIELD_COUNT(positive_num)              (positive_num) & 0xff, ((positive_num) >> 8) & 0xff
 
-#define COMMPROTO_ARRAY_LEN_IS(positive_num)                (positive_num) & 0xff, ((positive_num) >> 8) & 0xff
+#define COMMPROTO_ARRAY_LEN_IS(positive_num)                    (positive_num) & 0xff, ((positive_num) >> 8) & 0xff
 
 #else
 
-#define COMMPROTO_STRUCT_FIELD_COUNT(positive_num)          ((positive_num) >> 8) & 0xff, (positive_num) & 0xff
+#define COMMPROTO_STRUCT_FIELD_COUNT(positive_num)              ((positive_num) >> 8) & 0xff, (positive_num) & 0xff
 
-#define COMMPROTO_ARRAY_LEN_IS(positive_num)                ((positive_num) >> 8) & 0xff, (positive_num) & 0xff
+#define COMMPROTO_ARRAY_LEN_IS(positive_num)                    ((positive_num) >> 8) & 0xff, (positive_num) & 0xff
 
 #endif
 
 #if defined(COMMPROTO_DEBUG) || defined(TEST)
-#define COMMPROTO_DPRINT(fmt, ...)                          do { \
+#define COMMPROTO_DPRINT(fmt, ...)                              do { \
     if (NULL != getenv("COMMPROTO_DEBUG")) \
-        printf(__FILE__ ":%d: " fmt, __LINE__, ##__VA_ARGS__); \
+        printf(__FILE__ ":%d: " fmt, __LINE__, ##__VA_ARGS__);  \
 } while (0)
 #else
 #define COMMPROTO_DPRINT(fmt, ...)
@@ -1134,5 +1142,8 @@ int main(int argc, char **argv)
  * >>> 2022-02-18, Man Hung-Coeng:
  *  01. Change some parameter and return value types from int*_t to uint*_t.
  *  02. Add some macros to make defining and using struct meta variables easier.
+ *
+ * >>> 2022-02-27, Man Hung-Coeng:
+ *  01. Fix the alignment fault problem on some platforms (ARM, for example).
  */
 

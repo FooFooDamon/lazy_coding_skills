@@ -118,23 +118,23 @@ enum
 };
 
 #ifndef __ORDER_LITTLE_ENDIAN__
-#error Macro __ORDER_LITTLE_ENDIAN__ not defined!
+#error Macro __ORDER_LITTLE_ENDIAN__ not defined! Example: -D__ORDER_LITTLE_ENDIAN__=1234
 #endif
 
 #ifndef __ORDER_BIG_ENDIAN__
-#error Macro __ORDER_BIG_ENDIAN__ not defined!
+#error Macro __ORDER_BIG_ENDIAN__ not defined! Example: -D__ORDER_BIG_ENDIAN__=4321
 #endif
 
 #if __ORDER_BIG_ENDIAN__ == __ORDER_LITTLE_ENDIAN__
-#error Logic error: __ORDER_BIG_ENDIAN__ == __ORDER_LITTLE_ENDIAN__!
+#error Logic error: __ORDER_BIG_ENDIAN__ == __ORDER_LITTLE_ENDIAN__ !
 #endif
 
 #ifndef __BYTE_ORDER__
-#error Macro __BYTE_ORDER__ not defined!
+#error Macro __BYTE_ORDER__ not defined! Example: -D__BYTE_ORDER__=__ORDER_LITTLE_ENDIAN__
 #endif
 
 #if __BYTE_ORDER__ != __ORDER_LITTLE_ENDIAN__ && __BYTE_ORDER__ != __ORDER_BIG_ENDIAN__
-#error __BYTE_ORDER__ must be equal to __ORDER_LITTLE_ENDIAN__ or __ORDER_BIG_ENDIAN__!
+#error __BYTE_ORDER__ must be equal to __ORDER_LITTLE_ENDIAN__ or __ORDER_BIG_ENDIAN__ !
 #endif
 
 #ifndef __FLOAT_WORD_ORDER__
@@ -142,7 +142,7 @@ enum
 #endif
 
 #if __FLOAT_WORD_ORDER__ != __ORDER_LITTLE_ENDIAN__ && __FLOAT_WORD_ORDER__ != __ORDER_BIG_ENDIAN__
-#error __FLOAT_WORD_ORDER__ must be equal to __ORDER_LITTLE_ENDIAN__ or __ORDER_BIG_ENDIAN__!
+#error __FLOAT_WORD_ORDER__ must be equal to __ORDER_LITTLE_ENDIAN__ or __ORDER_BIG_ENDIAN__ !
 #endif
 
 #if (!defined(COMMPROTO_LITTLE_ENDIAN) && !defined(COMMPROTO_BIG_ENDIAN)) \
@@ -1145,5 +1145,9 @@ int main(int argc, char **argv)
  *
  * >>> 2022-02-27, Man Hung-Coeng:
  *  01. Fix the alignment fault problem on some platforms (ARM, for example).
+ *
+ * >>> 2022-03-05, Man Hung-Coeng:
+ *  01. Add hints of how to define macro __ORDER_LITTLE_ENDIAN__,
+ *      __ORDER_BIG_ENDIAN__ and __BYTE_ORDER__.
  */
 

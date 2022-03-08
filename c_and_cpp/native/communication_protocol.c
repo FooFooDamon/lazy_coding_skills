@@ -130,7 +130,7 @@ int commproto_init(void)
 #error COMMPROTO_INITIAL_BUFSIZE must be 4, 8, 16, 32, 64, 128!
 #endif
 
-static int16_t calculate_struct_size(int16_t struct_field_count, const uint8_t *meta_ptr,
+static int16_t calc_struct_size_or_move_meta_ptr(int16_t struct_field_count, const uint8_t *meta_ptr,
     uint16_t meta_len, uint8_t **nullable_meta_pptr)
 {
     const uint8_t *meta_start_ptr = meta_ptr;
@@ -141,11 +141,11 @@ static int16_t calculate_struct_size(int16_t struct_field_count, const uint8_t *
     {
         int8_t type = *meta_ptr;
 
-        if (type <= COMMPROTO_FLOAT64)
+        if (type > 0 && type <= COMMPROTO_FLOAT64)
         {
             result += (type % 10);
             meta_ptr += sizeof(int8_t);
-            if (meta_ptr - meta_start_ptr > meta_len)
+            if (meta_ptr - meta_start_ptr >= meta_len)
                 break;
             continue;
         }
@@ -154,7 +154,7 @@ static int16_t calculate_struct_size(int16_t struct_field_count, const uint8_t *
         {
             result += sizeof(int16_t);
             meta_ptr += sizeof(int8_t);
-            if (meta_ptr - meta_start_ptr > meta_len)
+            if (meta_ptr - meta_start_ptr >= meta_len)
                 break;
             continue;
         }
@@ -163,7 +163,7 @@ static int16_t calculate_struct_size(int16_t struct_field_count, const uint8_t *
         {
             result += ((type % 10) * (*((int16_t *)(meta_ptr + sizeof(int8_t)))));
             meta_ptr += (sizeof(int8_t) + sizeof(int16_t));
-            if (meta_ptr - meta_start_ptr > meta_len)
+            if (meta_ptr - meta_start_ptr >= meta_len)
                 break;
             continue;
         }
@@ -172,7 +172,7 @@ static int16_t calculate_struct_size(int16_t struct_field_count, const uint8_t *
         {
             result += sizeof(ptrdiff_t);
             meta_ptr += sizeof(int8_t);
-            if (meta_ptr - meta_start_ptr > meta_len)
+            if (meta_ptr - meta_start_ptr >= meta_len)
                 break;
             continue;
         }
@@ -181,7 +181,7 @@ static int16_t calculate_struct_size(int16_t struct_field_count, const uint8_t *
         {
             uint8_t *sub_meta_ptr = (uint8_t *)meta_ptr + sizeof(int8_t) + sizeof(int16_t) * 2;
             int16_t sub_struct_count = *((int16_t *)(meta_ptr + sizeof(int8_t) + sizeof(int16_t)));
-            int16_t sub_struct_size = calculate_struct_size(
+            int16_t sub_struct_size = calc_struct_size_or_move_meta_ptr(
                 *((int16_t *)(meta_ptr + sizeof(int8_t))), sub_meta_ptr,
                 meta_len, &sub_meta_ptr
             );
@@ -197,7 +197,7 @@ static int16_t calculate_struct_size(int16_t struct_field_count, const uint8_t *
             result += (sub_struct_size * sub_struct_count);
 
             meta_ptr = sub_meta_ptr;
-            if (meta_ptr - meta_start_ptr > meta_len)
+            if (meta_ptr - meta_start_ptr >= meta_len)
                 break;
 
             continue;
@@ -206,7 +206,7 @@ static int16_t calculate_struct_size(int16_t struct_field_count, const uint8_t *
         if (COMMPROTO_STRUCT_DYNAMIC_ARRAY == type)
         {
             uint8_t *sub_meta_ptr = (uint8_t *)meta_ptr + sizeof(int8_t) + sizeof(int16_t);
-            int16_t sub_struct_size = calculate_struct_size(
+            int16_t sub_struct_size = calc_struct_size_or_move_meta_ptr(
                 *((int16_t *)(meta_ptr + sizeof(int8_t))), sub_meta_ptr,
                 meta_len, &sub_meta_ptr
             );
@@ -222,7 +222,7 @@ static int16_t calculate_struct_size(int16_t struct_field_count, const uint8_t *
             result += sizeof(ptrdiff_t);
 
             meta_ptr = sub_meta_ptr;
-            if (meta_ptr - meta_start_ptr > meta_len)
+            if (meta_ptr - meta_start_ptr >= meta_len)
                 break;
 
             continue;
@@ -435,7 +435,7 @@ static int general_serialization(int16_t fields, int16_t loops, const uint8_t *m
                 {
                     *struct_pptr += sizeof(ptrdiff_t);
                     if (0 == struct_array_len && struct_field_count > 0)
-                        calculate_struct_size(struct_field_count, *meta_pptr, meta_len, meta_pptr);
+                        calc_struct_size_or_move_meta_ptr(struct_field_count, *meta_pptr, meta_len, meta_pptr);
                 }
                 break;
             } /* switch (type) */
@@ -586,7 +586,7 @@ static int general_deserialization(int16_t fields, int16_t loops, const uint8_t 
                 }
                 struct_field_count = *((int16_t *)(*meta_pptr + sizeof(int8_t)));
                 meta_offset += sizeof(int16_t);
-                dynamic_array_size = calculate_struct_size(struct_field_count,
+                dynamic_array_size = calc_struct_size_or_move_meta_ptr(struct_field_count,
                     *meta_pptr + meta_offset, meta_len, NULL) * struct_array_len;
                 break;
 
@@ -696,7 +696,7 @@ static int general_deserialization(int16_t fields, int16_t loops, const uint8_t 
                 {
                     *struct_pptr += sizeof(ptrdiff_t);
                     if (0 == struct_array_len && struct_field_count > 0)
-                        calculate_struct_size(struct_field_count, *meta_pptr, meta_len, meta_pptr);
+                        calc_struct_size_or_move_meta_ptr(struct_field_count, *meta_pptr, meta_len, meta_pptr);
                 }
                 break;
             } /* switch (type) */
@@ -727,7 +727,7 @@ int commproto_parse(const uint8_t *struct_meta_data, uint16_t meta_len, const ui
 {
     uint8_t *meta_ptr = (uint8_t *)struct_meta_data;
     uint8_t *struct_ptr = (uint8_t *)one_byte_aligned_struct;
-    const int16_t STRUCT_SIZE = calculate_struct_size(0xffff / 2, meta_ptr, meta_len, NULL);
+    const int16_t STRUCT_SIZE = calc_struct_size_or_move_meta_ptr(0xffff / 2, meta_ptr, meta_len, NULL);
     uint16_t parsed_len = 0;
     int err = s_is_initialized
         ? (
@@ -846,5 +846,9 @@ void commproto_dump_buffer(const uint8_t *buf, uint16_t size, FILE *nullable_str
  * >>> 2022-02-18, Man Hung-Coeng:
  *  01. Change some parameter and return value types from int*_t to uint*_t.
  *  02. Add some macros to make defining and using struct meta variables easier.
+ *
+ * >>> 2022-03-08, Man Hung-Coeng:
+ *  01. Fix the error of checking whether meta_ptr is out of range
+ *      in calculate_struct_size(), and rename this function at the same time.
  */
 

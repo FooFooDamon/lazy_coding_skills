@@ -46,12 +46,12 @@
 
 #define COMMPROTO_META_VAR_OUT_OF_STRUCT(struct_name)   COMMPROTO_CPP_CONSTEXPR uint8_t struct_name::__META_DATA__[]
 
-#define COMMPROTO_CPP_SERIALIZE(struct_name, struct_ptr, buf, buf_len, handled_len_ptr, error_code_ptr)     \
-    commproto_serialize(struct_name::meta_data(), struct_name::meta_size(),                                 \
+#define COMMPROTO_CPP_SERIALIZE(struct_ptr, buf, buf_len, handled_len_ptr, error_code_ptr)  \
+    commproto_serialize((struct_ptr)->meta_data(), (struct_ptr)->meta_size(),               \
         struct_ptr, buf, buf_len, handled_len_ptr, error_code_ptr)
 
-#define COMMPROTO_CPP_PARSE(struct_name, buf, buf_len, struct_ptr, handled_len_ptr)                         \
-    commproto_parse(struct_name::meta_data(), struct_name::meta_size(),                                     \
+#define COMMPROTO_CPP_PARSE(buf, buf_len, struct_ptr, handled_len_ptr)                      \
+    commproto_parse((struct_ptr)->meta_data(), (struct_ptr)->meta_size(),                   \
         buf, buf_len, struct_ptr, handled_len_ptr)
 
 extern "C" {
@@ -1149,5 +1149,9 @@ int main(int argc, char **argv)
  * >>> 2022-03-05, Man Hung-Coeng:
  *  01. Add hints of how to define macro __ORDER_LITTLE_ENDIAN__,
  *      __ORDER_BIG_ENDIAN__ and __BYTE_ORDER__.
+ *
+ * >>> 2022-03-08, Man Hung-Coeng:
+ *  01. Remove the struct_name argument from macro COMMPROTO_CPP_SERIALIZE()
+ *      and COMMPROTO_CPP_PARSE().
  */
 

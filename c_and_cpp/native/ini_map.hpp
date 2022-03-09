@@ -27,7 +27,7 @@
 #include <map>
 #include <exception>
 
-class ini_map final
+class ini_map_c final
 {
 private:
     typedef struct char_less_than_operator
@@ -40,12 +40,12 @@ private:
 
     typedef char_less_than_operator char_lt_op;
 
-    class cstr_map : public std::map<const char*, const char*, char_lt_op>
+    class cstr_map_c : public std::map<const char*, const char*, char_lt_op>
     {
     public:
         const char* operator[](const char *key) const
         {
-            cstr_map::const_iterator iter = this->find(key);
+            cstr_map_c::const_iterator iter = this->find(key);
             const char *safe_key = ((nullptr == key) ? "<nullptr>" : key);
 
             if (this->end() == iter)
@@ -55,7 +55,7 @@ private:
         }
     };
 
-    typedef std::map<const char*, cstr_map, char_lt_op> section_map;
+    typedef std::map<const char*, cstr_map_c, char_lt_op> section_map_t;
 
     enum
     {
@@ -65,9 +65,9 @@ private:
     };
 
 public:
-    ini_map() = delete;
+    ini_map_c() = delete;
 
-    explicit ini_map(ini_doc_t *doc, const char *path = nullptr)
+    explicit ini_map_c(ini_doc_t *doc, const char *path = nullptr)
         : err_(-ERR_NULL_PARAM)
         , doc_(doc)
         , path_(nullptr)
@@ -76,7 +76,7 @@ public:
         construct(doc, path);
     }
 
-    ini_map(const ini_map &src)
+    ini_map_c(const ini_map_c &src)
         : err_(-ERR_NULL_PARAM)
         , doc_(nullptr)
         , path_(nullptr)
@@ -85,7 +85,7 @@ public:
         construct(src.doc_, src.path_);
     }
 
-    ini_map(ini_map &&src)
+    ini_map_c(ini_map_c &&src)
         : err_(src.err_)
         , doc_(src.doc_)
         , path_(src.path_)
@@ -95,14 +95,14 @@ public:
         src.map_ = nullptr;
     }
 
-    ini_map& operator=(const ini_map &src)
+    ini_map_c& operator=(const ini_map_c &src)
     {
         if (this != &src)
         {
             ini_doc_t *doc_bak = src.doc_;
             const char *path_bak = src.path_;
 
-            this->~ini_map();
+            this->~ini_map_c();
 
             construct(doc_bak, path_bak);
         }
@@ -110,7 +110,7 @@ public:
         return *this;
     }
 
-    ini_map& operator=(ini_map &&src)
+    ini_map_c& operator=(ini_map_c &&src)
     {
         if (this != &src)
         {
@@ -125,7 +125,7 @@ public:
         return *this;
     }
 
-    ~ini_map()
+    ~ini_map_c()
     {
         if (nullptr != map_)
         {
@@ -175,9 +175,9 @@ public:
         return path_;
     }
 
-    inline const cstr_map& operator[](const char *section) const
+    inline const cstr_map_c& operator[](const char *section) const
     {
-        section_map::const_iterator iter = map_->find(section);
+        section_map_t::const_iterator iter = map_->find(section);
         const char *safe_sec = ((nullptr == section) ? "<nullptr>" : section);
 
         if (map_->end() == iter)
@@ -186,12 +186,12 @@ public:
         return iter->second;
     }
 
-    inline section_map::const_iterator begin(void) const
+    inline section_map_t::const_iterator begin(void) const
     {
         return map_->begin();
     }
 
-    inline section_map::const_iterator end(void) const
+    inline section_map_t::const_iterator end(void) const
     {
         return map_->end();
     }
@@ -225,7 +225,7 @@ private:
             strcpy(path_, path);
         }
 
-        if (nullptr == (map_ = new section_map()))
+        if (nullptr == (map_ = new section_map_t()))
         {
             err_ = -ERR_MEM_ALLOC;
             return;
@@ -236,19 +236,19 @@ private:
 
     static int save_node_into_map(const char *section, ini_node_t *cur_node, void *map)
     {
-        section_map *sec_map = (section_map *)map;
+        section_map_t *sec_map = (section_map_t *)map;
 
         switch (ini_node_type(cur_node))
         {
         case INI_NODE_SECTION:
             if (sec_map->end() == sec_map->find(section))
-                sec_map->insert(std::make_pair(section, cstr_map()));
+                sec_map->insert(std::make_pair(section, cstr_map_c()));
 
             break;
 
         case INI_NODE_ITEM:
             {
-                cstr_map &item_map = sec_map->find(section)->second;
+                cstr_map_c &item_map = sec_map->find(section)->second;
                 const char *key = ini_item_get_key(cur_node);
 
                 if (item_map.end() == item_map.find(key))
@@ -268,7 +268,7 @@ private:
     int err_;
     ini_doc_t *doc_;
     char *path_;
-    section_map *map_;
+    section_map_t *map_;
 };
 
 #endif /* #ifndef __INLINE_INI_MAP_HPP__ */
@@ -292,6 +292,9 @@ private:
  *  01. Change the exception type of operator [] from const char*
  *      to std::invalid_argument to make the exception reason displayable
  *      even if the exception is not catched.
+ *
+ * >>> 2022-03-09, Man Hung-Coeng:
+ *  01. Rename ini_map to ini_map_c, cstr_map to cstr_map_c
+ *      and section_map to section_map_t.
  */
-
 

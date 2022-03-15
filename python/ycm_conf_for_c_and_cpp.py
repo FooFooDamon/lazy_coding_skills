@@ -41,7 +41,9 @@ def FlagsForFile(filename, **kwargs):
 if __name__ == "__main__":
     import sys
     print('*** DO NOT run this script directly!', file = sys.stderr)
-    print('Import it into the ".ycm_extra_conf.py" file in your project instead.', file = sys.stderr)
+    print('Copy it into directory where ".ycm_extra_conf.py" of your project locates in,', file = sys.stderr)
+    print('and at least add a line: from ycm_conf_for_c_and_cpp import *', file = sys.stderr)
+    print('into ".ycm_extra_conf.py".', file = sys.stderr)
 
 #
 # ================

@@ -1,2 +1,2 @@
-It seems that ANSI c (also known as C89 or C90) is not free of charge,
+It seems that ANSI C (also known as C89 or C90) is not free of charge,
 so I won't make it public.

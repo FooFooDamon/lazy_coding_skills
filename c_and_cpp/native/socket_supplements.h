@@ -80,10 +80,10 @@ int sock_accept(int fd, bool is_nonblocking, bool allow_self_connection, struct 
 int sock_connect(int fd, const struct sockaddr *addr, size_t addr_len, int timeout_usecs);
 
 /* NOTE: It's recommended to sock_set_nonblocking() and select()/poll()/epoll() before this function. */
-size_t sock_send(int fd, const void *buf, size_t len, int flags, int *nullable_error_code);
+size_t sock_send(int fd, const void *buf, size_t len, int flags, int *nullable_standard_errno);
 
 /* NOTE: It's recommended to sock_set_nonblocking() and select()/poll()/epoll() before this function. */
-size_t sock_recv(int fd, const void *buf, size_t len, int flags, int *nullable_error_code);
+size_t sock_recv(int fd, const void *buf, size_t len, int flags, int *nullable_standard_errno);
 
 #ifdef __cplusplus
 }
@@ -102,5 +102,9 @@ size_t sock_recv(int fd, const void *buf, size_t len, int flags, int *nullable_e
  * >>> 2022-02-21, Man Hung-Coeng:
  *  01. Add sock_create(), sock_destroy(), sock_bind(), sock_listen()
  *      and sock_accept().
+ *
+ * >>> 2022-03-27, Man Hung-Coeng:
+ *  01. Rename the parameter nullable_error_code of sock_send() and sock_recv()
+ *      to nullable_standard_errno, and change its meaning and value as well.
  */
 

@@ -39,6 +39,22 @@ enum
 #define SOCK_IS_READABLE(status_bits)               (status_bits & SOCK_STATUS_READABLE)
 #define SOCK_IS_WRITABLE(status_bits)               (status_bits & SOCK_STATUS_WRITABLE)
 
+#pragma message("To use errno and its candidate values, <errno.h> or something similar should be included or defined manually.")
+
+#ifndef SOCK_IS_DISCONNECTED
+#define SOCK_IS_DISCONNECTED(standard_errno)        (EPIPE == (standard_errno) || ECONNRESET == (standard_errno) \
+                                                        || ENOTCONN == (standard_errno) || ESHUTDOWN == (standard_errno))
+#endif
+#ifndef SOCK_IS_OFFLINE
+#define SOCK_IS_OFFLINE(standard_errno)             (ECONNREFUSED == (standard_errno))
+#endif
+#ifndef SOCK_CONNECTION_IS_LOST
+#define SOCK_CONNECTION_IS_LOST(standard_errno)     SOCK_IS_DISCONNECTED(standard_errno) || SOCK_IS_OFFLINE(standard_errno)
+#endif
+#ifndef SOCK_SHOULD_TRY_LATER
+#define SOCK_SHOULD_TRY_LATER(standard_errno)       (EAGAIN == (standard_errno) || EWOULDBLOCK == (standard_errno))
+#endif
+
 const char* sock_error(int error_code);
 
 int sock_create(int domain, int type, int protocol, bool is_nonblocking);
@@ -83,6 +99,7 @@ int sock_connect(int fd, const struct sockaddr *addr, size_t addr_len, int timeo
 size_t sock_send(int fd, const void *buf, size_t len, int flags, int *nullable_standard_errno);
 
 /* NOTE: It's recommended to sock_set_nonblocking() and select()/poll()/epoll() before this function. */
+/* EXTRA: For a connection-oriented socket, return value of 0 and errno of EPIPE means (orderly) shutdown. */
 size_t sock_recv(int fd, const void *buf, size_t len, int flags, int *nullable_standard_errno);
 
 #ifdef __cplusplus
@@ -106,5 +123,9 @@ size_t sock_recv(int fd, const void *buf, size_t len, int flags, int *nullable_s
  * >>> 2022-03-27, Man Hung-Coeng:
  *  01. Rename the parameter nullable_error_code of sock_send() and sock_recv()
  *      to nullable_standard_errno, and change its meaning and value as well.
+ *
+ * >>> 2022-03-28, Man Hung-Coeng:
+ *  01. Add several macros: SOCK_IS_DISCONNECTED(), SOCK_IS_OFFLINE(),
+ *      SOCK_CONNECTION_IS_LOST() and SOCK_SHOULD_TRY_LATER().
  */
 

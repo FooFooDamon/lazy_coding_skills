@@ -213,7 +213,7 @@ int sock_connect(int fd, const struct sockaddr *addr, size_t addr_len, int timeo
     if (0 == ret)
         return 0;
 
-    if (EINPROGRESS != errno && EAGAIN != errno)
+    if (EINPROGRESS != errno && !SOCK_SHOULD_TRY_LATER(errno))
         return -(errno + SOCK_ERR_END);
 
     if ((ret = sock_check_status(fd, SOCK_STATUS_WRITABLE, timeout_usecs)) < 0)
@@ -237,7 +237,7 @@ size_t sock_send(int fd, const void *buf, size_t len, int flags, int *nullable_s
     {
         int ret = send(fd, (char *)buf + handled_len, len - handled_len, flags);
 
-        if (ret < 0 && EINTR != errno)
+        if ((ret < 0 && EINTR != errno) || 0 == ret)
         {
             *err_ptr = errno;
             break;
@@ -262,11 +262,9 @@ size_t sock_recv(int fd, const void *buf, size_t len, int flags, int *nullable_s
     {
         int ret = recv(fd, (char *)buf + handled_len, len - handled_len, flags);
 
-        if ((ret < 0 && EINTR != errno)
-            || 0 == ret /* Always stop regardless of orderly shutdown (by a stream socket peer) or normal case. */
-            || ECONNRESET == errno/* This may occur with a return value of 0. */)
+        if ((ret < 0 && EINTR != errno) || 0 == ret)
         {
-            *err_ptr = errno;
+            *err_ptr = (0 == ret) ? EPIPE : errno;
             break;
         }
 
@@ -315,5 +313,10 @@ int main(int argc, char **argv)
  * >>> 2022-03-27, Man Hung-Coeng:
  *  01. Rename the parameter nullable_error_code of sock_send() and sock_recv()
  *      to nullable_standard_errno, and change its meaning and value as well.
+ *
+ * >>> 2022-03-28, Man Hung-Coeng:
+ *  01. Set value of argument nullable_standard_errno of sock_recv() to EPIPE
+ *      when the underlying recv() returns 0, so as to let the caller know
+ *      that the connection-oriented remote endpoint has shut down.
  */
 

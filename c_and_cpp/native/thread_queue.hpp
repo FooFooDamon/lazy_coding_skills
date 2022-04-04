@@ -26,15 +26,93 @@
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
-#include <queue>
+#include <list>
 #include <vector>
 
-#define THREAD_QUEUE_INNER_LOCK()       std::unique_lock<lock_t> lock(*lock_ptr_)
+#ifndef __FUNCTION__
+#define __FUNCTION__                        __func__
+#endif
 
-template <typename T>
+#ifdef THREAD_QUEUE_DEBUG
+#define THREAD_QUEUE_DPRINT(format, ...)    printf("[DEBUG] " __FILE__ ":%d: %s(): " format, __LINE__, __FUNCTION__, ##__VA_ARGS__)
+#else
+#define THREAD_QUEUE_DPRINT(format, ...)
+#endif
+
+#define THREAD_QUEUE_INNER_LOCK()           std::unique_lock<lock_t> lock(*lock_ptr_)
+
+template<typename seq_container_t>
+inline void __reserve_memory_if_needed(size_t item_count, seq_container_t &container)
+{
+}
+
+template<typename T>
+inline void __reserve_memory_if_needed(size_t item_count, std::vector<T> &container)
+{
+    size_t needed_size = container.size() + item_count;
+    bool should_reserve = (needed_size > container.capacity() + 1);
+
+    THREAD_QUEUE_DPRINT("Whether to reserve memory of %zd items for vector: %d\n", item_count, should_reserve);
+
+    if (should_reserve)
+        container.reserve(needed_size);
+}
+
+template<typename T1, typename T2>
+inline void __general_push_back(size_t count, T1 &from, T2 &to)
+{
+    auto iter_begin = from.begin();
+    auto iter_end = iter_begin;
+
+    std::advance(iter_end, count);
+
+    __reserve_memory_if_needed(count, to);
+
+    for (auto iter = iter_begin; iter_end != iter; ++iter)
+    {
+        to.push_back(std::move(*iter));
+    }
+
+    from.erase(iter_begin, iter_end);
+
+    THREAD_QUEUE_DPRINT("%s\n", "General and possibly slower push_back()s.");
+}
+
+template<typename T>
+inline void __general_push_back(size_t count, std::list<T> &from, std::list<T> &to)
+{
+    auto iter_begin = from.begin();
+    auto iter_end = iter_begin;
+
+    std::advance(iter_end, count);
+
+    to.splice(to.end(), from, iter_begin, iter_end);
+}
+
+template<typename seq_container_t>
+inline void __splice_back(seq_container_t &&from, seq_container_t &to)
+{
+#if 0 /* TODO: Which is faster, insert() with iterators of a lvalue or push_back()s with rvalues? */
+    to.insert(to.end(), from.begin(), from.end());
+    THREAD_QUEUE_DPRINT("Used insert().\n");
+    to.swap(seq_container_t()); // Totally release memory.
+#else
+    __general_push_back(from.size(), from, to);
+    THREAD_QUEUE_DPRINT("%s\n", "Used push_back()s.");
+#endif
+}
+
+template<typename T>
+inline void __splice_back(std::list<T> &&from, std::list<T> &to)
+{
+    to.splice(to.end(), std::move(from));
+}
+
+template<typename T, typename seq_container_t = std::list<T>/* or std::deque<T>, std::vector<T> */>
 class thread_queue_c
 {
 public: // Types.
+
     typedef std::mutex                  lock_t;
 
     typedef std::condition_variable     notifier_t;
@@ -52,6 +130,7 @@ public: // Types.
     };
 
 public: // Constructors, destructor and assignment operator(s).
+
     thread_queue_c()
         : lock_ptr_(std::make_shared<lock_t>())
         , notifier_ptr_(std::make_shared<notifier_t>())
@@ -68,6 +147,7 @@ public: // Constructors, destructor and assignment operator(s).
     ~thread_queue_c(){}
 
 public: // Status functions.
+
     inline bool empty(void) const
     {
         return (0 == item_count_);
@@ -79,11 +159,13 @@ public: // Status functions.
     }
 
 public: // Abilities.
+
     size_t push_one(T &&item, notify_flag_e flag = NOTIFY_ONE)
     {
         THREAD_QUEUE_INNER_LOCK();
 
-        data_items_.push(std::move(item));
+        data_items_.push_back(std::move(item));
+
         ++item_count_;
 
         notify(flag);
@@ -91,7 +173,7 @@ public: // Abilities.
         return 1;
     }
 
-    size_t push_many(std::vector<T> &&items, notify_flag_e flag = NOTIFY_ONE)
+    size_t push_many(seq_container_t &&items, notify_flag_e flag = NOTIFY_ONE)
     {
         size_t count = items.size();
 
@@ -100,10 +182,16 @@ public: // Abilities.
 
         THREAD_QUEUE_INNER_LOCK();
 
-        for (size_t i = 0; i < count; ++i)
+        if (0 == item_count_)
         {
-            data_items_.push(std::move(items[i]));
+            data_items_.swap(items);
+            THREAD_QUEUE_DPRINT("%s\n", "Called swap().");
         }
+        else
+        {
+            __splice_back(std::move(items), data_items_);
+        }
+
         item_count_ += count;
 
         notify(flag);
@@ -111,22 +199,50 @@ public: // Abilities.
         return count;
     }
 
-    std::vector<T> pop_some(size_t count, notify_flag_e flag = NOTIFY_NONE)
+    template<typename diff_seq_container_t>
+    size_t push_many_with(diff_seq_container_t &&items, notify_flag_e flag = NOTIFY_ONE)
     {
-        std::vector<T> items;
+        size_t count = items.size();
 
-        if (0 == count || 0 == item_count_/* Have a fast glimpse of item_count_ before slower locking. */)
+        if (0 == count)
+            return 0;
+
+        THREAD_QUEUE_INNER_LOCK();
+
+        __general_push_back(count, items, data_items_);
+
+        item_count_ += count;
+
+        notify(flag);
+
+        return count;
+    }
+
+    seq_container_t pop_some(size_t count, notify_flag_e flag = NOTIFY_NONE)
+    {
+        seq_container_t items;
+
+        if (0 == item_count_/* Have a fast glimpse of item_count_ before slower locking. */ || 0 == count)
             return items;
 
         THREAD_QUEUE_INNER_LOCK();
 
         if (item_count_ > 0) /* Must confirm again after locking whether the queue is empty. */
         {
-            for (size_t i = 0; i < count && item_count_ > 0; ++i)
+            if (count == item_count_)
             {
-                items.push_back(std::move(data_items_.front()));
-                data_items_.pop();
-                --item_count_;
+                data_items_.swap(items);
+                item_count_ = 0;
+                THREAD_QUEUE_DPRINT("%s\n", "Called swap().");
+            }
+            else
+            {
+                if (count > item_count_)
+                    count = item_count_;
+
+                __general_push_back(count, data_items_, items);
+
+                item_count_ -= count;
             }
 
             notify(flag);
@@ -135,9 +251,15 @@ public: // Abilities.
         return items;
     }
 
-    std::vector<T> pop_all(notify_flag_e flag = NOTIFY_NONE)
+    template<typename diff_seq_container_t>
+    diff_seq_container_t pop_some_as(size_t count, notify_flag_e flag = NOTIFY_NONE)
     {
-        std::vector<T> items;
+        return this->__pop_some_as<diff_seq_container_t>(/* all = */false, count, flag);
+    }
+
+    seq_container_t pop_all(notify_flag_e flag = NOTIFY_NONE)
+    {
+        seq_container_t items;
 
         if (0 == item_count_) /* Have a fast glimpse of item_count_ before slower locking. */
             return items;
@@ -146,17 +268,20 @@ public: // Abilities.
 
         if (item_count_ > 0) /* Must confirm again after locking whether the queue is empty. */
         {
-            for (size_t i = 0; i < item_count_; ++i)
-            {
-                items.push_back(std::move(data_items_.front()));
-                data_items_.pop();
-            }
+            data_items_.swap(items);
+
             item_count_ = 0;
 
             notify(flag);
         }
 
         return items;
+    }
+
+    template<typename diff_seq_container_t>
+    diff_seq_container_t pop_all_as(notify_flag_e flag = NOTIFY_NONE)
+    {
+        return this->__pop_some_as<diff_seq_container_t>(/* all = */true, item_count_, flag);
     }
 
     inline void wait(int timeout_usecs = TIMEOUT_FOREVER)
@@ -180,14 +305,42 @@ public: // Abilities.
             notifier_ptr_->notify_all();
     }
 
+private:
+
+    template<typename diff_seq_container_t>
+    inline diff_seq_container_t __pop_some_as(bool all, size_t count_if_not_all, notify_flag_e flag = NOTIFY_NONE)
+    {
+        diff_seq_container_t items;
+
+        if (0 == item_count_/* Have a fast glimpse of item_count_ before slower locking. */
+            || ((!all) && 0 == count_if_not_all))
+            return items;
+
+        THREAD_QUEUE_INNER_LOCK();
+
+        if (item_count_ > 0) /* Must confirm again after locking whether the queue is empty. */
+        {
+            if (all || count_if_not_all > item_count_)
+                count_if_not_all = item_count_;
+
+            __general_push_back(count_if_not_all, data_items_, items);
+
+            item_count_ -= count_if_not_all;
+
+            notify(flag);
+        }
+
+        return items;
+    }
+
 private: // Data for implementation.
     std::shared_ptr<lock_t>         lock_ptr_;
     std::shared_ptr<notifier_t>     notifier_ptr_;
-    std::queue<T>                   data_items_;
+    seq_container_t                 data_items_;
     std::atomic_size_t              item_count_;
 };
 
-template <typename T> using threaque_c = thread_queue_c<T>;
+template<typename T> using threaque_c = thread_queue_c<T>;
 
 #endif /* #ifndef __THREAD_QUEUE_HPP__ */
 
@@ -198,5 +351,10 @@ template <typename T> using threaque_c = thread_queue_c<T>;
  *
  * >>> 2022-03-15, Man Hung-Coeng:
  *  01. Create.
+ *
+ * >>> 2022-04-04, Man Hung-Coeng:
+ *  01. Enhance the queue class template with a second typename parameter
+ *      to support customization of underlying container.
+ *  02. Add 3 member functions: push_many_with(), pop_all_as() and pop_all_as().
  */
 

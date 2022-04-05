@@ -355,6 +355,6 @@ template<typename T> using threaque_c = thread_queue_c<T>;
  * >>> 2022-04-04, Man Hung-Coeng:
  *  01. Enhance the queue class template with a second typename parameter
  *      to support customization of underlying container.
- *  02. Add 3 member functions: push_many_with(), pop_all_as() and pop_all_as().
+ *  02. Add 3 member functions: push_many_with(), pop_some_as() and pop_all_as().
  */
 

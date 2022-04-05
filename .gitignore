@@ -30,6 +30,9 @@ _tmp_
 *.tmp
 core.*
 tags
+/c_and_cpp/native/test_*
+!/c_and_cpp/native/*.[ch]
+!/c_and_cpp/native/*.[ch]pp
 /c_and_cpp/native/communication_protocol
 /c_and_cpp/native/ini_file
 /c_and_cpp/native/ini_file_test.ini

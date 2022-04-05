@@ -33,7 +33,7 @@
 #define __FUNCTION__                        __func__
 #endif
 
-#ifdef THREAD_QUEUE_DEBUG
+#if defined(THREAD_QUEUE_DEBUG) || defined(TEST)
 #define THREAD_QUEUE_DPRINT(format, ...)    printf("[DEBUG] " __FILE__ ":%d: %s(): " format, __LINE__, __FUNCTION__, ##__VA_ARGS__)
 #else
 #define THREAD_QUEUE_DPRINT(format, ...)
@@ -52,7 +52,7 @@ inline void __reserve_memory_if_needed(size_t item_count, std::vector<T> &contai
     size_t needed_size = container.size() + item_count;
     bool should_reserve = (needed_size > container.capacity() + 1);
 
-    THREAD_QUEUE_DPRINT("Whether to reserve memory of %zd items for vector: %d\n", item_count, should_reserve);
+    THREAD_QUEUE_DPRINT("Whether to reserve memory of %zu items for vector: %d\n", item_count, should_reserve);
 
     if (should_reserve)
         container.reserve(needed_size);
@@ -254,7 +254,7 @@ public: // Abilities.
     template<typename diff_seq_container_t>
     diff_seq_container_t pop_some_as(size_t count, notify_flag_e flag = NOTIFY_NONE)
     {
-        return this->__pop_some_as<diff_seq_container_t>(/* all = */false, count, flag);
+        return this->__pop_as<diff_seq_container_t>(/* all = */false, count, flag);
     }
 
     seq_container_t pop_all(notify_flag_e flag = NOTIFY_NONE)
@@ -281,17 +281,32 @@ public: // Abilities.
     template<typename diff_seq_container_t>
     diff_seq_container_t pop_all_as(notify_flag_e flag = NOTIFY_NONE)
     {
-        return this->__pop_some_as<diff_seq_container_t>(/* all = */true, item_count_, flag);
+        return this->__pop_as<diff_seq_container_t>(/* all = */true, item_count_, flag);
     }
 
     inline void wait(int timeout_usecs = TIMEOUT_FOREVER)
     {
+#if 0 // TODO: Should call the other wait() directly?
+        this->wait(timeout_usecs, []{ return false; });
+#else
         THREAD_QUEUE_INNER_LOCK();
 
         if (timeout_usecs < 0)
             notifier_ptr_->wait(lock);
         else
             notifier_ptr_->wait_for(lock, std::chrono::microseconds(timeout_usecs));
+#endif
+    }
+
+    template<typename bool_function_t/* the so-called "predicate" in somewhere else */>
+    inline void wait(int timeout_usecs, bool_function_t should_abort)
+    {
+        THREAD_QUEUE_INNER_LOCK();
+
+        if (timeout_usecs < 0)
+            notifier_ptr_->wait(lock, should_abort);
+        else
+            notifier_ptr_->wait_for(lock, std::chrono::microseconds(timeout_usecs), should_abort);
     }
 
     inline void notify(notify_flag_e flag)
@@ -305,10 +320,10 @@ public: // Abilities.
             notifier_ptr_->notify_all();
     }
 
-private:
+private: // Inner methods.
 
     template<typename diff_seq_container_t>
-    inline diff_seq_container_t __pop_some_as(bool all, size_t count_if_not_all, notify_flag_e flag = NOTIFY_NONE)
+    inline diff_seq_container_t __pop_as(bool all, size_t count_if_not_all, notify_flag_e flag = NOTIFY_NONE)
     {
         diff_seq_container_t items;
 
@@ -356,5 +371,9 @@ template<typename T> using threaque_c = thread_queue_c<T>;
  *  01. Enhance the queue class template with a second typename parameter
  *      to support customization of underlying container.
  *  02. Add 3 member functions: push_many_with(), pop_some_as() and pop_all_as().
+ *
+ * >>> 2022-04-05, Man Hung-Coeng:
+ *  01. Add an overload of wait() with a predicate parameter.
+ *  02. Rename the inner member function __pop_some_as() to __pop_as().
  */
 

@@ -286,27 +286,29 @@ public: // Abilities.
 
     inline void wait(int timeout_usecs = TIMEOUT_FOREVER)
     {
-#if 0 // TODO: Should call the other wait() directly?
-        this->wait(timeout_usecs, []{ return false; });
-#else
         THREAD_QUEUE_INNER_LOCK();
 
         if (timeout_usecs < 0)
             notifier_ptr_->wait(lock);
         else
             notifier_ptr_->wait_for(lock, std::chrono::microseconds(timeout_usecs));
-#endif
     }
 
-    template<typename bool_function_t/* the so-called "predicate" in somewhere else */>
-    inline void wait(int timeout_usecs, bool_function_t should_abort)
+    template<typename req_fetching_func_t/* the so-called "predicate" in somewhere else */>
+    inline void wait_unless_required_for_stop(int timeout_usecs, req_fetching_func_t req_for_stop)
     {
         THREAD_QUEUE_INNER_LOCK();
 
         if (timeout_usecs < 0)
-            notifier_ptr_->wait(lock, should_abort);
+            notifier_ptr_->wait(lock, req_for_stop);
         else
-            notifier_ptr_->wait_for(lock, std::chrono::microseconds(timeout_usecs), should_abort);
+            notifier_ptr_->wait_for(lock, std::chrono::microseconds(timeout_usecs), req_for_stop);
+    }
+
+    template<typename another_condition_func_t/* the so-called "predicate" in somewhere else */>
+    inline void wait_unless_either_satisfied(int timeout_usecs, another_condition_func_t who_cares)
+    {
+        throw std::runtime_error("Not supported");
     }
 
     inline void notify(notify_flag_e flag)
@@ -355,7 +357,7 @@ private: // Data for implementation.
     std::atomic_size_t              item_count_;
 };
 
-template<typename T> using threaque_c = thread_queue_c<T>;
+template<typename T, typename seq_container_t> using threaque_c = thread_queue_c<T, seq_container_t>;
 
 #endif /* #ifndef __THREAD_QUEUE_HPP__ */
 
@@ -375,5 +377,10 @@ template<typename T> using threaque_c = thread_queue_c<T>;
  * >>> 2022-04-05, Man Hung-Coeng:
  *  01. Add an overload of wait() with a predicate parameter.
  *  02. Rename the inner member function __pop_some_as() to __pop_as().
+ *
+ * >>> 2022-04-06, Man Hung-Coeng:
+ *  01. Synchronize definition of the alias threaque_c after the enhancement.
+ *  02. Rename the template-version wait() to wait_unless_required_for_stop()
+ *      for better readability, and add a new wait_unless_either_satisfied().
  */
 

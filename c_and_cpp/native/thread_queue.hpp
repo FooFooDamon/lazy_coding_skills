@@ -295,7 +295,7 @@ public: // Abilities.
     }
 
     template<typename req_fetching_func_t/* the so-called "predicate" in somewhere else */>
-    inline void wait_unless_required_for_stop(int timeout_usecs, req_fetching_func_t req_for_stop)
+    inline void wait_until_required_for_stop(int timeout_usecs, req_fetching_func_t req_for_stop)
     {
         THREAD_QUEUE_INNER_LOCK();
 
@@ -306,7 +306,7 @@ public: // Abilities.
     }
 
     template<typename another_condition_func_t/* the so-called "predicate" in somewhere else */>
-    inline void wait_unless_either_satisfied(int timeout_usecs, another_condition_func_t who_cares)
+    inline void wait_until_either_satisfied(int timeout_usecs, another_condition_func_t who_cares)
     {
         throw std::runtime_error("Not supported");
     }
@@ -380,7 +380,7 @@ template<typename T, typename seq_container_t> using threaque_c = thread_queue_c
  *
  * >>> 2022-04-06, Man Hung-Coeng:
  *  01. Synchronize definition of the alias threaque_c after the enhancement.
- *  02. Rename the template-version wait() to wait_unless_required_for_stop()
- *      for better readability, and add a new wait_unless_either_satisfied().
+ *  02. Rename the template-version wait() to wait_until_required_for_stop()
+ *      for better readability, and add a new wait_until_either_satisfied().
  */
 

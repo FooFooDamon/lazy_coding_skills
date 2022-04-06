@@ -1,8 +1,8 @@
 /*
  * Forward declaration of class template thread_queue_c,
- * and some definitions of it to make life easier.
+ * and some macros of it to make life easier.
  * Including this file instead of thread_queue.hpp in some header files
- * will reduce the overload of header resolving during compilation.
+ * can reduce the cost of header resolving during compilation.
  *
  * Copyright (c) 2022 Man Hung-Coeng <udc577@126.com>
  *

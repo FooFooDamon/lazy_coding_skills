@@ -1,18 +1,29 @@
 CC := gcc
+CXX := g++
 
-C_DEFINES := -DTEST -DCOMMPROTO_BIG_ENDIAN
+C_DEFINES := -DTEST -D__ORDER_LITTLE_ENDIAN__=1234 -D__ORDER_BIG_ENDIAN__=4321 \
+		-D__BYTE_ORDER__=__ORDER_LITTLE_ENDIAN__ -DCOMMPROTO_BIG_ENDIAN
+CXX_DEFINES := -DTEST
+
 C_INCLUDES :=
-OTHER_CFLAGS :=
+CXX_INCLUDES :=
 
-SRCS := $(shell find ./ -name "*.c")
-OBJS := $(addsuffix .o, $(basename ${SRCS}))
+OTHER_CFLAGS :=
+OTHER_CXXFLAGS := -std=c++11
+
+C_LDFLAGS :=
+CXX_LDFLAGS := -lpthread
+
+C_SRCS := $(shell find ./ -name "*.c")
+CXX_SRCS := $(shell find ./ -name "*.cpp")
+OBJS := $(addsuffix .o, $(basename ${C_SRCS} ${CXX_SRCS}))
 
 all: ${OBJS}
 
-EXECS := $(filter-out , $(basename ${SRCS}))
+EXECS := $(filter-out , $(basename ${OBJS}))
 
 ${EXECS}: %: %.o
-	${C_LINK}
+	${CXX_LINK}
 
 test:
 	for i in ${EXECS}; \
@@ -29,9 +40,11 @@ PARALLEL_OPTION ?= -j $(shell grep -c "processor" /proc/cpuinfo)
 
 check:
 	cppcheck --quiet --enable=all --language=c --std=c89 ${PARALLEL_OPTION} ${C_DEFINES} \
-		-D__ORDER_LITTLE_ENDIAN__=1234 -D__ORDER_BIG_ENDIAN__=4321 -D__BYTE_ORDER__=__ORDER_LITTLE_ENDIAN__ \
-		${C_INCLUDES} ${SRCS}
-	clang --analyze ${SRCS} ${CFLAGS} -std=gnu89
+		${C_INCLUDES} ${C_SRCS}
+	cppcheck --quiet --enable=all --language=c++ --std=c++11 ${PARALLEL_OPTION} -D__cplusplus=201103L ${CXX_DEFINES} \
+		${CXX_INCLUDES} ${CXX_SRCS}
+	clang --analyze ${C_SRCS} ${CFLAGS} -std=gnu89
+	clang --analyze ${CXX_SRCS} ${CXXFLAGS} -std=c++11
 
 clean:
 	rm -f ${EXECS} ${OBJS} *.plist

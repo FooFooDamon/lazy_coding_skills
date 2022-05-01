@@ -59,8 +59,8 @@ private:
 
     enum
     {
-        ERR_NULL_PARAM = 1
-        , INI_ERR_NOT_IMPLEMENTED
+        ERR_NOT_INITIALIZED = 1
+        , ERR_NOT_IMPLEMENTED
         , ERR_MEM_ALLOC
     };
 
@@ -68,18 +68,22 @@ public:
     ini_map_c() = delete;
 
     explicit ini_map_c(ini_doc_t *doc, const char *path = nullptr)
-        : err_(-ERR_NULL_PARAM)
-        , doc_(doc)
+        : err_(-ERR_NOT_INITIALIZED)
+        , doc_(nullptr)
         , path_(nullptr)
+        , dir_(nullptr)
+        , basename_(nullptr)
         , map_(nullptr)
     {
         construct(doc, path);
     }
 
     ini_map_c(const ini_map_c &src)
-        : err_(-ERR_NULL_PARAM)
+        : err_(-ERR_NOT_INITIALIZED)
         , doc_(nullptr)
         , path_(nullptr)
+        , dir_(nullptr)
+        , basename_(nullptr)
         , map_(nullptr)
     {
         construct(src.doc_, src.path_);
@@ -89,9 +93,15 @@ public:
         : err_(src.err_)
         , doc_(src.doc_)
         , path_(src.path_)
+        , dir_(src.dir_)
+        , basename_(src.basename_)
         , map_(src.map_)
     {
+        src.err_ = -ERR_NOT_INITIALIZED;
+        src.doc_ = nullptr;
         src.path_ = nullptr;
+        src.dir_ = nullptr;
+        src.basename_ = nullptr;
         src.map_ = nullptr;
     }
 
@@ -99,12 +109,9 @@ public:
     {
         if (this != &src)
         {
-            ini_doc_t *doc_bak = src.doc_;
-            const char *path_bak = src.path_;
-
             this->~ini_map_c();
 
-            construct(doc_bak, path_bak);
+            construct(src.doc_, src.path_);
         }
 
         return *this;
@@ -114,10 +121,28 @@ public:
     {
         if (this != &src)
         {
+            struct xx_t
+            {
+                char **src;
+                char **dest;
+            } xx[] = {
+                { &src.path_, &this->path_ }
+                , { &src.dir_, &this->dir_ }
+                , { &src.basename_, &this->basename_ }
+            };
+
+            for (size_t i = 0; i < sizeof(xx) / sizeof(struct xx_t); ++i)
+            {
+                *xx[i].dest = *xx[i].src;
+                *xx[i].src = nullptr;
+            }
+
             this->err_ = src.err_;
+            src.err_ = -ERR_NOT_INITIALIZED;
+
             this->doc_ = src.doc_;
-            this->path_ = src.path_;
-            src.path_ = nullptr;
+            src.doc_ = nullptr;
+
             this->map_ = src.map_;
             src.map_ = nullptr;
         }
@@ -133,10 +158,15 @@ public:
             map_ = nullptr;
         }
 
-        if (nullptr != path_)
+        char **xx[] = { &basename_, &dir_, &path_ };
+
+        for (size_t i = 0; i < sizeof(xx) / sizeof(char **); ++i)
         {
-            delete[] path_;
-            path_ = nullptr;
+            if (nullptr != *xx[i])
+            {
+                delete[] *xx[i];
+                *xx[i] = nullptr;
+            }
         }
     }
 
@@ -152,8 +182,8 @@ public:
 
         switch (err_)
         {
-        case -ERR_NULL_PARAM:
-            return "Null parameter";
+        case -ERR_NOT_INITIALIZED:
+            return "Not initialized";
 
         case -ERR_MEM_ALLOC:
             return "Failed to allocate memory";
@@ -173,6 +203,16 @@ public:
     inline const char* path(void) const
     {
         return path_;
+    }
+
+    inline const char* directory(void) const
+    {
+        return dir_;
+    }
+
+    inline const char* basename(void) const
+    {
+        return basename_;
     }
 
     inline const cstr_map_c& operator[](const char *section) const
@@ -209,20 +249,41 @@ public:
 private:
     void construct(ini_doc_t *doc, const char *path)
     {
-        err_ = -ERR_NULL_PARAM;
+        err_ = -ERR_NOT_INITIALIZED;
 
-        if (nullptr == doc_)
+        if (nullptr == (doc_ = doc))
             return;
 
         if (nullptr != path)
         {
-            if (nullptr == (path_ = new char[strlen(path) + 1]))
+            size_t path_len = strlen(path);
+            char *cast_path = const_cast<char *>(path); // for fixing the invalid-conversion compile error
+            char *slash_ptr = strrchr(cast_path, '/');
+            char *delimiter_ptr = (nullptr == slash_ptr) ? strrchr(cast_path, '\\') : slash_ptr;
+            size_t dir_len = (nullptr == delimiter_ptr) ? 1 : (delimiter_ptr - path);
+            size_t basename_len = (nullptr == delimiter_ptr) ? path_len : strlen(delimiter_ptr + 1);
+            struct xx_t
             {
-                err_ = -ERR_MEM_ALLOC;
-                return;
-            }
+                const char *src;
+                char **dest;
+                size_t len;
+            } xx[] = {
+                { path, &path_, path_len }
+                , { ((nullptr == delimiter_ptr) ? "." : path), &dir_, dir_len }
+                , { ((nullptr == delimiter_ptr) ? path : (delimiter_ptr + 1)), &basename_, basename_len }
+            };
 
-            strcpy(path_, path);
+            for (size_t i = 0; i < sizeof(xx) / sizeof(struct xx_t); ++i)
+            {
+                if (nullptr == (*xx[i].dest = new char[xx[i].len + 1]))
+                {
+                    err_ = -ERR_MEM_ALLOC;
+                    return;
+                }
+
+                strncpy(*xx[i].dest, xx[i].src, xx[i].len);
+                (*xx[i].dest)[xx[i].len] = '\0';
+            }
         }
 
         if (nullptr == (map_ = new section_map_t()))
@@ -268,6 +329,8 @@ private:
     int err_;
     ini_doc_t *doc_;
     char *path_;
+    char *dir_;
+    char *basename_;
     section_map_t *map_;
 };
 
@@ -296,5 +359,9 @@ private:
  * >>> 2022-03-09, Man Hung-Coeng:
  *  01. Rename ini_map to ini_map_c, cstr_map to cstr_map_c
  *      and section_map to section_map_t.
+ *
+ * >>> 2022-05-01, Man Hung-Coeng:
+ *  01. Add member function directory() and basename().
+ *  02. Fix some errors of initialization of data members.
  */
 

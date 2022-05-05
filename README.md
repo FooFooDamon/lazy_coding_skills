@@ -1,4 +1,4 @@
-# 编码提点 | Snippets and Hints
+# 懒编程秘笈 | Lazy Coding Skills
 
 ## 简介 | Introduction
 

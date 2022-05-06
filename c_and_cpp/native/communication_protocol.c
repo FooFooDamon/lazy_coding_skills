@@ -426,7 +426,7 @@ static int general_serialization(int16_t fields, int16_t loops, const uint8_t *m
 
             default:
                 inner_struct_ptr = (is_dynamic_struct_array ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : NULL);
-                err = (0 == struct_field_count || 0 == struct_array_len) ? 0
+                err = (/*0 == struct_field_count || */0 == struct_array_len) ? 0
                     : general_serialization(struct_field_count, struct_array_len, meta_start_ptr,
                         meta_len, meta_pptr, (is_dynamic_struct_array ? &inner_struct_ptr : struct_pptr),
                         /* can_have_inner_struct = */false, is_static_buf, max_buf_len,
@@ -434,7 +434,7 @@ static int general_serialization(int16_t fields, int16_t loops, const uint8_t *m
                 if (is_dynamic_struct_array && err >= 0)
                 {
                     *struct_pptr += sizeof(ptrdiff_t);
-                    if (0 == struct_array_len && struct_field_count > 0)
+                    if (0 == struct_array_len/* && struct_field_count > 0*/)
                         calc_struct_size_or_move_meta_ptr(struct_field_count, *meta_pptr, meta_len, meta_pptr);
                 }
                 break;
@@ -687,7 +687,7 @@ static int general_deserialization(int16_t fields, int16_t loops, const uint8_t 
 
             default:
                 inner_struct_ptr = (is_dynamic_struct_array ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : NULL);
-                err = (0 == struct_field_count || 0 == struct_array_len) ? 0
+                err = (/*0 == struct_field_count || */0 == struct_array_len) ? 0
                     : general_deserialization(struct_field_count, struct_array_len, meta_start_ptr,
                         meta_len, meta_pptr, buf_ptr,
                         buf_len, (is_dynamic_struct_array ? &inner_struct_ptr : struct_pptr), struct_size,
@@ -695,7 +695,7 @@ static int general_deserialization(int16_t fields, int16_t loops, const uint8_t 
                 if (is_dynamic_struct_array && err >= 0)
                 {
                     *struct_pptr += sizeof(ptrdiff_t);
-                    if (0 == struct_array_len && struct_field_count > 0)
+                    if (0 == struct_array_len/* && struct_field_count > 0*/)
                         calc_struct_size_or_move_meta_ptr(struct_field_count, *meta_pptr, meta_len, meta_pptr);
                 }
                 break;
@@ -705,8 +705,9 @@ static int general_deserialization(int16_t fields, int16_t loops, const uint8_t 
                 " struct offset: %d\n", loop, loops, type, *handled_len_ptr, (int)(*meta_pptr - meta_start_ptr),
                 (int)(*struct_pptr - struct_ptr_start));
 
-            if (*struct_pptr - struct_ptr_start > struct_size)
+            if (*struct_pptr - struct_ptr_start > struct_size) /* TODO: Necessary?! */
             {
+                COMMPROTO_DPRINT("*** struct pointer exceeds maxinum offset: %d\n", struct_size);
                 err = -COMMPROTO_ERR_STRUCT_PTR_EXCEEDS;
                 continue;
             }
@@ -746,6 +747,157 @@ int commproto_parse(const uint8_t *struct_meta_data, uint16_t meta_len, const ui
         *nullable_handled_len = parsed_len;
 
     return err;
+}
+
+static int general_clear(int16_t fields, int16_t loops,
+    const uint8_t *meta_start_ptr, uint16_t meta_len, uint8_t **meta_pptr,
+    uint8_t **struct_pptr, int16_t struct_size, bool can_have_inner_struct)
+{
+    int16_t simple_array_len = -1;
+    int16_t struct_array_len = -1;
+    int16_t struct_field_count = -1;
+    uint8_t *inner_struct_ptr = NULL;
+    uint8_t *meta_ptr_per_round = *meta_pptr;
+    uint8_t *struct_ptr_start = *struct_pptr;
+    int err = 0;
+    int16_t loop = 1;
+
+    for (; loop <= loops && err >= 0; ++loop)
+    {
+        int16_t field = 1;
+
+        while (err >= 0)
+        {
+            int8_t type = **meta_pptr;
+
+            switch (type)
+            {
+            case COMMPROTO_INT8:
+            case COMMPROTO_INT16:
+            case COMMPROTO_INT32:
+            case COMMPROTO_INT64:
+            case COMMPROTO_FLOAT32:
+            case COMMPROTO_FLOAT64:
+            case COMMPROTO_ARRAY_LEN:
+                if (COMMPROTO_ARRAY_LEN == type)
+                {
+                    simple_array_len = struct_array_len = *((int16_t *)*struct_pptr);
+                    *struct_pptr += sizeof(int16_t);
+                }
+                else
+                {
+                    *struct_pptr += (type % 10);
+                }
+                *meta_pptr += sizeof(int8_t);
+                break;
+
+            case COMMPROTO_INT8_FIXED_ARRAY:
+            case COMMPROTO_INT16_FIXED_ARRAY:
+            case COMMPROTO_INT32_FIXED_ARRAY:
+            case COMMPROTO_INT64_FIXED_ARRAY:
+            case COMMPROTO_FLOAT32_FIXED_ARRAY:
+            case COMMPROTO_FLOAT64_FIXED_ARRAY:
+                simple_array_len = *((int16_t *)(*meta_pptr + sizeof(int8_t)));
+                *struct_pptr += ((type % 10) * simple_array_len);
+                *meta_pptr += (sizeof(int8_t) + sizeof(int16_t));
+                break;
+
+            case COMMPROTO_INT8_DYNAMIC_ARRAY:
+            case COMMPROTO_INT16_DYNAMIC_ARRAY:
+            case COMMPROTO_INT32_DYNAMIC_ARRAY:
+            case COMMPROTO_INT64_DYNAMIC_ARRAY:
+            case COMMPROTO_FLOAT32_DYNAMIC_ARRAY:
+            case COMMPROTO_FLOAT64_DYNAMIC_ARRAY:
+                if (simple_array_len < 0)
+                {
+                    err = -COMMPROTO_ERR_META_ARRAY_LENGTH_MISSING;
+                    continue;
+                }
+                free((uint8_t *)**(ptrdiff_t **)struct_pptr);
+                **(ptrdiff_t **)struct_pptr = (ptrdiff_t)NULL;
+                *struct_pptr += sizeof(ptrdiff_t);
+                *meta_pptr += sizeof(int8_t);
+                break;
+
+            case COMMPROTO_STRUCT_FIXED_ARRAY:
+                if (!can_have_inner_struct)
+                {
+                    err = -COMMPROTO_ERR_WRONG_META_DATA;
+                    continue;
+                }
+                struct_field_count = *((int16_t *)(*meta_pptr + sizeof(int8_t)));
+                struct_array_len = *((int16_t *)(*meta_pptr + sizeof(int8_t) + sizeof(int16_t)));
+                *meta_pptr += (sizeof(int8_t) + sizeof(int16_t) * 2);
+                break;
+
+            case COMMPROTO_STRUCT_DYNAMIC_ARRAY:
+                if (struct_array_len < 0 || !can_have_inner_struct)
+                {
+                    err = (struct_array_len < 0) ? -COMMPROTO_ERR_META_ARRAY_LENGTH_MISSING
+                        : -COMMPROTO_ERR_WRONG_META_DATA;
+                    continue;
+                }
+                struct_field_count = *((int16_t *)(*meta_pptr + sizeof(int8_t)));
+                *meta_pptr += (sizeof(int8_t) + sizeof(int16_t));
+                break;
+
+            default:
+                err = -COMMPROTO_ERR_UNKNOWN_FIELD_TYPE;
+                continue;
+            } /* switch (type) */
+
+            if (type >= COMMPROTO_STRUCT_FIXED_ARRAY)
+            {
+                bool is_dynamic_struct_array = (COMMPROTO_STRUCT_DYNAMIC_ARRAY == type);
+
+                inner_struct_ptr = (is_dynamic_struct_array ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : NULL);
+                err = (0 == struct_array_len || (is_dynamic_struct_array && NULL == inner_struct_ptr)) ? 0
+                    : general_clear(/* fields = */struct_field_count, /* loops = */struct_array_len,
+                        meta_start_ptr, meta_len, meta_pptr,
+                        (is_dynamic_struct_array ? &inner_struct_ptr : struct_pptr), struct_size,
+                        /* can_have_inner_struct = */false);
+                if (is_dynamic_struct_array && err >= 0)
+                {
+                    free((uint8_t *)**(ptrdiff_t **)struct_pptr); /* NOTE: DO NOT: free(inner_struct_ptr); */
+                    **(ptrdiff_t **)struct_pptr = (ptrdiff_t)NULL;
+                    *struct_pptr += sizeof(ptrdiff_t);
+                    if (0 == struct_array_len)
+                        calc_struct_size_or_move_meta_ptr(struct_field_count, *meta_pptr, meta_len, meta_pptr);
+                }
+            } /* if (type >= COMMPROTO_STRUCT_FIXED_ARRAY) */
+
+            COMMPROTO_DPRINT("loop[%d/%d] Clear: type: %d, meta offset: %d, struct offset: %d\n",
+                loop, loops, type, (int)(*meta_pptr - meta_start_ptr), (int)(*struct_pptr - struct_ptr_start));
+
+            if (*struct_pptr - struct_ptr_start > struct_size) /* TODO: Necessary?! */
+            {
+                COMMPROTO_DPRINT("*** struct pointer exceeds maxinum offset: %d\n", struct_size);
+                /*err = -COMMPROTO_ERR_STRUCT_PTR_EXCEEDS;
+                continue;*/
+            }
+
+            if (*meta_pptr - meta_start_ptr >= meta_len || ++field > fields)
+                break;
+        } /* while (err >= 0) */
+
+        if (0 == err && loop < loops)
+            *meta_pptr = meta_ptr_per_round;
+    } /* for (; loop <= loops && err >= 0; ++loop) */
+
+    return err;
+}
+
+void commproto_clear(const uint8_t *struct_meta_data, uint16_t meta_len, void *one_byte_aligned_struct)
+{
+    if (s_is_initialized)
+    {
+        uint8_t *meta_ptr = (uint8_t *)struct_meta_data;
+        uint8_t *struct_ptr = (uint8_t *)one_byte_aligned_struct;
+        const int16_t STRUCT_SIZE = calc_struct_size_or_move_meta_ptr(0xffff / 2, meta_ptr, meta_len, NULL);
+
+        general_clear(/* fields = */0xffff / 2, /* loops = */1, struct_meta_data, meta_len, &meta_ptr,
+            &struct_ptr, STRUCT_SIZE, /* can_have_inner_struct = */true);
+    }
 }
 
 void commproto_dump_buffer(const uint8_t *buf, uint16_t size, FILE *nullable_stream, char *nullable_holder)
@@ -850,5 +1002,8 @@ void commproto_dump_buffer(const uint8_t *buf, uint16_t size, FILE *nullable_str
  * >>> 2022-03-08, Man Hung-Coeng:
  *  01. Fix the error of checking whether meta_ptr is out of range
  *      in calculate_struct_size(), and rename this function at the same time.
+ *
+ * >>> 2022-05-06, Man Hung-Coeng:
+ *  01. Add function commproto_clear() for struct memory release.
  */
 

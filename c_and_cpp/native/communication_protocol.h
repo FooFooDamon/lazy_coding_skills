@@ -46,6 +46,10 @@
 
 #define COMMPROTO_META_VAR_OUT_OF_STRUCT(struct_name)   COMMPROTO_CPP_CONSTEXPR uint8_t struct_name::__META_DATA__[]
 
+#define COMMPROTO_DEFINE_DESTRUCTOR(struct_name)        ~struct_name() { \
+    commproto_clear(struct_name::meta_data(), struct_name::meta_size(), this); \
+}
+
 #define COMMPROTO_CPP_SERIALIZE(struct_ptr, buf, buf_len, handled_len_ptr, error_code_ptr)  \
     commproto_serialize((struct_ptr)->meta_data(), (struct_ptr)->meta_size(),               \
         struct_ptr, buf, buf_len, handled_len_ptr, error_code_ptr)
@@ -70,6 +74,8 @@ uint8_t* commproto_serialize(const uint8_t *struct_meta_data, uint16_t meta_len,
 
 int commproto_parse(const uint8_t *struct_meta_data, uint16_t meta_len, const uint8_t *buf, uint16_t buf_len,
     void *one_byte_aligned_struct, uint16_t *nullable_handled_len);
+
+void commproto_clear(const uint8_t *struct_meta_data, uint16_t meta_len, void *one_byte_aligned_struct);
 
 void commproto_dump_buffer(const uint8_t *buf, uint16_t size, FILE *nullable_stream, char *nullable_holder);
 
@@ -903,105 +909,6 @@ static bool check_buffer_differences(const uint8_t *buf1, const uint8_t *buf2, u
     return true;
 }
 
-static void release_demo_struct_dynamic_fields(demo_struct_main_t *demo_struct)
-{
-    int16_t i = 0;
-
-    if (NULL == demo_struct)
-        return;
-
-    for (; i < (int16_t)(sizeof(demo_struct->sub1_fixed_array) / sizeof(demo_struct_sub1_t)); ++i)
-    {
-        if (NULL != demo_struct->sub1_fixed_array[i].i32_dynamic_array)
-        {
-            free(demo_struct->sub1_fixed_array[i].i32_dynamic_array);
-            demo_struct->sub1_fixed_array[i].i32_dynamic_array = NULL;
-        }
-    }
-
-    for (i = 0; i < demo_struct->sub1_dynamic_array_len; ++i)
-    {
-        if (NULL != demo_struct->sub1_dynamic_array[i].i32_dynamic_array)
-        {
-            free(demo_struct->sub1_dynamic_array[i].i32_dynamic_array);
-            demo_struct->sub1_dynamic_array[i].i32_dynamic_array = NULL;
-        }
-    }
-    if (NULL != demo_struct->sub1_dynamic_array)
-    {
-        free(demo_struct->sub1_dynamic_array);
-        demo_struct->sub1_dynamic_array = NULL;
-    }
-
-    if (demo_struct->int_dynamic_array_len > 0)
-    {
-        if (NULL != demo_struct->i8_dynamic_array)
-        {
-            free(demo_struct->i8_dynamic_array);
-            demo_struct->i8_dynamic_array = NULL;
-        }
-
-        if (NULL != demo_struct->i16_dynamic_array)
-        {
-            free(demo_struct->i16_dynamic_array);
-            demo_struct->i16_dynamic_array = NULL;
-        }
-
-        if (NULL != demo_struct->i32_dynamic_array)
-        {
-            free(demo_struct->i32_dynamic_array);
-            demo_struct->i32_dynamic_array = NULL;
-        }
-
-        if (NULL != demo_struct->i64_dynamic_array)
-        {
-            free(demo_struct->i64_dynamic_array);
-            demo_struct->i64_dynamic_array = NULL;
-        }
-    }
-
-    if (demo_struct->f32_dynamic_array_len > 0)
-    {
-        if (NULL != demo_struct->f32_dynamic_array)
-        {
-            free(demo_struct->f32_dynamic_array);
-            demo_struct->f32_dynamic_array = NULL;
-        }
-    }
-
-    if (demo_struct->f64_dynamic_array_len > 0)
-    {
-        if (NULL != demo_struct->f64_dynamic_array)
-        {
-            free(demo_struct->f64_dynamic_array);
-            demo_struct->f64_dynamic_array = NULL;
-        }
-    }
-
-    for (i = 0; i < demo_struct->sub2_dynamic_array_len; ++i)
-    {
-        if (NULL != demo_struct->sub2_dynamic_array[i].f64_dynamic_array)
-        {
-            free(demo_struct->sub2_dynamic_array[i].f64_dynamic_array);
-            demo_struct->sub2_dynamic_array[i].f64_dynamic_array = NULL;
-        }
-    }
-    if (NULL != demo_struct->sub2_dynamic_array)
-    {
-        free(demo_struct->sub2_dynamic_array);
-        demo_struct->sub2_dynamic_array = NULL;
-    }
-
-    for (i = 0; i < 5; ++i)
-    {
-        if (NULL != demo_struct->sub2_fixed_array[i].f64_dynamic_array)
-        {
-            free(demo_struct->sub2_fixed_array[i].f64_dynamic_array);
-            demo_struct->sub2_fixed_array[i].f64_dynamic_array = NULL;
-        }
-    }
-}
-
 int main(int argc, char **argv)
 {
     int err = -1;
@@ -1039,7 +946,7 @@ int main(int argc, char **argv)
     {
         fprintf(stderr, "*** Data serialization to static buffer failed after %d bytes: %s!\n",
             serialized_len, commproto_error(err));
-        release_demo_struct_dynamic_fields(&src);
+        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
 
         return -1;
     }
@@ -1051,8 +958,8 @@ int main(int argc, char **argv)
     {
         fprintf(stderr, "*** Data deserialization from static buffer failed after %d bytes: %s!\n",
             parsed_len, commproto_error(err));
-        release_demo_struct_dynamic_fields(&src);
-        release_demo_struct_dynamic_fields(&dest1);
+        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
+        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest1);
 
         return -1;
     }
@@ -1061,8 +968,8 @@ int main(int argc, char **argv)
 
     if (!check_struct_differences(&src, &dest1))
     {
-        release_demo_struct_dynamic_fields(&src);
-        release_demo_struct_dynamic_fields(&dest1);
+        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
+        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest1);
 
         return -1;
     }
@@ -1072,23 +979,23 @@ int main(int argc, char **argv)
     {
         fprintf(stderr, "*** Data serialization to dynamic buffer failed after %d bytes: %s!\n",
             serialized_len, commproto_error(err));
-        release_demo_struct_dynamic_fields(&src);
-        release_demo_struct_dynamic_fields(&dest1);
+        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
+        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest1);
         free(buf_ptr);
 
         return -1;
     }
     printf("Serialized %d bytes to dynamic buffer.\n", serialized_len);
 
-    release_demo_struct_dynamic_fields(&dest1);
+    commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest1);
 
     err = COMMPROTO_PARSE(demo_struct_main_t, buf_ptr, serialized_len, &dest2, &parsed_len);
     if (err < 0)
     {
         fprintf(stderr, "*** Data deserialization from dynamic buffer failed after %d bytes: %s!\n",
             parsed_len, commproto_error(err));
-        release_demo_struct_dynamic_fields(&src);
-        release_demo_struct_dynamic_fields(&dest2);
+        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
+        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest2);
         free(buf_ptr);
 
         return -1;
@@ -1098,8 +1005,8 @@ int main(int argc, char **argv)
 
     if (!check_buffer_differences(buf, buf_ptr, serialized_len))
     {
-        release_demo_struct_dynamic_fields(&src);
-        release_demo_struct_dynamic_fields(&dest2);
+        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
+        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest2);
         free(buf_ptr);
 
         return -1;
@@ -1109,14 +1016,14 @@ int main(int argc, char **argv)
 
     if (!check_struct_differences(&src, &dest2))
     {
-        release_demo_struct_dynamic_fields(&src);
-        release_demo_struct_dynamic_fields(&dest2);
+        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
+        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest2);
 
         return -1;
     }
 
-    release_demo_struct_dynamic_fields(&src);
-    release_demo_struct_dynamic_fields(&dest2);
+    commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
+    commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest2);
 
     printf("~ ~ ~ ~ Test finished successfully! ~ ~ ~ ~\n");
 
@@ -1153,5 +1060,9 @@ int main(int argc, char **argv)
  * >>> 2022-03-08, Man Hung-Coeng:
  *  01. Remove the struct_name argument from macro COMMPROTO_CPP_SERIALIZE()
  *      and COMMPROTO_CPP_PARSE().
+ *
+ * >>> 2022-05-06, Man Hung-Coeng:
+ *  01. Add function commproto_clear() and macro COMMPROTO_DEFINE_DESTRUCTOR()
+ *      for struct memory release.
  */
 

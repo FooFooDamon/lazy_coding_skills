@@ -50,13 +50,14 @@
     commproto_clear(struct_name::meta_data(), struct_name::meta_size(), this); \
 }
 
-#define COMMPROTO_CPP_SERIALIZE(struct_ptr, buf, buf_len, handled_len_ptr, error_code_ptr)  \
-    commproto_serialize((struct_ptr)->meta_data(), (struct_ptr)->meta_size(),               \
-        struct_ptr, buf, buf_len, handled_len_ptr, error_code_ptr)
+#define COMMPROTO_CPP_SERIALIZE(struct_ptr, buf, buf_len)   \
+    commproto_serialize((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), struct_ptr, buf, buf_len)
 
-#define COMMPROTO_CPP_PARSE(buf, buf_len, struct_ptr, handled_len_ptr)                      \
-    commproto_parse((struct_ptr)->meta_data(), (struct_ptr)->meta_size(),                   \
-        buf, buf_len, struct_ptr, handled_len_ptr)
+#define COMMPROTO_CPP_PARSE(buf, buf_len, struct_ptr)       \
+    commproto_parse((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), buf, buf_len, struct_ptr)
+
+#define COMMPROTO_CPP_CLEAR(struct_ptr)                     \
+    commproto_clear((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), struct_ptr)
 
 extern "C" {
 
@@ -65,18 +66,29 @@ extern "C" {
 typedef float       float32_t;  /* TODO: To be more portable. */
 typedef double      float64_t;  /* TODO: Same as above. */
 
+typedef struct commproto_result_t
+{
+    uint8_t *buf_ptr;
+    uint16_t buf_len; /* TODO: uint32_t */
+    uint16_t handled_len; /* TODO: uint32_t */
+    int error_code;
+} commproto_result_t;
+
 const char* commproto_error(int error_code);
 
 int commproto_init(void);
 
-uint8_t* commproto_serialize(const uint8_t *struct_meta_data, uint16_t meta_len, const void *one_byte_aligned_struct,
-    uint8_t *nullable_buf, uint16_t buf_len, uint16_t *nullable_handled_len, int *nullable_error_code);
+/* TODO: uint32_t meta_len */
 
-int commproto_parse(const uint8_t *struct_meta_data, uint16_t meta_len, const uint8_t *buf, uint16_t buf_len,
-    void *one_byte_aligned_struct, uint16_t *nullable_handled_len);
+commproto_result_t commproto_serialize(const uint8_t *struct_meta_data, uint16_t meta_len,
+    const void *one_byte_aligned_struct, uint8_t *nullable_buf, uint16_t buf_len);
+
+commproto_result_t commproto_parse(const uint8_t *struct_meta_data, uint16_t meta_len,
+    const uint8_t *buf, uint16_t buf_len, void *one_byte_aligned_struct);
 
 void commproto_clear(const uint8_t *struct_meta_data, uint16_t meta_len, void *one_byte_aligned_struct);
 
+/* TODO: uint32_t size */
 void commproto_dump_buffer(const uint8_t *buf, uint16_t size, FILE *nullable_stream, char *nullable_holder);
 
 #define COMMPROTO_META_VAR(struct_name)                 META_DATA_##struct_name
@@ -86,13 +98,16 @@ void commproto_dump_buffer(const uint8_t *buf, uint16_t size, FILE *nullable_str
 #define COMMPROTO_DECLARE_META_SIZE(struct_name)        const uint16_t META_SIZE_##struct_name
 #define COMMPROTO_DEFINE_META_SIZE(struct_name)         const uint16_t META_SIZE_##struct_name = sizeof(META_DATA_##struct_name)
 
-#define COMMPROTO_SERIALIZE(struct_name, struct_ptr, buf, buf_len, handled_len_ptr, error_code_ptr)     \
-    commproto_serialize(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name),              \
-        struct_ptr, buf, buf_len, handled_len_ptr, error_code_ptr)
+#define COMMPROTO_SERIALIZE(struct_name, struct_ptr, buf, buf_len)                          \
+    commproto_serialize(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name),  \
+        struct_ptr, buf, buf_len)
 
-#define COMMPROTO_PARSE(struct_name, buf, buf_len, struct_ptr, handled_len_ptr)                         \
-    commproto_parse(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name),                  \
-        buf, buf_len, struct_ptr, handled_len_ptr)
+#define COMMPROTO_PARSE(struct_name, buf, buf_len, struct_ptr)                              \
+    commproto_parse(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name),      \
+        buf, buf_len, struct_ptr)
+
+#define COMMPROTO_CLEAR(struct_name, struct_ptr)                                            \
+    commproto_clear(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name), struct_ptr)
 
 enum
 {
@@ -911,18 +926,15 @@ static bool check_buffer_differences(const uint8_t *buf1, const uint8_t *buf2, u
 
 int main(int argc, char **argv)
 {
-    int err = -1;
-    uint16_t serialized_len = 0;
-    uint16_t parsed_len = 0;
     demo_struct_main_t src = { 0 };
     uint8_t buf[4096] = { 0 };
-    uint8_t *buf_ptr = NULL;
     demo_struct_main_t dest1 = { 0 };
     demo_struct_main_t dest2 = { 0 };
+    commproto_result_t result;
 
-    if ((err = commproto_init()) < 0)
+    if ((result.error_code = commproto_init()) < 0)
     {
-        fprintf(stderr, "*** Communication facility initialization failed: %s!\n", commproto_error(err));
+        fprintf(stderr, "*** Communication facility initialization failed: %s!\n", commproto_error(result.error_code));
 
         return -1;
     }
@@ -941,89 +953,89 @@ int main(int argc, char **argv)
     fill_demo_struct(&src);
     print_demo_struct(&src, "src struct");
 
-    COMMPROTO_SERIALIZE(demo_struct_main_t, &src, buf, sizeof(buf), &serialized_len, &err);
-    if (err < 0)
+    result = COMMPROTO_SERIALIZE(demo_struct_main_t, &src, buf, sizeof(buf));
+    if (result.error_code < 0)
     {
         fprintf(stderr, "*** Data serialization to static buffer failed after %d bytes: %s!\n",
-            serialized_len, commproto_error(err));
-        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
+            result.handled_len, commproto_error(result.error_code));
+        COMMPROTO_CLEAR(demo_struct_main_t, &src);
 
         return -1;
     }
-    printf("Serialized %d bytes to static buffer.\n", serialized_len);
-    commproto_dump_buffer(buf, serialized_len, stdout, NULL);
+    printf("Serialized %d bytes to static buffer.\n", result.handled_len);
+    commproto_dump_buffer(buf, result.handled_len, stdout, NULL);
 
-    err = COMMPROTO_PARSE(demo_struct_main_t, buf, serialized_len, &dest1, &parsed_len);
-    if (err < 0)
+    result = COMMPROTO_PARSE(demo_struct_main_t, buf, result.handled_len, &dest1);
+    if (result.error_code < 0)
     {
         fprintf(stderr, "*** Data deserialization from static buffer failed after %d bytes: %s!\n",
-            parsed_len, commproto_error(err));
-        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
-        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest1);
+            result.handled_len, commproto_error(result.error_code));
+        COMMPROTO_CLEAR(demo_struct_main_t, &src);
+        COMMPROTO_CLEAR(demo_struct_main_t, &dest1);
 
         return -1;
     }
-    printf("Deserialized %d bytes from static buffer.\n", parsed_len);
+    printf("Deserialized %d bytes from static buffer.\n", result.handled_len);
     print_demo_struct(&dest1, "dest1 struct");
 
     if (!check_struct_differences(&src, &dest1))
     {
-        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
-        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest1);
+        COMMPROTO_CLEAR(demo_struct_main_t, &src);
+        COMMPROTO_CLEAR(demo_struct_main_t, &dest1);
 
         return -1;
     }
 
-    buf_ptr = COMMPROTO_SERIALIZE(demo_struct_main_t, &dest1, NULL, 0, &serialized_len, &err);
-    if (NULL == buf_ptr || err < 0)
+    result = COMMPROTO_SERIALIZE(demo_struct_main_t, &dest1, NULL, 0);
+    if (NULL == result.buf_ptr || result.error_code < 0)
     {
         fprintf(stderr, "*** Data serialization to dynamic buffer failed after %d bytes: %s!\n",
-            serialized_len, commproto_error(err));
-        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
-        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest1);
-        free(buf_ptr);
+            result.handled_len, commproto_error(result.error_code));
+        COMMPROTO_CLEAR(demo_struct_main_t, &src);
+        COMMPROTO_CLEAR(demo_struct_main_t, &dest1);
+        free(result.buf_ptr);
 
         return -1;
     }
-    printf("Serialized %d bytes to dynamic buffer.\n", serialized_len);
+    printf("Serialized %d bytes to dynamic buffer.\n", result.handled_len);
 
-    commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest1);
+    COMMPROTO_CLEAR(demo_struct_main_t, &dest1);
 
-    err = COMMPROTO_PARSE(demo_struct_main_t, buf_ptr, serialized_len, &dest2, &parsed_len);
-    if (err < 0)
+    result = COMMPROTO_PARSE(demo_struct_main_t, result.buf_ptr, result.handled_len, &dest2);
+    if (result.error_code < 0)
     {
         fprintf(stderr, "*** Data deserialization from dynamic buffer failed after %d bytes: %s!\n",
-            parsed_len, commproto_error(err));
-        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
-        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest2);
-        free(buf_ptr);
+            result.error_code, commproto_error(result.error_code));
+        COMMPROTO_CLEAR(demo_struct_main_t, &src);
+        COMMPROTO_CLEAR(demo_struct_main_t, &dest2);
+        free(result.buf_ptr);
 
         return -1;
     }
-    printf("Deserialized %d bytes from dynamic buffer.\n", parsed_len);
+    printf("Deserialized %d bytes from dynamic buffer.\n", result.error_code);
     print_demo_struct(&dest2, "dest2 struct");
 
-    if (!check_buffer_differences(buf, buf_ptr, serialized_len))
+    if (!check_buffer_differences(buf, result.buf_ptr, result.handled_len))
     {
-        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
-        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest2);
-        free(buf_ptr);
+        COMMPROTO_CLEAR(demo_struct_main_t, &src);
+        COMMPROTO_CLEAR(demo_struct_main_t, &dest2);
+        free(result.buf_ptr);
 
         return -1;
     }
 
-    free(buf_ptr);
+    free(result.buf_ptr);
 
     if (!check_struct_differences(&src, &dest2))
     {
-        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
-        commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest2);
+        COMMPROTO_CLEAR(demo_struct_main_t, &src);
+        COMMPROTO_CLEAR(demo_struct_main_t, &dest2);
 
         return -1;
     }
 
-    commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &src);
-    commproto_clear(COMMPROTO_META_VAR(demo_struct_main_t), COMMPROTO_META_SIZE(demo_struct_main_t), &dest2);
+    COMMPROTO_CLEAR(demo_struct_main_t, &src);
+    COMMPROTO_CLEAR(demo_struct_main_t, &dest2);
 
     printf("~ ~ ~ ~ Test finished successfully! ~ ~ ~ ~\n");
 
@@ -1064,5 +1076,11 @@ int main(int argc, char **argv)
  * >>> 2022-05-06, Man Hung-Coeng:
  *  01. Add function commproto_clear() and macro COMMPROTO_DEFINE_DESTRUCTOR()
  *      for struct memory release.
+ *
+ * >>> 2022-05-07, Man Hung-Coeng:
+ *  01. Add macro COMMPROTO_CLEAR() and COMMPROTO_CPP_CLEAR().
+ *  02. Change the type of return value of commproto_serialize() and
+ *      commproto_parse() to commproto_result_t (a new added type)
+ *      in order to reduce the amount of function parameters.
  */
 

@@ -455,48 +455,48 @@ static int general_serialization(int16_t fields, int16_t loops, const uint8_t *m
     return err;
 }
 
-uint8_t* commproto_serialize(const uint8_t *struct_meta_data, uint16_t meta_len, const void *one_byte_aligned_struct,
-    uint8_t *nullable_buf, uint16_t buf_len, uint16_t *nullable_handled_len, int *nullable_error_code)
+commproto_result_t commproto_serialize(const uint8_t *struct_meta_data, uint16_t meta_len,
+    const void *one_byte_aligned_struct, uint8_t *nullable_buf, uint16_t buf_len)
 {
     uint8_t *meta_ptr = (uint8_t *)struct_meta_data;
     uint8_t *struct_ptr = (uint8_t *)one_byte_aligned_struct;
     bool is_static_buf = (NULL != nullable_buf);
     const uint16_t MAX_BUF_LEN = is_static_buf ? buf_len : COMMPROTO_MAX_BUFSIZE;
-    uint16_t result_len = 0;
     uint16_t buf_capacity = is_static_buf ? buf_len : COMMPROTO_INITIAL_BUFSIZE;
-    uint8_t *buf_ptr = is_static_buf ? nullable_buf : (uint8_t *)malloc(buf_capacity);
     uint8_t *new_buf = NULL;
-    int err = s_is_initialized
+    commproto_result_t result = { 0 };
+
+    result.buf_ptr = is_static_buf ? nullable_buf : (uint8_t *)malloc(buf_capacity);
+    result.buf_len = buf_capacity;
+    result.error_code = s_is_initialized
         ? (
             is_static_buf
-            ? ((0 == buf_len) ? -COMMPROTO_ERR_ZERO_LENGTH : 0)
-            : ((NULL == buf_ptr) ? -COMMPROTO_ERR_MEM_ALLOC : 0)
+            ? ((0 == result.buf_len) ? -COMMPROTO_ERR_ZERO_LENGTH : 0)
+            : ((NULL == result.buf_ptr) ? -COMMPROTO_ERR_MEM_ALLOC : 0)
         )
         : -COMMPROTO_ERR_NOT_INITIALIZED;
 
-    if (err < 0)
+    if (result.error_code < 0)
         goto SERIALIZE_END;
 
-    if ((err = general_serialization(/* fields = */0xffff / 2, /* loops = */1, struct_meta_data,
+    if ((result.error_code = general_serialization(/* fields = */0xffff / 2, /* loops = */1, struct_meta_data,
         meta_len, &meta_ptr, &struct_ptr,
         /* can_have_inner_struct = */true, is_static_buf, MAX_BUF_LEN,
-        &buf_ptr, &buf_capacity, &result_len)) < 0)
+        &result.buf_ptr, &result.buf_len, &result.handled_len)) < 0)
     {
         goto SERIALIZE_END;
     }
 
-    if ((!is_static_buf) && result_len < buf_capacity && NULL != (new_buf = (uint8_t *)realloc(buf_ptr, result_len)))
-        buf_ptr = new_buf;
+    if ((!is_static_buf) && result.handled_len < result.buf_len
+        && NULL != (new_buf = (uint8_t *)realloc(result.buf_ptr, result.handled_len)))
+    {
+        result.buf_ptr = new_buf;
+        result.buf_len = result.handled_len;
+    }
 
 SERIALIZE_END:
 
-    if (NULL != nullable_handled_len)
-        *nullable_handled_len = result_len;
-
-    if (NULL != nullable_error_code)
-        *nullable_error_code = err;
-
-    return buf_ptr;
+    return result;
 }
 
 static int general_deserialization(int16_t fields, int16_t loops, const uint8_t *meta_start_ptr,
@@ -723,30 +723,30 @@ static int general_deserialization(int16_t fields, int16_t loops, const uint8_t 
     return err;
 }
 
-int commproto_parse(const uint8_t *struct_meta_data, uint16_t meta_len, const uint8_t *buf, uint16_t buf_len,
-    void *one_byte_aligned_struct, uint16_t *nullable_handled_len)
+commproto_result_t commproto_parse(const uint8_t *struct_meta_data, uint16_t meta_len,
+    const uint8_t *buf, uint16_t buf_len, void *one_byte_aligned_struct)
 {
     uint8_t *meta_ptr = (uint8_t *)struct_meta_data;
     uint8_t *struct_ptr = (uint8_t *)one_byte_aligned_struct;
     const int16_t STRUCT_SIZE = calc_struct_size_or_move_meta_ptr(0xffff / 2, meta_ptr, meta_len, NULL);
-    uint16_t parsed_len = 0;
-    int err = s_is_initialized
+    commproto_result_t result = { 0 };
+
+    result.buf_ptr = (uint8_t *)buf;
+    result.buf_len = buf_len;
+    result.error_code = s_is_initialized
         ? (
-            (0 == buf_len)
+            (0 == result.buf_len)
             ? -COMMPROTO_ERR_ZERO_LENGTH
             : general_deserialization(
                 /* fields = */0xffff / 2, /* loops = */1, struct_meta_data,
-                meta_len, &meta_ptr, buf,
-                buf_len, &struct_ptr, STRUCT_SIZE,
-                /* can_have_inner_struct = */true, &parsed_len
+                meta_len, &meta_ptr, result.buf_ptr,
+                result.buf_len, &struct_ptr, STRUCT_SIZE,
+                /* can_have_inner_struct = */true, &result.handled_len
             )
         )
         : -COMMPROTO_ERR_NOT_INITIALIZED;
 
-    if (NULL != nullable_handled_len)
-        *nullable_handled_len = parsed_len;
-
-    return err;
+    return result;
 }
 
 static int general_clear(int16_t fields, int16_t loops,
@@ -1005,5 +1005,10 @@ void commproto_dump_buffer(const uint8_t *buf, uint16_t size, FILE *nullable_str
  *
  * >>> 2022-05-06, Man Hung-Coeng:
  *  01. Add function commproto_clear() for struct memory release.
+ *
+ * >>> 2022-05-07, Man Hung-Coeng:
+ *  01. Change the type of return value of commproto_serialize() and
+ *      commproto_parse() to commproto_result_t (a new added type)
+ *      in order to reduce the amount of function parameters.
  */
 

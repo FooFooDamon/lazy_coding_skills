@@ -118,24 +118,24 @@ enum
     , COMMPROTO_FLOAT32 = 14
     , COMMPROTO_FLOAT64 = 18
 
-    , COMMPROTO_ARRAY_LEN
+    , COMMPROTO_ARRAY_LEN = 20 + sizeof(int16_t)
 
-    , COMMPROTO_INT8_FIXED_ARRAY = 21
-    , COMMPROTO_INT16_FIXED_ARRAY = 22
-    , COMMPROTO_INT32_FIXED_ARRAY = 24
-    , COMMPROTO_INT64_FIXED_ARRAY = 28
-    , COMMPROTO_FLOAT32_FIXED_ARRAY = 34
-    , COMMPROTO_FLOAT64_FIXED_ARRAY = 38
+    , COMMPROTO_INT8_FIXED_ARRAY = 31
+    , COMMPROTO_INT16_FIXED_ARRAY = 32
+    , COMMPROTO_INT32_FIXED_ARRAY = 34
+    , COMMPROTO_INT64_FIXED_ARRAY = 38
+    , COMMPROTO_FLOAT32_FIXED_ARRAY = 44
+    , COMMPROTO_FLOAT64_FIXED_ARRAY = 48
 
-    , COMMPROTO_INT8_DYNAMIC_ARRAY = 41
-    , COMMPROTO_INT16_DYNAMIC_ARRAY = 42
-    , COMMPROTO_INT32_DYNAMIC_ARRAY = 44
-    , COMMPROTO_INT64_DYNAMIC_ARRAY = 48
-    , COMMPROTO_FLOAT32_DYNAMIC_ARRAY = 54
-    , COMMPROTO_FLOAT64_DYNAMIC_ARRAY = 58
+    , COMMPROTO_INT8_DYNAMIC_ARRAY = 51
+    , COMMPROTO_INT16_DYNAMIC_ARRAY = 52
+    , COMMPROTO_INT32_DYNAMIC_ARRAY = 54
+    , COMMPROTO_INT64_DYNAMIC_ARRAY = 58
+    , COMMPROTO_FLOAT32_DYNAMIC_ARRAY = 64
+    , COMMPROTO_FLOAT64_DYNAMIC_ARRAY = 68
 
-    , COMMPROTO_STRUCT_FIXED_ARRAY
-    , COMMPROTO_STRUCT_DYNAMIC_ARRAY
+    , COMMPROTO_STRUCT_FIXED_ARRAY = 70 + sizeof(void *)
+    , COMMPROTO_STRUCT_DYNAMIC_ARRAY = 80 + sizeof(void *)
 };
 
 #ifndef __ORDER_LITTLE_ENDIAN__
@@ -1082,5 +1082,9 @@ int main(int argc, char **argv)
  *  02. Change the type of return value of commproto_serialize() and
  *      commproto_parse() to commproto_result_t (a new added type)
  *      in order to reduce the amount of function parameters.
+ *  03. Redefine enumerated values of field types, e.g., COMMPROTO_INT8,
+ *      to establish stronger relations between field types and their sizes,
+ *      which makes it possible to merge some boring conditional statements
+ *      in functions using them.
  */
 

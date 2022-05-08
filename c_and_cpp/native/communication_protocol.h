@@ -37,7 +37,7 @@
         return (uint8_t *)__META_DATA__; \
     } \
 \
-    static inline COMMPROTO_CPP_CONSTEXPR uint16_t meta_size(void) \
+    static inline COMMPROTO_CPP_CONSTEXPR uint32_t meta_size(void) \
     { \
         return sizeof(__META_DATA__); \
     }
@@ -50,11 +50,11 @@
     commproto_clear(struct_name::meta_data(), struct_name::meta_size(), this); \
 }
 
-#define COMMPROTO_CPP_SERIALIZE(struct_ptr, buf, buf_len)   \
-    commproto_serialize((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), struct_ptr, buf, buf_len)
+#define COMMPROTO_CPP_SERIALIZE(struct_ptr, buf_ptr, buf_len)   \
+    commproto_serialize((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), struct_ptr, buf_ptr, buf_len)
 
-#define COMMPROTO_CPP_PARSE(buf, buf_len, struct_ptr)       \
-    commproto_parse((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), buf, buf_len, struct_ptr)
+#define COMMPROTO_CPP_PARSE(buf_ptr, buf_len, struct_ptr)       \
+    commproto_parse((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), buf_ptr, buf_len, struct_ptr)
 
 #define COMMPROTO_CPP_CLEAR(struct_ptr)                     \
     commproto_clear((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), struct_ptr)
@@ -63,14 +63,15 @@ extern "C" {
 
 #endif /* #ifdef __cplusplus */
 
+typedef uint16_t    arraylen_t;
 typedef float       float32_t;  /* TODO: To be more portable. */
 typedef double      float64_t;  /* TODO: Same as above. */
 
 typedef struct commproto_result_t
 {
     uint8_t *buf_ptr;
-    uint16_t buf_len; /* TODO: uint32_t */
-    uint16_t handled_len; /* TODO: uint32_t */
+    uint32_t buf_len;
+    uint32_t handled_len;
     int error_code;
 } commproto_result_t;
 
@@ -78,33 +79,30 @@ const char* commproto_error(int error_code);
 
 int commproto_init(void);
 
-/* TODO: uint32_t meta_len */
+commproto_result_t commproto_serialize(const uint8_t *struct_meta_data, uint32_t meta_len,
+    const void *one_byte_aligned_struct, uint8_t *nullable_buf, uint32_t buf_len);
 
-commproto_result_t commproto_serialize(const uint8_t *struct_meta_data, uint16_t meta_len,
-    const void *one_byte_aligned_struct, uint8_t *nullable_buf, uint16_t buf_len);
+commproto_result_t commproto_parse(const uint8_t *struct_meta_data, uint32_t meta_len,
+    const uint8_t *buf_ptr, uint32_t buf_len, void *one_byte_aligned_struct);
 
-commproto_result_t commproto_parse(const uint8_t *struct_meta_data, uint16_t meta_len,
-    const uint8_t *buf, uint16_t buf_len, void *one_byte_aligned_struct);
+void commproto_clear(const uint8_t *struct_meta_data, uint32_t meta_len, void *one_byte_aligned_struct);
 
-void commproto_clear(const uint8_t *struct_meta_data, uint16_t meta_len, void *one_byte_aligned_struct);
-
-/* TODO: uint32_t size */
-void commproto_dump_buffer(const uint8_t *buf, uint16_t size, FILE *nullable_stream, char *nullable_holder);
+void commproto_dump_buffer(const uint8_t *buf, uint32_t size, FILE *nullable_stream, char *nullable_holder);
 
 #define COMMPROTO_META_VAR(struct_name)                 META_DATA_##struct_name
 #define COMMPROTO_DECLARE_META_VAR(struct_name)         const uint8_t META_DATA_##struct_name[]
 
 #define COMMPROTO_META_SIZE(struct_name)                META_SIZE_##struct_name
-#define COMMPROTO_DECLARE_META_SIZE(struct_name)        const uint16_t META_SIZE_##struct_name
-#define COMMPROTO_DEFINE_META_SIZE(struct_name)         const uint16_t META_SIZE_##struct_name = sizeof(META_DATA_##struct_name)
+#define COMMPROTO_DECLARE_META_SIZE(struct_name)        const uint32_t META_SIZE_##struct_name
+#define COMMPROTO_DEFINE_META_SIZE(struct_name)         const uint32_t META_SIZE_##struct_name = sizeof(META_DATA_##struct_name)
 
-#define COMMPROTO_SERIALIZE(struct_name, struct_ptr, buf, buf_len)                          \
+#define COMMPROTO_SERIALIZE(struct_name, struct_ptr, buf_ptr, buf_len)                      \
     commproto_serialize(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name),  \
-        struct_ptr, buf, buf_len)
+        struct_ptr, buf_ptr, buf_len)
 
-#define COMMPROTO_PARSE(struct_name, buf, buf_len, struct_ptr)                              \
+#define COMMPROTO_PARSE(struct_name, buf_ptr, buf_len, struct_ptr)                          \
     commproto_parse(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name),      \
-        buf, buf_len, struct_ptr)
+        buf_ptr, buf_len, struct_ptr)
 
 #define COMMPROTO_CLEAR(struct_name, struct_ptr)                                            \
     commproto_clear(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name), struct_ptr)
@@ -118,9 +116,9 @@ enum
     , COMMPROTO_FLOAT32 = 14
     , COMMPROTO_FLOAT64 = 18
 
-    , COMMPROTO_ARRAY_LEN = 20 + sizeof(int16_t)
+    , COMMPROTO_ARRAY_LEN = 20 + sizeof(arraylen_t)
 
-    , COMMPROTO_SINGLE_FIELD_TYPE_END
+    , COMMPROTO_SINGLE_FIELD_TYPE_END /* Generally for inner use only. */
 
     , COMMPROTO_INT8_DYNAMIC_ARRAY = 31
     , COMMPROTO_INT16_DYNAMIC_ARRAY = 32
@@ -136,12 +134,12 @@ enum
     , COMMPROTO_FLOAT32_FIXED_ARRAY = 64
     , COMMPROTO_FLOAT64_FIXED_ARRAY = 68
 
-    , COMMPROTO_SIMPLE_FIELD_TYPE_END
+    , COMMPROTO_SIMPLE_FIELD_TYPE_END /* Generally for inner use only. */
 
     , COMMPROTO_STRUCT_DYNAMIC_ARRAY = 70 + sizeof(void *)
-    , COMMPROTO_STRUCT_FIXED_ARRAY = 80 + sizeof(void *)
+    , COMMPROTO_STRUCT_FIXED_ARRAY
 
-    , COMMPROTO_FIELD_TYPE_END
+    , COMMPROTO_FIELD_TYPE_END /* Generally for inner use only. */
 };
 
 #ifndef __ORDER_LITTLE_ENDIAN__
@@ -177,7 +175,7 @@ enum
 #error One and only one of COMMPROTO_LITTLE_ENDIAN and COMMPROTO_BIG_ENDIAN should be defined!
 #endif
 
-#if 0 /* Will cause alignment fault on some platforms. */
+#if 0 /* May cause alignment fault on some platforms. */
 #define COMMPROTO_SAME_ENDIAN_ASSIGN(type, src_ptr, dest_ptr)       *((type *)(dest_ptr)) = *((type *)(src_ptr))
 #else
 #define COMMPROTO_SAME_ENDIAN_ASSIGN(type, src_ptr, dest_ptr)       memcpy((dest_ptr), (src_ptr), sizeof(type))
@@ -299,7 +297,7 @@ typedef struct demo_struct_sub1_t
 {/* NOTE: Only single variables and arrays of basic types are allowed within a sub-structure. */
     int8_t i8_single;
     int16_t i16_fixed_array[1];
-    int16_t i32_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
+    arraylen_t i32_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
     int32_t *i32_dynamic_array;
 } demo_struct_sub1_t;
 
@@ -320,25 +318,25 @@ typedef struct demo_struct_main_t
     float64_t f64_fixed_array[6];
 
     demo_struct_sub1_t sub1_fixed_array[3];
-    int16_t sub1_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
+    arraylen_t sub1_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
     demo_struct_sub1_t *sub1_dynamic_array;
 
-    int16_t int_dynamic_array_len; /* NOTE: One length field can be shared by multiple adjacent dynamic arrays. */
+    arraylen_t int_dynamic_array_len; /* NOTE: One length field can be shared by multiple adjacent dynamic arrays. */
     int8_t *i8_dynamic_array;
     int16_t *i16_dynamic_array;
     int32_t *i32_dynamic_array;
     int64_t *i64_dynamic_array;
-    int16_t f32_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
+    arraylen_t f32_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
     float32_t *f32_dynamic_array;
-    int16_t f64_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
+    arraylen_t f64_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
     float64_t *f64_dynamic_array;
 
-    int16_t sub2_dynamic_array_len;
+    arraylen_t sub2_dynamic_array_len;
     struct demo_struct_sub2_t /* NOTE: Nested structure is not recommended in C. */
     {/* NOTE: Only single variables and arrays of basic types are allowed within a sub-structure. */
         int64_t i64_single;
         float32_t f32_fixed_array[2];
-        int16_t f64_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
+        arraylen_t f64_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
         float64_t *f64_dynamic_array;
     } *sub2_dynamic_array, sub2_fixed_array[5];
 } demo_struct_main_t;
@@ -962,26 +960,26 @@ int main(int argc, char **argv)
     result = COMMPROTO_SERIALIZE(demo_struct_main_t, &src, buf, sizeof(buf));
     if (result.error_code < 0)
     {
-        fprintf(stderr, "*** Data serialization to static buffer failed after %d bytes: %s!\n",
+        fprintf(stderr, "*** Data serialization to static buffer failed after %u bytes: %s!\n",
             result.handled_len, commproto_error(result.error_code));
         COMMPROTO_CLEAR(demo_struct_main_t, &src);
 
         return -1;
     }
-    printf("Serialized %d bytes to static buffer.\n", result.handled_len);
+    printf("Serialized %u bytes to static buffer.\n", result.handled_len);
     commproto_dump_buffer(buf, result.handled_len, stdout, NULL);
 
     result = COMMPROTO_PARSE(demo_struct_main_t, buf, result.handled_len, &dest1);
     if (result.error_code < 0)
     {
-        fprintf(stderr, "*** Data deserialization from static buffer failed after %d bytes: %s!\n",
+        fprintf(stderr, "*** Data deserialization from static buffer failed after %u bytes: %s!\n",
             result.handled_len, commproto_error(result.error_code));
         COMMPROTO_CLEAR(demo_struct_main_t, &src);
         COMMPROTO_CLEAR(demo_struct_main_t, &dest1);
 
         return -1;
     }
-    printf("Deserialized %d bytes from static buffer.\n", result.handled_len);
+    printf("Deserialized %u bytes from static buffer.\n", result.handled_len);
     print_demo_struct(&dest1, "dest1 struct");
 
     if (!check_struct_differences(&src, &dest1))
@@ -995,7 +993,7 @@ int main(int argc, char **argv)
     result = COMMPROTO_SERIALIZE(demo_struct_main_t, &dest1, NULL, 0);
     if (NULL == result.buf_ptr || result.error_code < 0)
     {
-        fprintf(stderr, "*** Data serialization to dynamic buffer failed after %d bytes: %s!\n",
+        fprintf(stderr, "*** Data serialization to dynamic buffer failed after %u bytes: %s!\n",
             result.handled_len, commproto_error(result.error_code));
         COMMPROTO_CLEAR(demo_struct_main_t, &src);
         COMMPROTO_CLEAR(demo_struct_main_t, &dest1);
@@ -1003,7 +1001,7 @@ int main(int argc, char **argv)
 
         return -1;
     }
-    printf("Serialized %d bytes to dynamic buffer.\n", result.handled_len);
+    printf("Serialized %u bytes to dynamic buffer.\n", result.handled_len);
 
     COMMPROTO_CLEAR(demo_struct_main_t, &dest1);
 
@@ -1092,5 +1090,9 @@ int main(int argc, char **argv)
  *      to establish stronger relations between field types and their sizes,
  *      which makes it possible to merge some boring conditional statements
  *      in functions using them.
+ *
+ * >>> 2022-05-08, Man Hung-Coeng:
+ *  01. Change types of *_len parameters/fields from [u]int16_t to [u]int32_t.
+ *  02. Refactor.
  */
 

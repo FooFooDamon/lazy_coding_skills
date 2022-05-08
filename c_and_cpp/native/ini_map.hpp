@@ -2,7 +2,7 @@
  * A read-only class based on std::map and the relative C APIs
  * to make it easier to access parsed INI data.
  *
- * Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2021-2022 Man Hung-Coeng <udc577@126.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,24 +68,14 @@ public:
     ini_map_c() = delete;
 
     explicit ini_map_c(ini_doc_t *doc, const char *path = nullptr)
-        : err_(-ERR_NOT_INITIALIZED)
-        , doc_(nullptr)
-        , path_(nullptr)
-        , dir_(nullptr)
-        , basename_(nullptr)
-        , map_(nullptr)
     {
+        reset();
         construct(doc, path);
     }
 
     ini_map_c(const ini_map_c &src)
-        : err_(-ERR_NOT_INITIALIZED)
-        , doc_(nullptr)
-        , path_(nullptr)
-        , dir_(nullptr)
-        , basename_(nullptr)
-        , map_(nullptr)
     {
+        reset();
         construct(src.doc_, src.path_);
     }
 
@@ -97,20 +87,15 @@ public:
         , basename_(src.basename_)
         , map_(src.map_)
     {
-        src.err_ = -ERR_NOT_INITIALIZED;
-        src.doc_ = nullptr;
-        src.path_ = nullptr;
-        src.dir_ = nullptr;
-        src.basename_ = nullptr;
-        src.map_ = nullptr;
+        src.reset();
     }
 
     ini_map_c& operator=(const ini_map_c &src)
     {
         if (this != &src)
         {
-            this->~ini_map_c();
-
+            release();
+            reset();
             construct(src.doc_, src.path_);
         }
 
@@ -121,30 +106,14 @@ public:
     {
         if (this != &src)
         {
-            struct xx_t
-            {
-                char **src;
-                char **dest;
-            } xx[] = {
-                { &src.path_, &this->path_ }
-                , { &src.dir_, &this->dir_ }
-                , { &src.basename_, &this->basename_ }
-            };
-
-            for (size_t i = 0; i < sizeof(xx) / sizeof(struct xx_t); ++i)
-            {
-                *xx[i].dest = *xx[i].src;
-                *xx[i].src = nullptr;
-            }
-
             this->err_ = src.err_;
-            src.err_ = -ERR_NOT_INITIALIZED;
-
             this->doc_ = src.doc_;
-            src.doc_ = nullptr;
-
+            this->path_ = src.path_;
+            this->dir_ = src.dir_;
+            this->basename_ = src.basename_;
             this->map_ = src.map_;
-            src.map_ = nullptr;
+
+            src.reset();
         }
 
         return *this;
@@ -152,22 +121,8 @@ public:
 
     ~ini_map_c()
     {
-        if (nullptr != map_)
-        {
-            delete map_;
-            map_ = nullptr;
-        }
-
-        char **xx[] = { &basename_, &dir_, &path_ };
-
-        for (size_t i = 0; i < sizeof(xx) / sizeof(char **); ++i)
-        {
-            if (nullptr != *xx[i])
-            {
-                delete[] *xx[i];
-                *xx[i] = nullptr;
-            }
-        }
+        release();
+        reset();
     }
 
     inline int error_code(void) const
@@ -247,10 +202,32 @@ public:
     }
 
 private:
-    void construct(ini_doc_t *doc, const char *path)
+    inline void release(void)
+    {
+        if (nullptr != map_)
+            delete map_;
+
+        char **xx[] = { &basename_, &dir_, &path_ };
+
+        for (size_t i = 0; i < sizeof(xx) / sizeof(char **); ++i)
+        {
+            if (nullptr != *xx[i])
+                delete[] *xx[i];
+        }
+    }
+
+    inline void reset(void)
     {
         err_ = -ERR_NOT_INITIALIZED;
+        doc_ = nullptr;
+        path_ = nullptr;
+        dir_ = nullptr;
+        basename_ = nullptr;
+        map_ = nullptr;
+    }
 
+    void construct(ini_doc_t *doc, const char *path)
+    {
         if (nullptr == (doc_ = doc))
             return;
 
@@ -363,5 +340,9 @@ private:
  * >>> 2022-05-01, Man Hung-Coeng:
  *  01. Add member function directory() and basename().
  *  02. Fix some errors of initialization of data members.
+ *
+ * >>> 2022-05-08, Man Hung-Coeng:
+ *  01. Eliminate stupid cppcheck[operatorEqVarError] warnings
+ *      happening to operator= !
  */
 

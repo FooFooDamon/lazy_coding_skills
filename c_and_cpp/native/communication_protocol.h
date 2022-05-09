@@ -50,14 +50,27 @@
     commproto_clear(struct_name::meta_data(), struct_name::meta_size(), this); \
 }
 
+/* NOTE: These macros are only suitable for structs WITHOUT virtual functions! */
+
 #define COMMPROTO_CPP_SERIALIZE(struct_ptr, buf_ptr, buf_len)   \
     commproto_serialize((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), struct_ptr, buf_ptr, buf_len)
 
 #define COMMPROTO_CPP_PARSE(buf_ptr, buf_len, struct_ptr)       \
     commproto_parse((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), buf_ptr, buf_len, struct_ptr)
 
-#define COMMPROTO_CPP_CLEAR(struct_ptr)                     \
+#define COMMPROTO_CPP_CLEAR(struct_ptr)                         \
     commproto_clear((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), struct_ptr)
+
+/* NOTE: These macros are only suitable for structs CONTAINING virtual functions! */
+
+#define COMMPROTO_CPP_VSERIALIZE(struct_ptr, buf_ptr, buf_len)  \
+    commproto_serialize((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), (char*)(struct_ptr) + sizeof(void*), buf_ptr, buf_len)
+
+#define COMMPROTO_CPP_VPARSE(buf_ptr, buf_len, struct_ptr)      \
+    commproto_parse((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), buf_ptr, buf_len, (char*)(struct_ptr) + sizeof(void*))
+
+#define COMMPROTO_CPP_VCLEAR(struct_ptr)                        \
+    commproto_clear((struct_ptr)->meta_data(), (struct_ptr)->meta_size(), (char*)(struct_ptr) + sizeof(void*))
 
 extern "C" {
 
@@ -97,12 +110,10 @@ void commproto_dump_buffer(const uint8_t *buf, uint32_t size, FILE *nullable_str
 #define COMMPROTO_DEFINE_META_SIZE(struct_name)         const uint32_t META_SIZE_##struct_name = sizeof(META_DATA_##struct_name)
 
 #define COMMPROTO_SERIALIZE(struct_name, struct_ptr, buf_ptr, buf_len)                      \
-    commproto_serialize(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name),  \
-        struct_ptr, buf_ptr, buf_len)
+    commproto_serialize(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name), struct_ptr, buf_ptr, buf_len)
 
 #define COMMPROTO_PARSE(struct_name, buf_ptr, buf_len, struct_ptr)                          \
-    commproto_parse(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name),      \
-        buf_ptr, buf_len, struct_ptr)
+    commproto_parse(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name), buf_ptr, buf_len, struct_ptr)
 
 #define COMMPROTO_CLEAR(struct_name, struct_ptr)                                            \
     commproto_clear(COMMPROTO_META_VAR(struct_name), COMMPROTO_META_SIZE(struct_name), struct_ptr)
@@ -1094,5 +1105,9 @@ int main(int argc, char **argv)
  * >>> 2022-05-08, Man Hung-Coeng:
  *  01. Change types of *_len parameters/fields from [u]int16_t to [u]int32_t.
  *  02. Refactor.
+ *
+ * >>> 2022-05-09, Man Hung-Coeng:
+ *  01. Add macro COMMPROTO_CPP_VSERIALIZE(), COMMPROTO_CPP_VPARSE() and
+ *      COMMPROTO_CPP_VCLEAR() for structs CONTAINING virtual functions!
  */
 

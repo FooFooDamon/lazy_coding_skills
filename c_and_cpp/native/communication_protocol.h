@@ -1089,7 +1089,7 @@ int main(int argc, char **argv)
  *      __ORDER_BIG_ENDIAN__ and __BYTE_ORDER__.
  *
  * >>> 2022-03-08, Man Hung-Coeng:
- *  01. Remove the struct_name argument from macro COMMPROTO_CPP_SERIALIZE()
+ *  01. Remove the struct_name parameter from macro COMMPROTO_CPP_SERIALIZE()
  *      and COMMPROTO_CPP_PARSE().
  *
  * >>> 2022-05-06, Man Hung-Coeng:

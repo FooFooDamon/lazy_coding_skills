@@ -98,6 +98,10 @@ commproto_result_t commproto_serialize(const uint8_t *struct_meta_data, uint32_t
 commproto_result_t commproto_parse(const uint8_t *struct_meta_data, uint32_t meta_len,
     const uint8_t *buf_ptr, uint32_t buf_len, void *one_byte_aligned_struct);
 
+/*
+ * Generally this function should be called after each deserialization.
+ * But there're still some tricks, see the "Step 2" comment in commproto_parse() or its sub-function.
+ */
 void commproto_clear(const uint8_t *struct_meta_data, uint32_t meta_len, void *one_byte_aligned_struct);
 
 void commproto_dump_buffer(const uint8_t *buf, uint32_t size, FILE *nullable_stream, char *nullable_holder);

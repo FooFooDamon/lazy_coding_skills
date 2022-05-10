@@ -315,7 +315,7 @@ static int general_serialization(int16_t fields, int16_t loops, bool can_have_in
 
             *meta_pptr += meta_offset;
 
-            if (*handled_len_ptr + data_offset > *buf_capacity_ptr) /* Step 2: Expand buffer if needed. */
+            if (*handled_len_ptr + data_offset > *buf_capacity_ptr) /* Step 2: Expand the buffer if needed. */
             {
                 if (is_static_buf)
                 {
@@ -458,7 +458,7 @@ static int general_deserialization(int16_t fields, int16_t loops, bool can_have_
     int16_t struct_array_len = -1;
     int16_t struct_field_count = -1;
     uint8_t *inner_struct_ptr = NULL;
-    bool should_expand_dynamic_array = false;
+    bool should_reallocate_array = false;
     uint8_t *meta_ptr_per_round = *meta_pptr;
     uint8_t *struct_ptr_start = *struct_pptr;
     int err = 0;
@@ -554,8 +554,19 @@ static int general_deserialization(int16_t fields, int16_t loops, bool can_have_
                 continue;
             }
 
-            /* Step 2: Allocate memory for current dynamic array if needed. */
-            if (dynamic_array_size > 0 && (should_expand_dynamic_array || NULL == (char *)**(ptrdiff_t **)struct_pptr))
+            /*
+             * Step 2: Allocate or reallocate memory for current dynamic array if needed.
+             *
+             * NOTE: The memory can be allocated only once and reused repeatedly if and only if:
+             *      1) the same struct instance is used repeatedly,
+             *      2) maximum lengths of the instance's dynamic sub-arrays are fixed,
+             *      3) lengths of the instance's sub-arrays are set to their maxinum values on first use,
+             *          and will not be greater afterwards.
+             *      However, if the rules above are broken, memory leaks may occur!
+             *      If you're not sure, call commproto_clear() or release the memory manually
+             *      before each new deserialization.
+             */
+            if (dynamic_array_size > 0 && (should_reallocate_array || NULL == (char *)**(ptrdiff_t **)struct_pptr))
             {
                 char *new_array = (char *)realloc((char *)**(ptrdiff_t **)struct_pptr, dynamic_array_size);
 
@@ -564,6 +575,11 @@ static int general_deserialization(int16_t fields, int16_t loops, bool can_have_
                     err = -COMMPROTO_ERR_MEM_ALLOC;
                     continue;
                 }
+                COMMPROTO_DPRINT("(Re)allocated the array: addr = %p, size = %d\n", new_array, dynamic_array_size);
+
+                if (can_have_inner_struct && new_array != (char *)**(ptrdiff_t **)struct_pptr)
+                    memset(new_array, 0, dynamic_array_size);
+
                 **(ptrdiff_t **)struct_pptr = (ptrdiff_t)new_array;
             }
 
@@ -596,7 +612,7 @@ static int general_deserialization(int16_t fields, int16_t loops, bool can_have_
 
             case COMMPROTO_ARRAY_LEN:
                 COMMPROTO_SET_INT16(buf_ptr + *handled_len_ptr - data_offset, &simple_array_len);
-                should_expand_dynamic_array = (simple_array_len > *((int16_t *)*struct_pptr));
+                should_reallocate_array = (simple_array_len > *((int16_t *)*struct_pptr));
                 *((int16_t *)*struct_pptr) = struct_array_len = simple_array_len;
                 *struct_pptr += data_offset;
                 break;
@@ -921,5 +937,9 @@ void commproto_dump_buffer(const uint8_t *buf, uint32_t size, FILE *nullable_str
  *  01. Fix the potential struct-pointer-exceeds problem.
  *  02. Change types of *_len parameters/fields from [u]int16_t to [u]int32_t.
  *  03. Refactor.
+ *
+ * >>> 2022-05-10, Man Hung-Coeng:
+ *  01. Fix the conditional-jump-or-move-depends-on-uninitialised-values problem
+ *      reported by valgrind.
  */
 

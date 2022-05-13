@@ -547,8 +547,7 @@ static int general_deserialization(int16_t fields, int16_t loops, bool can_have_
 
             *meta_pptr += meta_offset;
 
-            if (*handled_len_ptr + data_offset > buf_len ||
-                dynamic_array_size < 0 || *handled_len_ptr + dynamic_array_size > buf_len)
+            if (*handled_len_ptr + data_offset > buf_len || dynamic_array_size < 0)
             {
                 err = (dynamic_array_size < 0) ? dynamic_array_size : -COMMPROTO_ERR_INCOMPLETE_BUF_CONTENTS;
                 continue;
@@ -941,5 +940,9 @@ void commproto_dump_buffer(const uint8_t *buf, uint32_t size, FILE *nullable_str
  * >>> 2022-05-10, Man Hung-Coeng:
  *  01. Fix the conditional-jump-or-move-depends-on-uninitialised-values problem
  *      reported by valgrind.
+ *
+ * >>> 2022-05-13, Man Hung-Coeng:
+ *  01. Fix the wrong incomplete-buffer-contents condition
+ *      involving size of the dynamic struct array in general_deserialization().
  */
 

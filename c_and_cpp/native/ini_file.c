@@ -1,7 +1,7 @@
 /*
  * APIs for Windows .ini file manipulation.
  *
- * Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2021-2022 Man Hung-Coeng <udc577@126.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -142,7 +142,7 @@ void ini_set_item_indent_width(size_t width)
     if (width > INI_INDENT_WIDTH_MAX)
         return;
 
-    if (NULL != (tmp = realloc(s_indent_spaces, width + 1)))
+    if (NULL != (tmp = (char *)realloc(s_indent_spaces, width + 1)))
     {
         s_indent_spaces = tmp;
         memset(s_indent_spaces, ' ', width);
@@ -186,10 +186,10 @@ ini_doc_t* __parse_from(void *target, int target_size, char* (*getline_func)(cha
     int strip_blanks, ini_summary_t *nullable_summary)
 {
     ini_summary_t summary = { 0 }; /* Use it instead of nullable_summary for reducing the "if" statements. */
-    ini_doc_t *doc = calloc(1, sizeof(ini_doc_t));
+    ini_doc_t *doc = (ini_doc_t *)calloc(1, sizeof(ini_doc_t));
     ini_node_t *section = (NULL == doc) ? NULL : doc->section;
     ini_node_t *prev = NULL;
-    char *buf = (NULL == doc) ? NULL : calloc(INI_LINE_SIZE_MAX + 1, sizeof(char));
+    char *buf = (NULL == doc) ? NULL : (char *)calloc(INI_LINE_SIZE_MAX + 1, sizeof(char));
     int is_str = (target_size > 0);
     char *pos = NULL;
 
@@ -218,9 +218,9 @@ ini_doc_t* __parse_from(void *target, int target_size, char* (*getline_func)(cha
         int is_blank_line = 0;
         int is_comment = 0;
         int is_section = 0;
-        ini_node_t *this = (ini_node_t *)calloc(1, sizeof(ini_node_t));
+        ini_node_t *_this = (ini_node_t *)calloc(1, sizeof(ini_node_t));
 
-        RETURN_IF_TRUE(NULL == this, -INI_ERR_MEM_ALLOC, free(buf));
+        RETURN_IF_TRUE(NULL == _this, -INI_ERR_MEM_ALLOC, free(buf));
 
         if (is_str)
         {
@@ -248,29 +248,29 @@ ini_doc_t* __parse_from(void *target, int target_size, char* (*getline_func)(cha
 
         if (is_blank_line)
         {
-            this->type = INI_NODE_BLANK_LINE;
+            _this->type = INI_NODE_BLANK_LINE;
 
             if (NULL == section && NULL == doc->preamble)
-                doc->preamble = this;
+                doc->preamble = _this;
 
             if (NULL != section && NULL == ((ini_section_t *)section->detail)->sub)
-                ((ini_section_t *)section->detail)->sub = this;
+                ((ini_section_t *)section->detail)->sub = _this;
 
             summary.blank_lines += 1;
         }
         else if (is_comment)
         {
-            this->type = INI_NODE_COMMENT;
+            _this->type = INI_NODE_COMMENT;
 
-            this->detail = calloc(length + 1, sizeof(char));
-            RETURN_IF_TRUE(NULL == this->detail, -INI_ERR_MEM_ALLOC, free(this);free(buf));
-            strncpy(this->detail, head, length);
+            _this->detail = calloc(length + 1, sizeof(char));
+            RETURN_IF_TRUE(NULL == _this->detail, -INI_ERR_MEM_ALLOC, free(_this);free(buf));
+            strncpy((char *)_this->detail, head, length);
 
             if (NULL == section && NULL == doc->preamble)
-                doc->preamble = this;
+                doc->preamble = _this;
 
             if (NULL != section && NULL == ((ini_section_t *)section->detail)->sub)
-                ((ini_section_t *)section->detail)->sub = this;
+                ((ini_section_t *)section->detail)->sub = _this;
 
             summary.comment_lines += 1;
         }
@@ -280,36 +280,36 @@ ini_doc_t* __parse_from(void *target, int target_size, char* (*getline_func)(cha
             size_t counter = 0;
             int has_extra_brackets = 0;
 
-            RETURN_IF_TRUE(1 == length || ']' == head[1], -INI_ERR_NULL_SECTION_NAME, free(this);free(buf));
-            RETURN_IF_TRUE(']' != head[length - 1], -INI_ERR_BAD_FORMAT, free(this);free(buf));
+            RETURN_IF_TRUE(1 == length || ']' == head[1], -INI_ERR_NULL_SECTION_NAME, free(_this);free(buf));
+            RETURN_IF_TRUE(']' != head[length - 1], -INI_ERR_BAD_FORMAT, free(_this);free(buf));
 
             ++head;
             --tail;
             while (IS_BLANK(*head)) ++head;
-            RETURN_IF_TRUE(head > tail, -INI_ERR_NULL_SECTION_NAME, free(this);free(buf));
+            RETURN_IF_TRUE(head > tail, -INI_ERR_NULL_SECTION_NAME, free(_this);free(buf));
             while (IS_BLANK(*tail)) --tail;
-            RETURN_IF_TRUE(head > tail, -INI_ERR_NULL_SECTION_NAME, free(this);free(buf));
+            RETURN_IF_TRUE(head > tail, -INI_ERR_NULL_SECTION_NAME, free(_this);free(buf));
             length = tail - head + 1;
             while (counter < length && '[' != head[counter] && ']' != head[counter]) ++counter;
             has_extra_brackets = (counter < length);
-            RETURN_IF_TRUE(has_extra_brackets, -INI_ERR_BAD_FORMAT, free(this);free(buf));
+            RETURN_IF_TRUE(has_extra_brackets, -INI_ERR_BAD_FORMAT, free(_this);free(buf));
 
-            this->type = INI_NODE_SECTION;
+            _this->type = INI_NODE_SECTION;
 
-            this->detail = calloc(1, sizeof(ini_section_t));
-            RETURN_IF_TRUE(NULL == this->detail, -INI_ERR_MEM_ALLOC, free(this);free(buf));
+            _this->detail = calloc(1, sizeof(ini_section_t));
+            RETURN_IF_TRUE(NULL == _this->detail, -INI_ERR_MEM_ALLOC, free(_this);free(buf));
 
-            name = calloc(length + 1, sizeof(char));
-            RETURN_IF_TRUE(NULL == name, -INI_ERR_MEM_ALLOC, free(this->detail);free(this);free(buf));
+            name = (char *)calloc(length + 1, sizeof(char));
+            RETURN_IF_TRUE(NULL == name, -INI_ERR_MEM_ALLOC, free(_this->detail);free(_this);free(buf));
             strncpy(name, head, length);
-            ((ini_section_t *)this->detail)->name = name;
+            ((ini_section_t *)_this->detail)->name = name;
 
             if (NULL == section)
-                doc->section = this;
+                doc->section = _this;
             else
-                section->next = this;
+                section->next = _this;
 
-            section = this;
+            section = _this;
 
             prev = NULL; /* NOTE: An non-section node cannot be its precedent. */
 
@@ -325,39 +325,39 @@ ini_doc_t* __parse_from(void *target, int target_size, char* (*getline_func)(cha
 
             RETURN_IF_TRUE(is_orphan || NULL == equal_sign || equal_sign == head,
                 is_orphan ? -INI_ERR_ORPHAN_ITEM : ((NULL == equal_sign) ? -INI_ERR_BAD_FORMAT : -INI_ERR_NULL_KEY),
-                free(this);free(buf));
+                free(_this);free(buf));
 
-            this->type = INI_NODE_ITEM;
+            _this->type = INI_NODE_ITEM;
 
-            this->detail = calloc(1, sizeof(ini_item_t));
-            RETURN_IF_TRUE(NULL == this->detail, -INI_ERR_MEM_ALLOC, free(this);free(buf));
+            _this->detail = calloc(1, sizeof(ini_item_t));
+            RETURN_IF_TRUE(NULL == _this->detail, -INI_ERR_MEM_ALLOC, free(_this);free(buf));
 
             if (strip_blanks && NULL != val_head)
                 while (IS_BLANK(*val_head)) ++val_head;
             length = (tail >= val_head ) ? (tail - val_head + 1) : 0;
-            val = calloc(length + 1, sizeof(char));
-            RETURN_IF_TRUE(NULL == val, -INI_ERR_MEM_ALLOC, free(this->detail);free(this);free(buf));
+            val = (char *)calloc(length + 1, sizeof(char));
+            RETURN_IF_TRUE(NULL == val, -INI_ERR_MEM_ALLOC, free(_this->detail);free(_this);free(buf));
             strncpy(val, val_head, length);
-            ((ini_item_t *)this->detail)->val = val;
+            ((ini_item_t *)_this->detail)->val = val;
 
             tail = equal_sign - 1;
             while (IS_BLANK(*tail)) --tail;
             length = tail - head + 1;
-            key = calloc(length + 1, sizeof(char));
-            RETURN_IF_TRUE(NULL == key, -INI_ERR_MEM_ALLOC, free(val);free(this->detail);free(this);free(buf));
+            key = (char *)calloc(length + 1, sizeof(char));
+            RETURN_IF_TRUE(NULL == key, -INI_ERR_MEM_ALLOC, free(val);free(_this->detail);free(_this);free(buf));
             strncpy(key, head, length);
-            ((ini_item_t *)this->detail)->key = key;
+            ((ini_item_t *)_this->detail)->key = key;
 
             if (NULL == ((ini_section_t *)section->detail)->sub)
-                ((ini_section_t *)section->detail)->sub = this;
+                ((ini_section_t *)section->detail)->sub = _this;
         }
 
-        if (this != section)
+        if (_this != section)
         {
             if (NULL != prev)
-                prev->next = this;
+                prev->next = _this;
 
-            prev = this;
+            prev = _this;
         }
 
         summary.success_lines += 1;
@@ -519,8 +519,9 @@ static ini_summary_t __traverse_all_nodes(ini_doc_t *doc, int should_free_memory
     return summary;
 }
 
-static int __dump_node_to_stream(const char *sec_name, ini_node_t *cur_node, void *stream)
+static int __dump_node_to_stream(const char *sec_name, ini_node_t *cur_node, void *file_stream)
 {
+    FILE *stream = (FILE *)file_stream;
     int bytes_written = -INI_ERR_IO;
 
     switch (cur_node->type)
@@ -530,7 +531,7 @@ static int __dump_node_to_stream(const char *sec_name, ini_node_t *cur_node, voi
         break;
 
     case INI_NODE_COMMENT:
-        bytes_written = fputs(cur_node->detail, stream);
+        bytes_written = fputs((const char *)cur_node->detail, stream);
         break;
 
     case INI_NODE_SECTION:
@@ -588,7 +589,7 @@ static int __dump_node_to_buffer(const char *sec_name, ini_node_t *cur_node, voi
     size_t name_len = (INI_NODE_SECTION == node_type) ? strlen(((ini_section_t *)detail)->name) : 0; /* TODO: detail->name_len */
     size_t key_len = (INI_NODE_ITEM == node_type) ? strlen(((ini_item_t *)detail)->key) : 0; /* TODO: detail->key_len */
     size_t val_len = (INI_NODE_ITEM == node_type) ? strlen(((ini_item_t *)detail)->val) : 0; /* TODO: detail->val_len */
-    size_t comment_len = (INI_NODE_COMMENT == node_type) ? strlen(detail) : 0;
+    size_t comment_len = (INI_NODE_COMMENT == node_type) ? strlen((char *)detail) : 0;
     size_t expected_len = (INI_NODE_ITEM == node_type)
         ? (indent_width + key_len + 1 + val_len + newline_len)
         : ((INI_NODE_SECTION == node_type)
@@ -598,7 +599,7 @@ static int __dump_node_to_buffer(const char *sec_name, ini_node_t *cur_node, voi
 
     if (NULL == *(buf->pptr) || buf_not_enough)
     {
-        char *tmp = (buf_not_enough && !buf->allow_resizing) ? NULL : realloc(*buf->pptr, buf->total * 2);
+        char *tmp = (buf_not_enough && !buf->allow_resizing) ? NULL : (char *)realloc(*buf->pptr, buf->total * 2);
 
         if (NULL == tmp)
             return -INI_ERR_MEM_ALLOC;
@@ -796,7 +797,7 @@ int ini_section_rename(const char *name, size_t name_len, ini_node_t *sec)
 
     name_len = tail - head + 1;
 
-    if (NULL == (new_name = malloc(name_len + 1)))
+    if (NULL == (new_name = (char *)malloc(name_len + 1)))
         return -INI_ERR_MEM_ALLOC;
 
     strncpy(new_name, name, name_len);
@@ -899,7 +900,7 @@ int ini_item_set_key(const char *key, size_t key_len, ini_node_t *item)
 
     key_len = tail - head + 1;
 
-    if (NULL == (new_key = malloc(key_len + 1)))
+    if (NULL == (new_key = (char *)malloc(key_len + 1)))
         return -INI_ERR_MEM_ALLOC;
 
     strncpy(new_key, head, key_len);
@@ -940,7 +941,7 @@ int ini_item_set_value(const char *val, size_t val_len, ini_node_t *item)
             return -INI_ERR_BAD_FORMAT;
     }
 
-    if (NULL == (new_value = malloc(val_len + 1)))
+    if (NULL == (new_value = (char *)malloc(val_len + 1)))
         return -INI_ERR_MEM_ALLOC;
 
     strncpy(new_value, head, val_len);
@@ -970,7 +971,7 @@ int ini_item_remove(const char *key, size_t key_len/* = 0 if auto calculated lat
 
 const char* ini_comment_get(const ini_node_t *node)
 {
-    return (INI_NODE_COMMENT == node->type) ? (node->detail) : NULL;
+    return (INI_NODE_COMMENT == node->type) ? ((char *)node->detail) : NULL;
 }
 
 int ini_comment_set(const char *comment, size_t comment_len, ini_node_t *node)
@@ -1007,7 +1008,7 @@ int ini_comment_set(const char *comment, size_t comment_len, ini_node_t *node)
 
     comment_len = tail - head + 1;
 
-    if (NULL == (new_comment = malloc(comment_len + 1)))
+    if (NULL == (new_comment = (char *)malloc(comment_len + 1)))
         return -INI_ERR_MEM_ALLOC;
 
     strncpy(new_comment, head, comment_len);
@@ -1284,5 +1285,8 @@ TEST_END:
  *  03. Use the allow_resizing parameter within the str_buf argument to decide
  *      whether memory re-allocation is allowed within __dump_node_to_buffer().
  *  04. Improve code style according to suggestions from cppcheck and clang.
+ *
+ * >>> 2022-05-16, Man Hung-Coeng:
+ *  01. Eliminate warnings from VIM plugins.
  */
 

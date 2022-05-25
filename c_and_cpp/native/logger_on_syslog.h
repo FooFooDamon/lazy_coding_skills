@@ -88,7 +88,7 @@ extern unsigned char __log_level_mask;
 #define DLOG(format, ...)                           __LOGFB(unlikely, DEBUG, D, format, ##__VA_ARGS__)
 #define ILOG(format, ...)                           __LOGF(INFO, I, format, ##__VA_ARGS__)
 #define NLOG(format, ...)                           __LOGF(NOTICE, N, format, ##__VA_ARGS__)
-#define WLOG(format, ...)                           __LOGF(WARNING, W, format, ##__VA_ARGS__)
+#define WLOG(format, ...)                           __VLOGF(WARNING, W, format, ##__VA_ARGS__)
 #define ELOG(format, ...)                           __VLOGFB(likely, ERR, E, format, ##__VA_ARGS__)
 #define CLOG(format, ...)                           __VLOGFB(likely, CRIT, C, format, ##__VA_ARGS__)
 
@@ -133,7 +133,7 @@ extern pthread_key_t __thread_name__;
 #define TDLOG(format, ...)                          __TLOGFB(unlikely, DEBUG, D, format, ##__VA_ARGS__)
 #define TILOG(format, ...)                          __TLOGF(INFO, I, format, ##__VA_ARGS__)
 #define TNLOG(format, ...)                          __TLOGF(NOTICE, N, format, ##__VA_ARGS__)
-#define TWLOG(format, ...)                          __TLOGF(WARNING, W, format, ##__VA_ARGS__)
+#define TWLOG(format, ...)                          __VTLOGF(WARNING, W, format, ##__VA_ARGS__)
 #define TELOG(format, ...)                          __VTLOGFB(likely, ERR, E, format, ##__VA_ARGS__)
 #define TCLOG(format, ...)                          __VTLOGFB(likely, CRIT, C, format, ##__VA_ARGS__)
 

@@ -36,6 +36,7 @@ tags
 /c_and_cpp/native/communication_protocol
 /c_and_cpp/native/ini_file
 /c_and_cpp/native/ini_file_test.ini
+/c_and_cpp/native/logger_on_syslog
 /c_and_cpp/native/signal_handling
 /c_and_cpp/native/sleeps
 /c_and_cpp/native/socket_supplements

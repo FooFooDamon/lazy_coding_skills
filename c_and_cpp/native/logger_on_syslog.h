@@ -111,22 +111,22 @@ extern pthread_key_t __thread_name__;
 #endif /* #if defined(__cplusplus) && __cplusplus >= 201103L */
 
 #define __TLOGF(level, lv, format, ...)             do { \
-    __SYSLOG(level, lv, "[%s] " format, GET_THREAD_NAME_FOR_LOGGER(), ##__VA_ARGS__); \
+    __SYSLOG(level, lv, "(%s) " format, GET_THREAD_NAME_FOR_LOGGER(), ##__VA_ARGS__); \
 } while (0)
 
 #define __VTLOGF(level, lv, format, ...)            do { \
-    __SYSLOG(level, lv, "[%s] " __FILE__ ":%d %s(): " format, GET_THREAD_NAME_FOR_LOGGER(), __LINE__, __func__, ##__VA_ARGS__); \
+    __SYSLOG(level, lv, "(%s) " __FILE__ ":%d %s(): " format, GET_THREAD_NAME_FOR_LOGGER(), __LINE__, __func__, ##__VA_ARGS__); \
 } while (0)
 
 #define __TLOGFB(bet, level, lv, format, ...)       do { \
     if (bet(ALLOW_LOG_LEVEL(level))) { \
-        __SYSLOG(level, lv, "[%s] " format, GET_THREAD_NAME_FOR_LOGGER(), ##__VA_ARGS__); \
+        __SYSLOG(level, lv, "(%s) " format, GET_THREAD_NAME_FOR_LOGGER(), ##__VA_ARGS__); \
     } \
 } while (0)
 
 #define __VTLOGFB(bet, level, lv, format, ...)      do { \
     if (bet(ALLOW_LOG_LEVEL(level))) { \
-        __SYSLOG(level, lv, "[%s] " __FILE__ ":%d %s(): " format, GET_THREAD_NAME_FOR_LOGGER(), __LINE__, __func__, ##__VA_ARGS__); \
+        __SYSLOG(level, lv, "(%s) " __FILE__ ":%d %s(): " format, GET_THREAD_NAME_FOR_LOGGER(), __LINE__, __func__, ##__VA_ARGS__); \
     } \
 } while (0)
 

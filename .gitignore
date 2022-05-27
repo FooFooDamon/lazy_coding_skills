@@ -16,6 +16,7 @@
 CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
+.vs
 .vscode
 gccdump.s
 __pycache__

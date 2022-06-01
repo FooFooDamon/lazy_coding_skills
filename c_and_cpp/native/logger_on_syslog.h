@@ -61,11 +61,18 @@ extern unsigned char __log_level_mask;
     __log_option_flags = 0; \
 } while (0)
 
+#ifdef SYSLOG_WITH_NANOSECOND
+
 #define __SYSLOG(level, lv, format, ...)            \
     struct timespec lv##_log_time; \
     clock_gettime(CLOCK_REALTIME, &lv##_log_time); \
-    syslog(__log_facility | LOG_##level, #lv " %ld.%09ld " format, \
-        lv##_log_time.tv_sec, lv##_log_time.tv_nsec, ##__VA_ARGS__); \
+    syslog(__log_facility | LOG_##level, #lv " .%09ld " format, lv##_log_time.tv_nsec, ##__VA_ARGS__)
+
+#else
+
+#define __SYSLOG(level, lv, format, ...)            syslog(__log_facility | LOG_##level, #lv " " format, ##__VA_ARGS__)
+
+#endif
 
 #define __LOGF(level, lv, format, ...)              do { \
     __SYSLOG(level, lv, format, ##__VA_ARGS__); \
@@ -146,5 +153,9 @@ extern pthread_key_t __thread_name__;
  *
  * >>> 2022-05-25, Man Hung-Coeng:
  *  01. Create.
+ *
+ * >>> 2022-06-01, Man Hung-Coeng:
+ *  01. Add a macro SYSLOG_WITH_NANOSECOND to control
+ *      whether to show nanosecond in each log item.
  */
 

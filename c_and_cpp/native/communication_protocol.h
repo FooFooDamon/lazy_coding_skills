@@ -76,7 +76,9 @@ extern "C" {
 
 #endif /* #ifdef __cplusplus */
 
-typedef uint16_t    arraylen_t;
+typedef uint8_t     arraylen8_t;
+typedef uint16_t    arraylen16_t;
+typedef uint32_t    arraylen32_t;
 typedef float       float32_t;  /* TODO: To be more portable. */
 typedef double      float64_t;  /* TODO: Same as above. */
 
@@ -131,7 +133,9 @@ enum
     , COMMPROTO_FLOAT32 = 14
     , COMMPROTO_FLOAT64 = 18
 
-    , COMMPROTO_ARRAY_LEN = 20 + sizeof(arraylen_t)
+    , COMMPROTO_ARRAY_LEN8 = 20 + sizeof(arraylen8_t)
+    , COMMPROTO_ARRAY_LEN16 = 20 + sizeof(arraylen16_t)
+    , COMMPROTO_ARRAY_LEN32 = 20 + sizeof(arraylen32_t)
 
     , COMMPROTO_SINGLE_FIELD_TYPE_END /* Generally for inner use only. */
 
@@ -312,7 +316,7 @@ typedef struct demo_struct_sub1_t
 {/* NOTE: Only single variables and arrays of basic types are allowed within a sub-structure. */
     int8_t i8_single;
     int16_t i16_fixed_array[1];
-    arraylen_t i32_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
+    arraylen16_t i32_dynamic_array_len; /* NOTE: The length field MUST be right BEFORE the target dynamic array! */
     int32_t *i32_dynamic_array;
 } demo_struct_sub1_t;
 
@@ -333,25 +337,25 @@ typedef struct demo_struct_main_t
     float64_t f64_fixed_array[6];
 
     demo_struct_sub1_t sub1_fixed_array[3];
-    arraylen_t sub1_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
+    arraylen16_t sub1_dynamic_array_len; /* NOTE: The length field MUST be right BEFORE the target dynamic array! */
     demo_struct_sub1_t *sub1_dynamic_array;
 
-    arraylen_t int_dynamic_array_len; /* NOTE: One length field can be shared by multiple adjacent dynamic arrays. */
+    arraylen8_t int_dynamic_array_len; /* NOTE: One length field can be shared by multiple adjacent dynamic arrays. */
     int8_t *i8_dynamic_array;
     int16_t *i16_dynamic_array;
     int32_t *i32_dynamic_array;
     int64_t *i64_dynamic_array;
-    arraylen_t f32_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
+    arraylen16_t f32_dynamic_array_len; /* NOTE: The length field MUST be right BEFORE the target dynamic array! */
     float32_t *f32_dynamic_array;
-    arraylen_t f64_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
+    arraylen32_t f64_dynamic_array_len; /* NOTE: The length field MUST be right BEFORE the target dynamic array! */
     float64_t *f64_dynamic_array;
 
-    arraylen_t sub2_dynamic_array_len;
+    arraylen16_t sub2_dynamic_array_len;
     struct demo_struct_sub2_t /* NOTE: Nested structure is not recommended in C. */
     {/* NOTE: Only single variables and arrays of basic types are allowed within a sub-structure. */
         int64_t i64_single;
         float32_t f32_fixed_array[2];
-        arraylen_t f64_dynamic_array_len; /* NOTE: The length field MUST BE right before the target dynamic array! */
+        arraylen16_t f64_dynamic_array_len; /* NOTE: The length field MUST be right BEFORE the target dynamic array! */
         float64_t *f64_dynamic_array;
     } *sub2_dynamic_array, sub2_fixed_array[5];
 } demo_struct_main_t;
@@ -360,12 +364,12 @@ typedef struct demo_struct_main_t
 
 #define _SUB1_STRUCT_META_DATA      COMMPROTO_INT8/* i8_single */ \
     , COMMPROTO_INT16_FIXED_ARRAY/* i16_fixed_array */, COMMPROTO_ARRAY_LEN_IS(1) \
-    , COMMPROTO_ARRAY_LEN/* i32_dynamic_array_len */ \
+    , COMMPROTO_ARRAY_LEN16/* i32_dynamic_array_len */ \
     , COMMPROTO_INT32_DYNAMIC_ARRAY/* i32_dynamic_array */
 
 #define _SUB2_STRUCT_META_DATA      COMMPROTO_INT64/* i64_single */ \
     , COMMPROTO_FLOAT32_FIXED_ARRAY/* f32_fixed_array */, COMMPROTO_ARRAY_LEN_IS(2) \
-    , COMMPROTO_ARRAY_LEN/* f64_dynamic_array_len */ \
+    , COMMPROTO_ARRAY_LEN16/* f64_dynamic_array_len */ \
     , COMMPROTO_FLOAT64_DYNAMIC_ARRAY/* f64_dynamic_array */
 
 COMMPROTO_DECLARE_META_VAR(demo_struct_main_t) = {
@@ -385,21 +389,21 @@ COMMPROTO_DECLARE_META_VAR(demo_struct_main_t) = {
 
     , COMMPROTO_STRUCT_FIXED_ARRAY/* sub1_fixed_array */, COMMPROTO_STRUCT_FIELD_COUNT(4), COMMPROTO_ARRAY_LEN_IS(3)
     , _SUB1_STRUCT_META_DATA
-    , COMMPROTO_ARRAY_LEN/* sub1_dynamic_array_len */
+    , COMMPROTO_ARRAY_LEN16/* sub1_dynamic_array_len */
     , COMMPROTO_STRUCT_DYNAMIC_ARRAY/* sub1_dynamic_array */, COMMPROTO_STRUCT_FIELD_COUNT(4)
     , _SUB1_STRUCT_META_DATA
 
-    , COMMPROTO_ARRAY_LEN/* int_dynamic_array_len */
+    , COMMPROTO_ARRAY_LEN8/* int_dynamic_array_len */
     , COMMPROTO_INT8_DYNAMIC_ARRAY/* i8_dynamic_array */
     , COMMPROTO_INT16_DYNAMIC_ARRAY/* i16_dynamic_array */
     , COMMPROTO_INT32_DYNAMIC_ARRAY/* i32_dynamic_array */
     , COMMPROTO_INT64_DYNAMIC_ARRAY/* i64_dynamic_array */
-    , COMMPROTO_ARRAY_LEN/* f32_dynamic_array_len */
+    , COMMPROTO_ARRAY_LEN16/* f32_dynamic_array_len */
     , COMMPROTO_FLOAT32_DYNAMIC_ARRAY/* f32_dynamic_array */
-    , COMMPROTO_ARRAY_LEN/* f64_dynamic_array_len */
+    , COMMPROTO_ARRAY_LEN32/* f64_dynamic_array_len */
     , COMMPROTO_FLOAT64_DYNAMIC_ARRAY/* f64_dynamic_array */
 
-    , COMMPROTO_ARRAY_LEN/* sub2_dynamic_array_len */
+    , COMMPROTO_ARRAY_LEN16/* sub2_dynamic_array_len */
     , COMMPROTO_STRUCT_DYNAMIC_ARRAY/* sub2_dynamic_array */, COMMPROTO_STRUCT_FIELD_COUNT(4)
     , _SUB2_STRUCT_META_DATA
     , COMMPROTO_STRUCT_FIXED_ARRAY/* sub2_fixed_array */, COMMPROTO_STRUCT_FIELD_COUNT(4), COMMPROTO_ARRAY_LEN_IS(5)
@@ -663,7 +667,7 @@ static void print_demo_struct(const demo_struct_main_t *demo_struct, const char 
     }
     printf("\n");
 
-    printf("f64_dynamic_array_len: %d\n", demo_struct->f64_dynamic_array_len);
+    printf("f64_dynamic_array_len: %d\n", (int)demo_struct->f64_dynamic_array_len);
     printf("f64_dynamic_array:");
     for (i = 0; i < (size_t)demo_struct->f64_dynamic_array_len; ++i)
     {
@@ -857,8 +861,8 @@ static bool check_struct_differences(const demo_struct_main_t *struct1, const de
             struct1->f32_dynamic_array[i], struct2->f32_dynamic_array[i], "%.6f");
     }
 
-    RETURN_IF_NOT_EQUAL("f64_dynamic_array_len", struct1->f64_dynamic_array_len,
-        struct2->f64_dynamic_array_len, "%d");
+    RETURN_IF_NOT_EQUAL("f64_dynamic_array_len", (int)struct1->f64_dynamic_array_len,
+        (int)struct2->f64_dynamic_array_len, "%d");
 
     for (i = 0; i < (size_t)struct1->f64_dynamic_array_len; ++i)
     {
@@ -1113,5 +1117,8 @@ int main(int argc, char **argv)
  * >>> 2022-05-09, Man Hung-Coeng:
  *  01. Add macro COMMPROTO_CPP_VSERIALIZE(), COMMPROTO_CPP_VPARSE() and
  *      COMMPROTO_CPP_VCLEAR() for structs CONTAINING virtual functions!
+ *
+ * >>> 2022-06-04, Man Hung-Coeng:
+ *  01. Expand arraylen_t to arraylen8_t, arraylen16_t and arraylen32_t.
  */
 

@@ -217,13 +217,13 @@ static int32_t calc_struct_size_or_move_meta_ptr(int16_t struct_field_count, con
     return result;
 }
 
-static int general_serialization(int16_t fields, int16_t loops, bool can_have_inner_struct,
+static int general_serialization(int16_t fields, int32_t loops, bool can_have_inner_struct,
     const uint8_t *meta_start_ptr, uint32_t meta_len, uint8_t **meta_pptr,
     uint8_t **struct_pptr, bool is_static_buf, uint32_t max_buf_len,
     uint8_t **buf_pptr, uint32_t *buf_capacity_ptr, uint32_t *handled_len_ptr)
 {
-    int16_t simple_array_len = -1;
-    int16_t struct_array_len = -1;
+    int32_t simple_array_len = -1;
+    int32_t struct_array_len = -1;
     int16_t struct_field_count = -1;
     uint8_t *inner_struct_ptr = NULL;
     uint8_t *meta_ptr_per_round = *meta_pptr;
@@ -232,7 +232,7 @@ static int general_serialization(int16_t fields, int16_t loops, bool can_have_in
 #endif
     uint8_t *new_buf = NULL;
     int err = 0;
-    int16_t loop = 1;
+    int32_t loop = 1;
 
     for (; loop <= loops && err >= 0; ++loop)
     {
@@ -253,11 +253,9 @@ static int general_serialization(int16_t fields, int16_t loops, bool can_have_in
             case COMMPROTO_INT64:
             case COMMPROTO_FLOAT32:
             case COMMPROTO_FLOAT64:
-            case COMMPROTO_ARRAY_LEN:
-                if (COMMPROTO_ARRAY_LEN == type)
-                {
-                    simple_array_len = struct_array_len = *((int16_t *)*struct_pptr);
-                }
+            case COMMPROTO_ARRAY_LEN8:
+            case COMMPROTO_ARRAY_LEN16:
+            case COMMPROTO_ARRAY_LEN32:
                 data_offset += (type % 10);
                 break;
 
@@ -281,9 +279,9 @@ static int general_serialization(int16_t fields, int16_t loops, bool can_have_in
             case COMMPROTO_INT64_FIXED_ARRAY:
             case COMMPROTO_FLOAT32_FIXED_ARRAY:
             case COMMPROTO_FLOAT64_FIXED_ARRAY:
-                simple_array_len = *((int16_t *)(*meta_pptr + sizeof(int8_t)));
+                simple_array_len = *((uint16_t *)(*meta_pptr + sizeof(int8_t)));
                 data_offset += ((type % 10) * simple_array_len);
-                meta_offset += sizeof(int16_t);
+                meta_offset += sizeof(uint16_t);
                 break;
 
             case COMMPROTO_STRUCT_DYNAMIC_ARRAY:
@@ -304,7 +302,7 @@ static int general_serialization(int16_t fields, int16_t loops, bool can_have_in
                     continue;
                 }
                 struct_field_count = *((int16_t *)(*meta_pptr + sizeof(int8_t)));
-                struct_array_len = *((int16_t *)(*meta_pptr + sizeof(int8_t) + sizeof(int16_t)));
+                struct_array_len = *((uint16_t *)(*meta_pptr + sizeof(int8_t) + sizeof(int16_t)));
                 meta_offset += (sizeof(int16_t) * 2);
                 break;
 
@@ -352,6 +350,13 @@ static int general_serialization(int16_t fields, int16_t loops, bool can_have_in
                     *struct_pptr += ((COMMPROTO_##T##W##_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset); \
                     break
 
+            #define CASE_FOR_ARRAYLEN_FIELD_SERIALIZATION(W)        \
+                case COMMPROTO_ARRAY_LEN##W: \
+                    simple_array_len = struct_array_len = *((uint##W##_t *)*struct_pptr); \
+                    COMMPROTO_SET_INT##W(*struct_pptr, *buf_pptr + *handled_len_ptr - data_offset); \
+                    *struct_pptr += data_offset; \
+                    break
+
             switch (type) /* Step 3: Do assignments. */
             {
             CASE_FOR_SIMPLE_FIELD_SERIALIZATION(INT, 8);
@@ -366,10 +371,11 @@ static int general_serialization(int16_t fields, int16_t loops, bool can_have_in
 
             CASE_FOR_SIMPLE_FIELD_SERIALIZATION(FLOAT, 64);
 
-            case COMMPROTO_ARRAY_LEN:
-                COMMPROTO_SET_INT16(*struct_pptr, *buf_pptr + *handled_len_ptr - data_offset);
-                *struct_pptr += data_offset;
-                break;
+            CASE_FOR_ARRAYLEN_FIELD_SERIALIZATION(8);
+
+            CASE_FOR_ARRAYLEN_FIELD_SERIALIZATION(16);
+
+            CASE_FOR_ARRAYLEN_FIELD_SERIALIZATION(32);
 
             default:
                 inner_struct_ptr = (is_dynamic_struct_array ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : NULL);
@@ -448,21 +454,21 @@ SERIALIZE_END:
     return result;
 }
 
-static int general_deserialization(int16_t fields, int16_t loops, bool can_have_inner_struct,
+static int general_deserialization(int16_t fields, int32_t loops, bool can_have_inner_struct,
     const uint8_t *meta_start_ptr, uint32_t meta_len, uint8_t **meta_pptr,
     const uint8_t *buf_ptr, uint32_t buf_len,
     uint8_t **struct_pptr, int32_t struct_size,
     uint32_t *handled_len_ptr)
 {
-    int16_t simple_array_len = -1;
-    int16_t struct_array_len = -1;
+    int32_t simple_array_len = -1;
+    int32_t struct_array_len = -1;
     int16_t struct_field_count = -1;
     uint8_t *inner_struct_ptr = NULL;
     bool should_reallocate_array = false;
     uint8_t *meta_ptr_per_round = *meta_pptr;
     uint8_t *struct_ptr_start = *struct_pptr;
     int err = 0;
-    int16_t loop = 1;
+    int32_t loop = 1;
 
     for (; loop <= loops && err >= 0; ++loop)
     {
@@ -485,7 +491,9 @@ static int general_deserialization(int16_t fields, int16_t loops, bool can_have_
             case COMMPROTO_INT64:
             case COMMPROTO_FLOAT32:
             case COMMPROTO_FLOAT64:
-            case COMMPROTO_ARRAY_LEN:
+            case COMMPROTO_ARRAY_LEN8:
+            case COMMPROTO_ARRAY_LEN16:
+            case COMMPROTO_ARRAY_LEN32:
                 data_offset += (type % 10);
                 break;
 
@@ -509,9 +517,9 @@ static int general_deserialization(int16_t fields, int16_t loops, bool can_have_
             case COMMPROTO_INT64_FIXED_ARRAY:
             case COMMPROTO_FLOAT32_FIXED_ARRAY:
             case COMMPROTO_FLOAT64_FIXED_ARRAY:
-                simple_array_len = *((int16_t *)(*meta_pptr + sizeof(int8_t)));
+                simple_array_len = *((uint16_t *)(*meta_pptr + sizeof(int8_t)));
                 data_offset += ((type % 10) * simple_array_len);
-                meta_offset += sizeof(int16_t);
+                meta_offset += sizeof(uint16_t);
                 break;
 
             case COMMPROTO_STRUCT_DYNAMIC_ARRAY:
@@ -534,7 +542,7 @@ static int general_deserialization(int16_t fields, int16_t loops, bool can_have_
                     continue;
                 }
                 struct_field_count = *((int16_t *)(*meta_pptr + sizeof(int8_t)));
-                struct_array_len = *((int16_t *)(*meta_pptr + sizeof(int8_t) + sizeof(int16_t)));
+                struct_array_len = *((uint16_t *)(*meta_pptr + sizeof(int8_t) + sizeof(int16_t)));
                 meta_offset += (sizeof(int16_t) * 2);
                 static_struct_array_size = calc_struct_size_or_move_meta_ptr(struct_field_count,
                     *meta_pptr + meta_offset, meta_len, NULL) * struct_array_len;
@@ -595,6 +603,15 @@ static int general_deserialization(int16_t fields, int16_t loops, bool can_have_
                     *struct_pptr += ((COMMPROTO_##T##W##_DYNAMIC_ARRAY == type) ? sizeof(ptrdiff_t) : data_offset); \
                     break
 
+            #define CASE_FOR_ARRAYLEN_FIELD_PARSING(W)              \
+                case COMMPROTO_ARRAY_LEN##W: { \
+                    uint##W##_t uint##W##_array_len; \
+                    COMMPROTO_SET_INT##W(buf_ptr + *handled_len_ptr - data_offset, &uint##W##_array_len); \
+                    should_reallocate_array = (uint##W##_array_len > *((uint##W##_t *)*struct_pptr)); \
+                    struct_array_len = simple_array_len = *((uint##W##_t *)*struct_pptr) = uint##W##_array_len; \
+                    *struct_pptr += data_offset; } \
+                    break
+
             switch (type) /* Step 3: Do assignments. */
             {
             CASE_FOR_SIMPLE_FIELD_PARSING(INT, 8);
@@ -609,12 +626,11 @@ static int general_deserialization(int16_t fields, int16_t loops, bool can_have_
 
             CASE_FOR_SIMPLE_FIELD_PARSING(FLOAT, 64);
 
-            case COMMPROTO_ARRAY_LEN:
-                COMMPROTO_SET_INT16(buf_ptr + *handled_len_ptr - data_offset, &simple_array_len);
-                should_reallocate_array = (simple_array_len > *((int16_t *)*struct_pptr));
-                *((int16_t *)*struct_pptr) = struct_array_len = simple_array_len;
-                *struct_pptr += data_offset;
-                break;
+            CASE_FOR_ARRAYLEN_FIELD_PARSING(8);
+
+            CASE_FOR_ARRAYLEN_FIELD_PARSING(16);
+
+            CASE_FOR_ARRAYLEN_FIELD_PARSING(32);
 
             default:
                 inner_struct_ptr = (is_dynamic_struct_array ? ((uint8_t *)**(ptrdiff_t **)struct_pptr) : NULL);
@@ -680,11 +696,11 @@ commproto_result_t commproto_parse(const uint8_t *struct_meta_data, uint32_t met
     return result;
 }
 
-static int general_clear(int16_t fields, int16_t loops, bool can_have_inner_struct,
+static int general_clear(int16_t fields, int32_t loops, bool can_have_inner_struct,
     const uint8_t *meta_start_ptr, uint32_t meta_len, uint8_t **meta_pptr, uint8_t **struct_pptr)
 {
-    int16_t simple_array_len = -1;
-    int16_t struct_array_len = -1;
+    int32_t simple_array_len = -1;
+    int32_t struct_array_len = -1;
     int16_t struct_field_count = -1;
     uint8_t *inner_struct_ptr = NULL;
     uint8_t *meta_ptr_per_round = *meta_pptr;
@@ -692,11 +708,18 @@ static int general_clear(int16_t fields, int16_t loops, bool can_have_inner_stru
     uint8_t *struct_ptr_start = *struct_pptr;
 #endif
     int err = 0;
-    int16_t loop = 1;
+    int32_t loop = 1;
 
     for (; loop <= loops && err >= 0; ++loop)
     {
         int16_t field = 1;
+
+        #define CASE_FOR_ARRAYLEN_FIELD_CLEAR(W)                    \
+            case COMMPROTO_ARRAY_LEN##W: \
+                simple_array_len = struct_array_len = *((uint##W##_t *)*struct_pptr); \
+                *struct_pptr += (type % 10); \
+                *meta_pptr += sizeof(int8_t); \
+                break
 
         while (err >= 0)
         {
@@ -710,14 +733,15 @@ static int general_clear(int16_t fields, int16_t loops, bool can_have_inner_stru
             case COMMPROTO_INT64:
             case COMMPROTO_FLOAT32:
             case COMMPROTO_FLOAT64:
-            case COMMPROTO_ARRAY_LEN:
-                if (COMMPROTO_ARRAY_LEN == type)
-                {
-                    simple_array_len = struct_array_len = *((int16_t *)*struct_pptr);
-                }
                 *struct_pptr += (type % 10);
                 *meta_pptr += sizeof(int8_t);
                 break;
+
+            CASE_FOR_ARRAYLEN_FIELD_CLEAR(8);
+
+            CASE_FOR_ARRAYLEN_FIELD_CLEAR(16);
+
+            CASE_FOR_ARRAYLEN_FIELD_CLEAR(32);
 
             case COMMPROTO_INT8_DYNAMIC_ARRAY:
             case COMMPROTO_INT16_DYNAMIC_ARRAY:
@@ -743,9 +767,9 @@ static int general_clear(int16_t fields, int16_t loops, bool can_have_inner_stru
             case COMMPROTO_INT64_FIXED_ARRAY:
             case COMMPROTO_FLOAT32_FIXED_ARRAY:
             case COMMPROTO_FLOAT64_FIXED_ARRAY:
-                simple_array_len = *((int16_t *)(*meta_pptr + sizeof(int8_t)));
+                simple_array_len = *((uint16_t *)(*meta_pptr + sizeof(int8_t)));
                 *struct_pptr += ((type % 10) * simple_array_len);
-                *meta_pptr += (sizeof(int8_t) + sizeof(int16_t));
+                *meta_pptr += (sizeof(int8_t) + sizeof(uint16_t));
                 break;
 
             case COMMPROTO_STRUCT_DYNAMIC_ARRAY:
@@ -766,7 +790,7 @@ static int general_clear(int16_t fields, int16_t loops, bool can_have_inner_stru
                     continue;
                 }
                 struct_field_count = *((int16_t *)(*meta_pptr + sizeof(int8_t)));
-                struct_array_len = *((int16_t *)(*meta_pptr + sizeof(int8_t) + sizeof(int16_t)));
+                struct_array_len = *((uint16_t *)(*meta_pptr + sizeof(int8_t) + sizeof(int16_t)));
                 *meta_pptr += (sizeof(int8_t) + sizeof(int16_t) * 2);
                 break;
 
@@ -944,5 +968,8 @@ void commproto_dump_buffer(const uint8_t *buf, uint32_t size, FILE *nullable_str
  * >>> 2022-05-13, Man Hung-Coeng:
  *  01. Fix the wrong incomplete-buffer-contents condition
  *      involving size of the dynamic struct array in general_deserialization().
+ *
+ * >>> 2022-06-04, Man Hung-Coeng:
+ *  01. Expand arraylen_t to arraylen8_t, arraylen16_t and arraylen32_t.
  */
 

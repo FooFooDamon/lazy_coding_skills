@@ -234,7 +234,7 @@ static int general_serialization(int16_t fields, int32_t loops, bool can_have_in
     int err = 0;
     int32_t loop = 1;
 
-    for (; loop <= loops && err >= 0; ++loop)
+    for (; loop <= loops; ++loop)
     {
         int16_t field = 1;
 
@@ -243,7 +243,7 @@ static int general_serialization(int16_t fields, int32_t loops, bool can_have_in
             uint8_t type = **meta_pptr;
             bool is_dynamic_struct_array = (COMMPROTO_STRUCT_DYNAMIC_ARRAY == type);
             uint32_t meta_offset = sizeof(int8_t);
-            int32_t data_offset = 0;
+            uint32_t data_offset = 0;
 
             switch (type) /* Step 1: Determine offsets and array lengths. */
             {
@@ -400,9 +400,11 @@ static int general_serialization(int16_t fields, int32_t loops, bool can_have_in
                 break;
         } /* while (err >= 0) */
 
-        if (0 == err && loop < loops)
+        if (err >= 0 && loop < loops)
             *meta_pptr = meta_ptr_per_round;
-    } /* for (; loop <= loops && err >= 0; ++loop) */
+        else
+            break;
+    } /* for (; loop <= loops; ++loop) */
 
     return err;
 }
@@ -470,7 +472,7 @@ static int general_deserialization(int16_t fields, int32_t loops, bool can_have_
     int err = 0;
     int32_t loop = 1;
 
-    for (; loop <= loops && err >= 0; ++loop)
+    for (; loop <= loops; ++loop)
     {
         int16_t field = 1;
 
@@ -481,7 +483,7 @@ static int general_deserialization(int16_t fields, int32_t loops, bool can_have_
             int32_t dynamic_array_size = 0;
             int32_t static_struct_array_size = 0;
             uint32_t meta_offset = sizeof(int8_t);
-            int32_t data_offset = 0;
+            uint32_t data_offset = 0;
 
             switch (type) /* Step 1: Determine offsets and array lengths. */
             {
@@ -664,9 +666,14 @@ static int general_deserialization(int16_t fields, int32_t loops, bool can_have_
                 break;
         } /* while (err >= 0 && *handled_len_ptr < buf_len) */
 
-        if (0 == err && loop < loops)
+        if (err >= 0 && loop < loops && *handled_len_ptr < buf_len)
             *meta_pptr = meta_ptr_per_round;
-    } /* for (; loop <= loops && err >= 0; ++loop) */
+        else
+            break;
+    } /* for (; loop <= loops; ++loop) */
+
+    if (err >= 0 && loop < loops)
+        err = -COMMPROTO_ERR_INCOMPLETE_BUF_CONTENTS;
 
     return err;
 }
@@ -710,7 +717,7 @@ static int general_clear(int16_t fields, int32_t loops, bool can_have_inner_stru
     int err = 0;
     int32_t loop = 1;
 
-    for (; loop <= loops && err >= 0; ++loop)
+    for (; loop <= loops; ++loop)
     {
         int16_t field = 1;
 
@@ -826,9 +833,11 @@ static int general_clear(int16_t fields, int32_t loops, bool can_have_inner_stru
                 break;
         } /* while (err >= 0) */
 
-        if (0 == err && loop < loops)
+        if (err >= 0 && loop < loops)
             *meta_pptr = meta_ptr_per_round;
-    } /* for (; loop <= loops && err >= 0; ++loop) */
+        else
+            break;
+    } /* for (; loop <= loops; ++loop) */
 
     return err;
 }
@@ -971,5 +980,8 @@ void commproto_dump_buffer(const uint8_t *buf, uint32_t size, FILE *nullable_str
  *
  * >>> 2022-06-04, Man Hung-Coeng:
  *  01. Expand arraylen_t to arraylen8_t, arraylen16_t and arraylen32_t.
+ *
+ * >>> 2022-06-20, Man Hung-Coeng:
+ *  01. Optimize loop conditions in general_*().
  */
 

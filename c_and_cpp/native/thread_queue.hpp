@@ -40,6 +40,7 @@
 #endif
 
 #define THREAD_QUEUE_INNER_LOCK()           std::unique_lock<lock_t> lock(*lock_ptr_)
+#define THREAD_QUEUE_INNER_UNLOCK()         lock.unlock()
 
 template<typename seq_container_t>
 inline void __reserve_memory_if_needed(size_t item_count, seq_container_t &container)
@@ -168,6 +169,8 @@ public: // Abilities.
 
         ++item_count_;
 
+        THREAD_QUEUE_INNER_UNLOCK(); // So that consumers will not wake and wait unnecessarily before the item is pushed.
+
         notify(flag);
 
         return 1;
@@ -194,6 +197,8 @@ public: // Abilities.
 
         item_count_ += count;
 
+        THREAD_QUEUE_INNER_UNLOCK(); // So that consumers will not wake and wait unnecessarily before items are pushed.
+
         notify(flag);
 
         return count;
@@ -212,6 +217,8 @@ public: // Abilities.
         __general_push_back(count, items, data_items_);
 
         item_count_ += count;
+
+        THREAD_QUEUE_INNER_UNLOCK(); // So that consumers will not wake and wait unnecessarily before items are pushed.
 
         notify(flag);
 
@@ -382,5 +389,8 @@ template<typename T, typename seq_container_t> using threaque_c = thread_queue_c
  *  01. Synchronize definition of the alias threaque_c after the enhancement.
  *  02. Rename the template-version wait() to wait_until_required_for_stop()
  *      for better readability, and add a new wait_until_either_satisfied().
+ *
+ * >>> 2022-08-01, Man Hung-Coeng:
+ *  01. push_*(): Do the unlock in time to avoid consumers' unnecessary waiting.
  */
 

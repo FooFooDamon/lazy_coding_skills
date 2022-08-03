@@ -42,6 +42,7 @@ enum
     , COMMPROTO_ERR_META_ARRAY_LENGTH_MISSING
     , COMMPROTO_ERR_STRUCT_PTR_EXCEEDS
     , COMMPROTO_ERR_INCOMPLETE_BUF_CONTENTS
+    , COMMPROTO_ERR_STRUCT_ARRAY_TOO_BIG
 
     , COMMPROTO_ERR_END /* NOTE: All error codes should be defined ahead of this. */
 };
@@ -59,6 +60,7 @@ static const char* const S_ERRORS[] = {
     , "Meta array length missing"
     , "Structure pointer exceeds"
     , "Incomplete buffer contents"
+    , "Structure array too big"
 };
 
 const char* commproto_error(int error_code)
@@ -559,7 +561,13 @@ static int general_deserialization(int16_t fields, int32_t loops, bool can_have_
 
             if (*handled_len_ptr + data_offset > buf_len || dynamic_array_size < 0)
             {
-                err = (dynamic_array_size < 0) ? dynamic_array_size : -COMMPROTO_ERR_INCOMPLETE_BUF_CONTENTS;
+                err = (dynamic_array_size < 0)
+                    ? (
+                        (dynamic_array_size > COMMPROTO_ERR_END)
+                        ? dynamic_array_size
+                        : -COMMPROTO_ERR_STRUCT_ARRAY_TOO_BIG
+                    )
+                    : -COMMPROTO_ERR_INCOMPLETE_BUF_CONTENTS;
                 continue;
             }
 
@@ -983,5 +991,8 @@ void commproto_dump_buffer(const uint8_t *buf, uint32_t size, FILE *nullable_str
  *
  * >>> 2022-06-20, Man Hung-Coeng:
  *  01. Optimize loop conditions in general_*().
+ *
+ * >>> 2022-08-03, Man Hung-Coeng:
+ *  01. Add and use an error code: COMMPROTO_ERR_STRUCT_ARRAY_TOO_BIG.
  */
 

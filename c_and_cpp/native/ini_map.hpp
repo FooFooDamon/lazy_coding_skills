@@ -25,7 +25,7 @@
 #include "ini_file.h"
 
 #include <map>
-#include <exception>
+#include <stdexcept>
 
 class ini_map_c final
 {
@@ -344,5 +344,8 @@ private:
  * >>> 2022-05-08, Man Hung-Coeng:
  *  01. Eliminate stupid cppcheck[operatorEqVarError] warnings
  *      happening to operator= !
+ *
+ * >>> 2022-09-04, Man Hung-Coeng:
+ *  01. Replace the header <exception> with <stdexcept>.
  */
 

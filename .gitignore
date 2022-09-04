@@ -19,6 +19,7 @@ cmake_install.cmake
 .vs
 .vscode
 gccdump.s
+<stdin>.s
 __pycache__
 *.pyc
 .~*

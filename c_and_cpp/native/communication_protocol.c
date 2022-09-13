@@ -207,7 +207,7 @@ static int32_t calc_struct_size_or_move_meta_ptr(int16_t struct_field_count, con
             break;
         }
 
-        if (meta_ptr - meta_start_ptr >= meta_len)
+        if (meta_ptr - meta_start_ptr >= (int32_t)meta_len)
             break;
     } /* for (; i < struct_field_count; ++i) */
 
@@ -398,7 +398,7 @@ static int general_serialization(int16_t fields, int32_t loops, bool can_have_in
                 " struct offset: %d\n", loop, loops, type, (int)*handled_len_ptr, (int)(*meta_pptr - meta_start_ptr),
                 (int)(*struct_pptr - struct_ptr_start));
 
-            if (*meta_pptr - meta_start_ptr >= meta_len || ++field > fields)
+            if (*meta_pptr - meta_start_ptr >= (int32_t)meta_len || ++field > fields)
                 break;
         } /* while (err >= 0) */
 
@@ -670,7 +670,7 @@ static int general_deserialization(int16_t fields, int32_t loops, bool can_have_
                 continue;
             }
 
-            if (*meta_pptr - meta_start_ptr >= meta_len || ++field > fields)
+            if (*meta_pptr - meta_start_ptr >= (int32_t)meta_len || ++field > fields)
                 break;
         } /* while (err >= 0 && *handled_len_ptr < buf_len) */
 
@@ -837,7 +837,7 @@ static int general_clear(int16_t fields, int32_t loops, bool can_have_inner_stru
             COMMPROTO_DPRINT("loop[%d/%d] Clear: type: %d, meta offset: %d, struct offset: %d\n",
                 loop, loops, type, (int)(*meta_pptr - meta_start_ptr), (int)(*struct_pptr - struct_ptr_start));
 
-            if (*meta_pptr - meta_start_ptr >= meta_len || ++field > fields)
+            if (*meta_pptr - meta_start_ptr >= (int32_t)meta_len || ++field > fields)
                 break;
         } /* while (err >= 0) */
 
@@ -994,5 +994,8 @@ void commproto_dump_buffer(const uint8_t *buf, uint32_t size, FILE *nullable_str
  *
  * >>> 2022-08-03, Man Hung-Coeng:
  *  01. Add and use an error code: COMMPROTO_ERR_STRUCT_ARRAY_TOO_BIG.
+ *
+ * >>> 2022-09-13, Man Hung-Coeng:
+ *  01. Eliminate some warnings from compilers or VIM plugins.
  */
 

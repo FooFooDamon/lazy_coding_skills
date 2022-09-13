@@ -60,8 +60,10 @@ __VER__ ?= ${VCS_VERSION}
 COMMON_COMPILE_FLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC -Wall -Werror \
     -ansi -Wpedantic -Wno-variadic-macros # -fstack-protector-strong
 
+EXTRA_COMPILE_FLAGS ?= -W -Wno-unused-parameter -Wno-missing-field-initializers -Wno-implicit-fallthrough
+
 ifeq (${NDEBUG}, 1)
-    DEBUG_FLAGS ?= -O3
+    DEBUG_FLAGS ?= -O3 -DNDEBUG
 else
     DEBUG_FLAGS ?= -O0 -g -ggdb
 endif
@@ -121,5 +123,8 @@ CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS}
 #
 # >>> 2022-02-21, Man Hung-Coeng:
 #   01. Add -D_REENTRANT into COMMON_COMPILE_FLAGS.
+#
+# >>> 2022-09-13, Man Hung-Coeng:
+#   01. Add EXTRA_COMPILE_FLAGS and -DNDEBUG.
 #
 

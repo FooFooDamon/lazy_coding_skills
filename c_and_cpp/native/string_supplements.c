@@ -107,7 +107,7 @@ static char** __str_split(const char *str, size_t str_len, const char *delimiter
             len = (splits < MAX_SPLITS) ? (tail - head) : (STOP - head);
             if (is_dynamic_alloc)
             {
-                if (NULL == (pptr[splits - 1] = malloc(len + 1)))
+                if (NULL == (pptr[splits - 1] = (char *)malloc(len + 1)))
                 {
                     *errcode = -STR_ERR_MEM_ALLOC;
 
@@ -129,7 +129,7 @@ static char** __str_split(const char *str, size_t str_len, const char *delimiter
         if (is_dynamic_alloc)
             pptr[splits - 1] = NULL;
 
-        if (is_dynamic_alloc && capacity > splits && (NULL != (tmp = realloc(pptr, sizeof(char *) * splits))))
+        if (is_dynamic_alloc && capacity > splits && (NULL != (tmp = (char**)realloc(pptr, sizeof(char *) * splits))))
             pptr = tmp;
     }
     else
@@ -150,7 +150,7 @@ char** str_split(const char *str, size_t str_len, const char *delimiter, size_t 
     char **pptr = __str_split(str, str_len, delimiter, delimiter_len, &splits, NULL, 0, &err);
 
     if (NULL != nullable_errno_or_splits_output)
-        *nullable_errno_or_splits_output = (err < 0) ? err : splits;
+        *nullable_errno_or_splits_output = (err < 0) ? err : (int)splits;
 
     return pptr;
 }
@@ -184,7 +184,7 @@ int str_split_to_fixed_buffer(const char *str, size_t str_len, const char *delim
     if (0 == err)
         __str_split(str, str_len, delimiter, delimiter_len, &splits, buf, capacity_per_item, &err);
 
-    return (err < 0) ? err : splits;
+    return (err < 0) ? err : (int)splits;
 }
 
 #ifdef TEST
@@ -327,5 +327,8 @@ int main(int argc, char **argv)
  *      result only, and add a new one named str_split_to_fixed_buffer()
  *      for storing the result in the static buffer specified by the parameter.
  *  02. Add str_split_destroy() for releasing the memory from str_split().
+ *
+ * >>> 2022-09-13, Man Hung-Coeng:
+ *  01. Eliminate some warnings from compilers or VIM plugins.
  */
 

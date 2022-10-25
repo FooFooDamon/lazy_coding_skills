@@ -21,7 +21,8 @@
 
 CC ?= gcc
 CXX ?= g++
-AR ?= ar -r -s
+AR ?= ar
+ARFLAGS ?= -r -s
 STRIP ?= strip
 
 VCS ?= git
@@ -126,5 +127,8 @@ CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS}
 #
 # >>> 2022-09-13, Man Hung-Coeng:
 #   01. Add EXTRA_COMPILE_FLAGS and -DNDEBUG.
+#
+# >>> 2022-10-25, Man Hung-Coeng:
+#   01. Add ARFLAGS, and modify AR.
 #
 

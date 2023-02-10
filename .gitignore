@@ -44,5 +44,6 @@ tags
 /c_and_cpp/native/socket_supplements
 /c_and_cpp/native/string_supplements
 /c_and_cpp/native/watchdog
+/shell/private
 /vim/private
 

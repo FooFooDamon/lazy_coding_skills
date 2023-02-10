@@ -73,8 +73,8 @@ help:
 	@echo "  clean     - Remove most generated files and directories."
 
 examples:
-	@echo "make install LCS_USER='Man Hung-Ceong' LCS_EMAIL='udc577@126.com'"
-	@echo "make install LCS_USER='Man Hung-Ceong'"
+	@echo "make install LCS_USER='Man Hung-Coeng' LCS_EMAIL='udc577@126.com'"
+	@echo "make install LCS_USER='Man Hung-Coeng'"
 	@echo "make install LCS_EMAIL='udc577@126.com'"
 	@echo "make install"
 	@echo "make uninstall"

@@ -22,6 +22,6 @@
 " ================
 "   CHANGE LOG
 " ================
-" >>> ${YEAR} ${LCS_USER} <${LCS_EMAIL}>:
+" >>> ${DATE}, ${LCS_USER} <${LCS_EMAIL}>:
 "   01. Create.
 "

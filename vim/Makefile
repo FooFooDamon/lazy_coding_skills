@@ -35,7 +35,11 @@ install: uninstall
 	echo "let g:LCS_USER = '${LCS_USER}'" >> ${VIM_RC}
 	echo "let g:LCS_EMAIL = '${LCS_EMAIL}'" >> ${VIM_RC}
 	echo "source $(shell pwd)/main.vim" >> ${VIM_RC}
-	[ -e "${VIM_PRIVATE}" ] && ln -s "${VIM_PRIVATE}" "$(shell pwd)/private"
+	@# The make program will report an error while ${VIM_PRIVATE} does not exist.
+	@# [ -e "${VIM_PRIVATE}" ] && ln -s "${VIM_PRIVATE}" "$(shell pwd)/private"
+	if [ -e "${VIM_PRIVATE}" ]; then \
+		ln -s "${VIM_PRIVATE}" "$(shell pwd)/private"; \
+	fi
 
 uninstall:
 	rm -f "$(shell pwd)/private"

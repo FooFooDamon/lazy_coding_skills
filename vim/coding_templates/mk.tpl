@@ -62,10 +62,10 @@ help:
 	@echo "  clean     - Remove most generated files and directories."
 
 examples:
-	@echo "make && make install"
-	@echo "make clean"
-	@echo "make uninstall"
-	@echo "make check"
+	@echo "1. make && make install"
+	@echo "2. make clean"
+	@echo "3. make uninstall"
+	@echo "4. make check"
 
 #
 # ================

@@ -19,6 +19,7 @@
 #
 #
 LAZY_CODING_HOME := $(patsubst %/,%,$(dir $(shell pwd)))
+SCRIPT_PRIVATE_DIR ?= ${HOME}/git/lazy_coding_skills.private/scripts
 ifneq ("$(wildcard ${HOME}/.bashrc)","")
 	BASH_RC := ${HOME}/.bashrc
 else ifneq ("$(wildcard ${HOME}/.bash_profile)","")
@@ -42,8 +43,14 @@ init:
 install: build uninstall
 	echo 'export LAZY_CODING_HOME=${LAZY_CODING_HOME}' >> "${BASH_RC}"
 	echo '. $${LAZY_CODING_HOME}/scripts/__import__.sh' >> "${BASH_RC}"
+	@# The make program will report an error while ${SCRIPT_PRIVATE_DIR} does not exist.
+	@# [ -e "${SCRIPT_PRIVATE_DIR}" ] && ln -s "${SCRIPT_PRIVATE_DIR}" "$(shell pwd)/private"
+	if [ -e "${SCRIPT_PRIVATE_DIR}" ]; then \
+		ln -s "${SCRIPT_PRIVATE_DIR}" "$(shell pwd)/private"; \
+	fi
 
 uninstall:
+	rm -f "$(shell pwd)/private"
 	sed -i "/LAZY_CODING_HOME/d" "${BASH_RC}"
 
 check:
@@ -76,8 +83,9 @@ help:
 	@echo "  clean     - Remove most generated files and directories."
 
 examples:
-	@echo "make install"
-	@echo "make uninstall"
+	@echo "1. make install SCRIPT_PRIVATE_DIR=${SCRIPT_PRIVATE_DIR}"
+	@echo "2. make install"
+	@echo "3. make uninstall"
 
 #
 # ================

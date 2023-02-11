@@ -20,6 +20,7 @@
 
 LCS_USER ?= ${USER}
 LCS_EMAIL ?= ${USER}@123456.com
+VIM_PRIVATE ?= ${HOME}/git/lazy_coding_skills.private/vim
 VIM_RC := ${HOME}/.vimrc
 
 all: build
@@ -34,14 +35,16 @@ install: uninstall
 	echo "let g:LCS_USER = '${LCS_USER}'" >> ${VIM_RC}
 	echo "let g:LCS_EMAIL = '${LCS_EMAIL}'" >> ${VIM_RC}
 	echo "source $(shell pwd)/main.vim" >> ${VIM_RC}
+	[ -e "${VIM_PRIVATE}" ] && ln -s "${VIM_PRIVATE}" "$(shell pwd)/private"
 
 uninstall:
+	rm -f "$(shell pwd)/private"
 	export vimrc_linenum=$$(grep -n "$(shell pwd)/main.vim" ${VIM_RC} | awk -F : '{ print $$1 }'); \
 	if [ -n "$${vimrc_linenum}" ]; then \
 		sed -i "$${vimrc_linenum}d" ${VIM_RC}; \
 	fi
-	sed -i "/g:LCS_USER/d" ${VIM_RC}
 	sed -i "/g:LCS_EMAIL/d" ${VIM_RC}
+	sed -i "/g:LCS_USER/d" ${VIM_RC}
 
 check:
 	@echo "check: Unneeded."
@@ -73,11 +76,15 @@ help:
 	@echo "  clean     - Remove most generated files and directories."
 
 examples:
-	@echo "make install LCS_USER='Man Hung-Coeng' LCS_EMAIL='udc577@126.com'"
-	@echo "make install LCS_USER='Man Hung-Coeng'"
-	@echo "make install LCS_EMAIL='udc577@126.com'"
-	@echo "make install"
-	@echo "make uninstall"
+	@echo "1. make install LCS_USER='Man Hung-Coeng' LCS_EMAIL='udc577@126.com' VIM_PRIVATE='${VIM_PRIVATE}'"
+	@echo "2. make install LCS_USER='Man Hung-Coeng' LCS_EMAIL='udc577@126.com'"
+	@echo "3. make install LCS_USER='Man Hung-Coeng' VIM_PRIVATE='${VIM_PRIVATE}'"
+	@echo "4. make install LCS_EMAIL='udc577@126.com' VIM_PRIVATE='${VIM_PRIVATE}'"
+	@echo "5. make install LCS_USER='Man Hung-Coeng'"
+	@echo "6. make install LCS_EMAIL='udc577@126.com'"
+	@echo "7. make install VIM_PRIVATE='${VIM_PRIVATE}'"
+	@echo "8. make install"
+	@echo "9. make uninstall"
 
 #
 # ================
@@ -86,5 +93,8 @@ examples:
 #
 # >>> 2023-02-10, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> 2023-02-11, Man Hung-Coeng <udc577@126.com>:
+#   01. Detect, and link to, the private settings automatically.
 #
 

@@ -19,12 +19,12 @@
 if [ -n "${LAZY_CODING_HOME}" ]; then
     set -eu
 
-    export PATH=${PATH}:${LAZY_CODING_HOME}/shell:${LAZY_CODING_HOME}/shell/private
+    export PATH=${PATH}:${LAZY_CODING_HOME}/scripts:${LAZY_CODING_HOME}/scripts/private
 
     for i in .bash_aliases .bash_variables .bash_functions .bash_completions .bash_openup
     do
-        [ -f "${LAZY_CODING_HOME}/shell/${i}" ] && . "${LAZY_CODING_HOME}/shell/${i}"
-        [ -f "${LAZY_CODING_HOME}/shell/private/${i}" ] && . "${LAZY_CODING_HOME}/shell/private/${i}"
+        [ -f "${LAZY_CODING_HOME}/scripts/${i}" ] && . "${LAZY_CODING_HOME}/scripts/${i}"
+        [ -f "${LAZY_CODING_HOME}/scripts/private/${i}" ] && . "${LAZY_CODING_HOME}/scripts/private/${i}"
     done
 
     echo "-- Welcome to use Lazy-Coding-Skills (懒编程秘笈). --"

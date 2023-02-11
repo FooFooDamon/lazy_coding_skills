@@ -41,7 +41,7 @@ init:
 
 install: build uninstall
 	echo 'export LAZY_CODING_HOME=${LAZY_CODING_HOME}' >> "${BASH_RC}"
-	echo '. $${LAZY_CODING_HOME}/shell/__import__.sh' >> "${BASH_RC}"
+	echo '. $${LAZY_CODING_HOME}/scripts/__import__.sh' >> "${BASH_RC}"
 
 uninstall:
 	sed -i "/LAZY_CODING_HOME/d" "${BASH_RC}"

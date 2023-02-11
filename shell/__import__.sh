@@ -17,12 +17,23 @@
 #
 
 if [ -n "${LAZY_CODING_HOME}" ]; then
+    set -eu
+
     export PATH=${PATH}:${LAZY_CODING_HOME}/shell:${LAZY_CODING_HOME}/shell/private
+
+    for i in .bash_aliases .bash_variables .bash_functions .bash_completions .bash_openup
+    do
+        [ -f "${LAZY_CODING_HOME}/shell/${i}" ] && . "${LAZY_CODING_HOME}/shell/${i}"
+        [ -f "${LAZY_CODING_HOME}/shell/private/${i}" ] && . "${LAZY_CODING_HOME}/shell/private/${i}"
+    done
+
     echo "-- Welcome to use Lazy-Coding-Skills (懒编程秘笈). --"
     echo " * Author: Man Hung-Coeng"
     echo " * E-Mail: udc577@126.com"
     echo " * GitHub: FooFooDamon"
-    echo "-- Less code, better world! Please try and enjoy! --"
+    echo "-- Less code, better world!  Please try and enjoy! --"
+
+    set +eu
 fi
 
 #

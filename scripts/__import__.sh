@@ -31,7 +31,10 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     echo " * Author: Man Hung-Coeng"
     echo " * E-Mail: udc577@126.com"
     echo " * GitHub: FooFooDamon"
+    echo " * Tip-01: To get help, run: lchelp"
+    echo " * Tip-02: To do terminal logging, run: tl"
     echo "-- Less code, better world!  Please try and enjoy! --"
+    echo ""
 
     set +eu
 fi
@@ -43,5 +46,8 @@ fi
 #
 # >>> 2023-02-11, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> 2023-02-12, Man Hung-Coeng <udc577@126.com>:
+#   01. Add two tips.
 #
 

@@ -25,7 +25,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     alias L="cd ${LAZY_CODING_HOME}"
     alias make="time make"
     alias pst="ps -eLo uid,pid,ppid,lwp,psr,c,stime,tname,time,args" # Means displaying [t]hread info while executing ps.
-    alias rm=safer-rm
+    alias rm=safer-rm.sh
     alias startx="printf '\\e[0;33mstartx should not be used when you have entered a graphic desktop\\e[0m\n'"
     alias tailf="tail --follow=name"
     alias tl="[ -e ${HOME}/logs ] || mkdir ${HOME}/logs; script -f ${HOME}/logs/terminal_log_\`date +%Y-%m-%d_%H_%M_%S\`.txt"

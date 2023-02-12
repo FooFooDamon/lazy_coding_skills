@@ -20,8 +20,8 @@ DATETIME_CMD="date +%Y-%m-%d_%H:%M:%S.%N"
 
 usage()
 {
-    printf "\n$(basename $0) - Update local git repositories.\n\n"
-    printf "USAGES: $(basename $0) [OPTIONS ...] [default git root directory]\n"
+    printf "\n$(basename $0) - Update local git repositories.\n"
+    printf "\nUSAGE: $(basename $0) [OPTIONS ...] [default git root directory]\n"
     printf "  -h, --help     Show this help message.\n"
     printf "  -v, --version  Show version info.\n"
     printf "\nEXAMPLES:\n"

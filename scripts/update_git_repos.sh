@@ -67,8 +67,9 @@ do
     fi
 done
 [ -n "${DEFAULT_GIT_ROOT}" ] || DEFAULT_GIT_ROOT="${HOME}/git"
-
 echo "Default git root directory: ${DEFAULT_GIT_ROOT}"
+
+[ -e "${HOME}/etc" ] || mkdir "${HOME}/etc" || exit 1
 
 REPO_CONFIG="${HOME}/etc/git_repositories.txt"
 if [ ! -f "${REPO_CONFIG}" ]; then
@@ -89,7 +90,7 @@ do
     git_root=$(echo ${i} | awk -F ":::" '{ print $3 }')
     [ $(echo "${git_root}" | grep '^[ \t]*$' -c) -eq 0 ] || git_root="${DEFAULT_GIT_ROOT}"
 
-    if [ -d ${git_root}/${repo_name} ]; then
+    if [ -e ${git_root}/${repo_name} ]; then
         printf "\e[0;33mUpdating ${git_root}/${repo_name} ...\e[0m\n"
         cd ${git_root}/${repo_name} && git status && git pull
     else
@@ -105,5 +106,8 @@ done < "${REPO_CONFIG}"
 #
 # >>> V1.0.0|2023-02-11, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> V1.0.1|2023-02-12, Man Hung-Coeng <udc577@126.com>:
+#   01. Automatically create ~/etc directory if it does not exist.
 #
 

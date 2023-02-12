@@ -49,17 +49,26 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     {
         printf '\nALIASES:\n'
         grep "alias " "${LAZY_CODING_HOME}/scripts/.bash_aliases" \
-            | awk -F = '{ print $1 }' | awk '{ printf("    %s\n", $2) }' | sort
+            | awk -F = '{ print $1 }' | awk '{ printf(" %s\n", $2) }' | sort | nl -s . -w 3
         echo '-- Run "alias <name>" to see definition of an alias, e.g. alias diff'
 
         printf '\nFUNCTIONS:\n'
-        grep '^[ \t]*[a-zA-Z0-9_-]\+()$' "${LAZY_CODING_HOME}/scripts/.bash_functions" | sed 's/()//' | sort
+        grep '^[ \t]*[a-zA-Z0-9_-]\+()$' "${LAZY_CODING_HOME}/scripts/.bash_functions" \
+            | sed 's/^[ \t]*\([^ \t()]\+\)()/ \1/' | sort | nl -s . -w 3
         echo '-- Run "declare -f <name>" to see definition of a function, e.g. declare -f lchelp'
 
         printf '\nVARIABLES:\n'
         grep '^[ \t]*export [a-zA-Z0-9_-]\+=' "${LAZY_CODING_HOME}/scripts/.bash_variables" \
-            | awk -F = '{ print $1 }' | sed 's/^[ \t]*export \(.*\)/    \1/' | sort | uniq
+            | awk -F = '{ print $1 }' | sed 's/^[ \t]*export \(.*\)/ \1/' | sort | uniq | nl -s . -w 3
         echo '-- Run "echo ${<name>}" to see value of a variable, e.g. echo ${SHELL}'
+
+        printf '\nSCRIPTS:\n'
+        cd "${LAZY_CODING_HOME}/scripts"
+        set +e
+        ls *.exp *.sh *.py 2> /dev/null | grep -v "^_" | sed 's/\(.*\)/ \1/' | nl -s . -w 3
+        set -e
+        cd - > /dev/null
+        echo '-- Run "<name> -h" to see usage of a script, e.g. safer-rm.sh -h'
 
         printf '\n'
     }

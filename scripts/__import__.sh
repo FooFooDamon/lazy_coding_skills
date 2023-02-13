@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-if [ -n "${LAZY_CODING_HOME}" ]; then
+time if [ -n "${LAZY_CODING_HOME}" ]; then
     set -eu
 
     export PATH=${PATH}:${LAZY_CODING_HOME}/scripts:${LAZY_CODING_HOME}/scripts/private
@@ -35,7 +35,6 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     echo " * Tip-01: To get help, run: lchelp"
     echo " * Tip-02: To do terminal logging, run: tl"
     echo "-- Less code, better world!  Please try and enjoy! --"
-    echo ""
 
     set +eu
 fi
@@ -54,5 +53,6 @@ fi
 # >>> 2023-02-13, Man Hung-Coeng <udc577@126.com>:
 #   01. Unset the loop counter "i" after use
 #       to avoid variable pollution.
+#   02. Display how much time on loading this script.
 #
 

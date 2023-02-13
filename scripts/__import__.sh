@@ -26,6 +26,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
         [ -f "${LAZY_CODING_HOME}/scripts/${i}" ] && . "${LAZY_CODING_HOME}/scripts/${i}"
         [ -f "${LAZY_CODING_HOME}/scripts/private/${i}" ] && . "${LAZY_CODING_HOME}/scripts/private/${i}"
     done
+    unset i
 
     echo "-- Welcome to use Lazy-Coding-Skills (懒编程秘笈). --"
     echo " * Author: Man Hung-Coeng"
@@ -49,5 +50,9 @@ fi
 #
 # >>> 2023-02-12, Man Hung-Coeng <udc577@126.com>:
 #   01. Add two tips.
+#
+# >>> 2023-02-13, Man Hung-Coeng <udc577@126.com>:
+#   01. Unset the loop counter "i" after use
+#       to avoid variable pollution.
 #
 

@@ -21,12 +21,13 @@
 if [ -n "${LAZY_CODING_HOME}" ]; then
     set +e
 
-    for i in "${LAZY_CODING_HOME}/scripts" "${LAZY_CODING_HOME}/scripts/private"
+    for j in "${LAZY_CODING_HOME}/scripts" "${LAZY_CODING_HOME}/scripts/private"
     do
-        [ -e "${i}" ] && cd "${i}" || continue
+        [ -e "${j}" ] && cd "${j}" || continue
         ls *.exp *.sh *.py 2> /dev/null | grep -v "^_" | xargs -I {} chmod +x "{}"
         chmod -x __import__.sh .bash_* 2> /dev/null
     done
+    unset j
 
     set -e
 
@@ -38,7 +39,11 @@ fi
 #   CHANGE LOG
 # ================
 #
-# >>> V1.0.0|2023-02-12, Man Hung-Coeng <udc577@126.com>:
+# >>> 2023-02-12, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> 2023-02-13, Man Hung-Coeng <udc577@126.com>:
+#   01. Rename the loop counter "i" to "j",
+#       and unset it after use to avoid variable pollution.
 #
 

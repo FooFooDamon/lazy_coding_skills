@@ -75,7 +75,12 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
 
     man2pdf()
     {
-        man -t "$1" | ps2pdf - "${1}.pdf"
+        if [ -z "$1" ]; then
+            echo "*** Please specify a command!" >&2
+            return 1
+        else
+            man -t "$1" | ps2pdf - "${1}.pdf"
+        fi
     }
 fi
 
@@ -84,7 +89,10 @@ fi
 #   CHANGE LOG
 # ================
 #
-# >>> V1.0.0|2023-02-12, Man Hung-Coeng <udc577@126.com>:
+# >>> 2023-02-12, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> 2023-02-13, Man Hung-Coeng <udc577@126.com>:
+#   01. Add a command line argument checking in man2pdf().
 #
 

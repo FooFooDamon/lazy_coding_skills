@@ -43,11 +43,7 @@ init:
 install: build uninstall
 	echo 'export LAZY_CODING_HOME=${LAZY_CODING_HOME}' >> "${BASH_RC}"
 	echo '. $${LAZY_CODING_HOME}/scripts/__import__.sh' >> "${BASH_RC}"
-	@# The make program will report an error while ${SCRIPT_PRIVATE_DIR} does not exist.
-	@# [ -e "${SCRIPT_PRIVATE_DIR}" ] && ln -s "${SCRIPT_PRIVATE_DIR}" "$(shell pwd)/private"
-	if [ -e "${SCRIPT_PRIVATE_DIR}" ]; then \
-		ln -s "${SCRIPT_PRIVATE_DIR}" "$(shell pwd)/private"; \
-	fi
+	[ -e "${SCRIPT_PRIVATE_DIR}" ] && ln -s "${SCRIPT_PRIVATE_DIR}" "$(shell pwd)/private" || :
 
 uninstall:
 	rm -f "$(shell pwd)/private"
@@ -94,5 +90,8 @@ examples:
 #
 # >>> 2023-02-11, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> 2023-02-13, Man Hung-Coeng <udc577@126.com>:
+#   01. Fix the error of one-line-linking of private directory.
 #
 

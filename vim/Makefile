@@ -35,11 +35,7 @@ install: uninstall
 	echo "let g:LCS_USER = '${LCS_USER}'" >> ${VIM_RC}
 	echo "let g:LCS_EMAIL = '${LCS_EMAIL}'" >> ${VIM_RC}
 	echo "source $(shell pwd)/main.vim" >> ${VIM_RC}
-	@# The make program will report an error while ${VIM_PRIVATE} does not exist.
-	@# [ -e "${VIM_PRIVATE}" ] && ln -s "${VIM_PRIVATE}" "$(shell pwd)/private"
-	if [ -e "${VIM_PRIVATE}" ]; then \
-		ln -s "${VIM_PRIVATE}" "$(shell pwd)/private"; \
-	fi
+	[ -e "${VIM_PRIVATE}" ] && ln -s "${VIM_PRIVATE}" "$(shell pwd)/private" || :
 
 uninstall:
 	rm -f "$(shell pwd)/private"
@@ -100,5 +96,8 @@ examples:
 #
 # >>> 2023-02-11, Man Hung-Coeng <udc577@126.com>:
 #   01. Detect, and link to, the private settings automatically.
+#
+# >>> 2023-02-13, Man Hung-Coeng <udc577@126.com>:
+#   01. Fix the error of one-line-linking of private directory.
 #
 

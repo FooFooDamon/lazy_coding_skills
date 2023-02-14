@@ -1,8 +1,6 @@
 #!/bin/bash
 
 #
-# TODO: Brief description of this script.
-#
 # Copyright (c) ${YEAR} ${LCS_USER} <${LCS_EMAIL}>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,10 +20,14 @@ DATETIME_CMD="date +%Y-%m-%d_%H:%M:%S.%N"
 
 usage()
 {
-    echo "$(basename $0) - <Brief description of this script>"
-    echo "Usage: $(basename $0) <Usage format of this script>"
-    echo "Example 1: $(basename $0) <An example showing how actual arguments should be like>"
+    printf "\n$(basename $0) - <Brief description of this script>\n"
+    printf "\nUSAGE: $(basename $0) [OPTIONS ...]\n"
+    printf "  -h, --help     Show this help message.\n"
+    printf "  -v, --version  Show version info.\n"
+    printf "\nEXAMPLES:\n"
+    printf "  1: $(basename $0) <An example showing how actual arguments should be like>\n"
     # TODO: Put more examples if necessary.
+    printf "\n"
 }
 
 version()
@@ -33,17 +35,33 @@ version()
     grep "^# >>> V[0-9.]\+[ ]*|" "$0" | tail -n 1 | sed 's/.*\(V[0-9.]\+[ ]*|[0-9-]\+\),.*/\1/'
 }
 
+printW()
+{
+    printf "\e[0;33m$*\e[0m\n" >&2
+}
+
+printE()
+{
+    printf "\e[0;31m$*\e[0m\n" >&2
+}
+
+eexit()
+{
+    [ $# -gt 0 ] && printE "$*"
+    exit 1
+}
+
 handle_sigINT()
 {
     # TODO: Define what to do here when SIGINT arises.
-    printf "\e[0;33m$(${DATETIME_CMD}): $(basename $0): Script will exit soon.\e[0m\n" >&2
+    printW "$(${DATETIME_CMD}): $(basename $0): Script will exit soon."
     exit 1
 }
 
 handle_sigQUIT()
 {
     # TODO: Define what to do here when SIGQUIT arises.
-    printf "\e[0;33m$(${DATETIME_CMD}): $(basename $0): Script will exit soon.\e[0m\n" >&2
+    printW "$(${DATETIME_CMD}): $(basename $0): Script will exit soon."
     exit 1
 }
 
@@ -68,7 +86,7 @@ do
         version
         exit 0
     else
-        continue # Or whatever you want.
+        continue # TODO: Or whatever you want.
     fi
 done
 

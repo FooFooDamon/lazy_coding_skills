@@ -46,7 +46,7 @@ for i in PUBLIC_TEMPLATES
 
     for j in split(template_file, '\.')
         if j != 'tpl'
-            execute "autocmd BufNewFile *" . j . " 0r " . i . " | " . EXEC_ADJUST_ALL
+            execute "autocmd BufNewFile *." . j . " 0r " . i . " | " . EXEC_ADJUST_ALL
         endif
     endfor
 endfor
@@ -54,7 +54,7 @@ endfor
 for i in PRIVATE_TEMPLATES
     for j in split(fnamemodify(i, ':t'), '\.')
         if j != 'tpl'
-            execute "autocmd BufNewFile *" . j . " 0r " . i . " | " . EXEC_ADJUST_ALL
+            execute "autocmd BufNewFile *." . j . " 0r " . i . " | " . EXEC_ADJUST_ALL
         endif
     endfor
 endfor
@@ -75,7 +75,11 @@ autocmd BufNewFile [Mm][Aa][Kk][Ee][Ff][Ii][Ll][Ee] 0r $MK_TEMPLATE | execute EX
 " ================
 "   CHANGE LOG
 " ================
+"
 " >>> 2023-02-10, Man Hung-Coeng <udc577@126.com>:
 "   01. Create.
+"
+" >>> 2023-02-14, Man Hung-Coeng <udc577@126.com>:
+"   01. Fix the mismatching bug of autocmd BufNewFile.
 "
 

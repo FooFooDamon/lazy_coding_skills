@@ -21,7 +21,7 @@ time if [ -n "${LAZY_CODING_HOME}" ]; then
 
     export PATH=${PATH}:${LAZY_CODING_HOME}/scripts:${LAZY_CODING_HOME}/scripts/private
 
-    for i in .bash_aliases .bash_variables .bash_functions .bash_completions .bash_openup
+    for i in .bash_aliases .bash_variables .bash_functions .bash_openup .bash_completions
     do
         [ -f "${LAZY_CODING_HOME}/scripts/${i}" ] && . "${LAZY_CODING_HOME}/scripts/${i}"
         [ -f "${LAZY_CODING_HOME}/scripts/private/${i}" ] && . "${LAZY_CODING_HOME}/scripts/private/${i}"
@@ -54,5 +54,8 @@ fi
 #   01. Unset the loop counter "i" after use
 #       to avoid variable pollution.
 #   02. Display how much time on loading this script.
+#
+# >>> 2023-02-14, Man Hung-Coeng <udc577@126.com>:
+#   01. Put .bash_completions after .bash_openup.
 #
 

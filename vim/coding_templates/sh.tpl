@@ -25,7 +25,7 @@ usage()
     printf "  -h, --help     Show this help message.\n"
     printf "  -v, --version  Show version info.\n"
     printf "\nEXAMPLES:\n"
-    printf "  1: $(basename $0) <An example showing how actual arguments should be like>\n"
+    printf "  1. $(basename $0) <An example showing how actual arguments should be like>\n"
     # TODO: Put more examples if necessary.
     printf "\n"
 }

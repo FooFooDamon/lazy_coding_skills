@@ -26,12 +26,11 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
         [ -e "${j}" ] && cd "${j}" || continue
         ls *.exp *.sh *.py 2> /dev/null | grep -v "^_" | xargs -I {} chmod +x "{}"
         chmod -x __import__.sh .bash_* 2> /dev/null
+        cd - > /dev/null
     done
     unset j
 
     set -e
-
-    cd "${HOME}"
 fi
 
 #
@@ -45,5 +44,9 @@ fi
 # >>> 2023-02-13, Man Hung-Coeng <udc577@126.com>:
 #   01. Rename the loop counter "i" to "j",
 #       and unset it after use to avoid variable pollution.
+#
+# >>> 2023-02-14, Man Hung-Coeng <udc577@126.com>:
+#   01. Go back to previous directory after each setting,
+#       instead of going to user home in the end.
 #
 

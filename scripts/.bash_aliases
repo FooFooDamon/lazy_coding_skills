@@ -21,6 +21,8 @@
 if [ -n "${LAZY_CODING_HOME}" ]; then
     alias diff=colordiff
     alias dsk="cd ${HOME}/桌面 2> /dev/null || cd ${HOME}/Desktop"
+    alias html2pdf=wkhtmltopdf
+    alias html2pic=wkhtmltoimage
     alias lc_reload=". ${LAZY_CODING_HOME}/scripts/__import__.sh"
     alias L="cd ${LAZY_CODING_HOME}"
     alias make="time make"
@@ -37,7 +39,10 @@ fi
 #   CHANGE LOG
 # ================
 #
-# >>> V1.0.0|2023-02-12, Man Hung-Coeng <udc577@126.com>:
+# >>> 2023-02-12, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> 2023-02-14, Man Hung-Coeng <udc577@126.com>:
+#   01. Add html2pdf and html2pic.
 #
 

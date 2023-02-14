@@ -43,15 +43,31 @@ version()
     grep "^# >>> V[0-9.]\+[ ]*|" "$0" | tail -n 1 | sed 's/.*\(V[0-9.]\+[ ]*|[0-9-]\+\),.*/\1/'
 }
 
+printW()
+{
+    printf "\e[0;33m$*\e[0m\n" >&2
+}
+
+printE()
+{
+    printf "\e[0;31m$*\e[0m\n" >&2
+}
+
+eexit()
+{
+    [ $# -gt 0 ] && printE "$*"
+    exit 1
+}
+
 handle_sigINT()
 {
-    printf "\e[0;33m$(${DATETIME_CMD}): $(basename $0): Script will exit soon.\e[0m\n" >&2
+    printW "$(${DATETIME_CMD}): $(basename $0): Script will exit soon."
     exit 1
 }
 
 handle_sigQUIT()
 {
-    printf "\e[0;33m$(${DATETIME_CMD}): $(basename $0): Script will exit soon.\e[0m\n" >&2
+    printW "$(${DATETIME_CMD}): $(basename $0): Script will exit soon."
     exit 1
 }
 
@@ -88,7 +104,7 @@ precheck()
     do
         if [ -z "$(which ${i})" ]; then
             _pass=0
-            echo "*** Can not find \"${i}\" command, please install it first!"
+            printE "*** Can not find \"${i}\" command, please install it first!"
         fi
     done
 
@@ -98,7 +114,7 @@ precheck()
 precheck || exit 1
 
 if [ -z "$1" ]; then
-    echo "*** Please specify an URL, or a local .m3u8 file!" >&2
+    printE "*** Please specify an URL, or a local .m3u8 file!"
     usage
     exit 1
 fi
@@ -138,7 +154,7 @@ else
     export url_prefix="$(dirname "${url}")"
 fi
 if [ $(grep -c "\.m3u" ${REMOTE_PLAYLIST}) -gt 0 ]; then
-    echo "[W] Secondary playlist(s):" >&2
+    echo "[W] Secondary playlist/index:" >&2
     cat ${REMOTE_PLAYLIST}
     [ $(grep -c "^http:\|^https:\|^rtp:" ${REMOTE_PLAYLIST}) -eq 0 ] \
         && url="${url_prefix}/$(grep "\.m3u" ${REMOTE_PLAYLIST} | tail -n 1)" \
@@ -203,5 +219,8 @@ ffmpeg -allowed_extensions ALL -protocol_whitelist "file,http,https,crypto,tcp,t
 #
 # >>> V1.0.0|2023-02-12, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> V1.0.1|2023-02-14, Man Hung-Coeng <udc577@126.com>:
+#   01. Add 3 new functions: printW(), printE() and eexit().
 #
 

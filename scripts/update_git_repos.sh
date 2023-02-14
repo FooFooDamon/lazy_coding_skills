@@ -35,15 +35,31 @@ version()
     grep "^# >>> V[0-9.]\+[ ]*|" "$0" | tail -n 1 | sed 's/.*\(V[0-9.]\+[ ]*|[0-9-]\+\),.*/\1/'
 }
 
+printW()
+{
+    printf "\e[0;33m$*\e[0m\n" >&2
+}
+
+printE()
+{
+    printf "\e[0;31m$*\e[0m\n" >&2
+}
+
+eexit()
+{
+    [ $# -gt 0 ] && printE "$*"
+    exit 1
+}
+
 handle_sigINT()
 {
-    printf "\e[0;33m$(${DATETIME_CMD}): $(basename $0): Script will exit soon.\e[0m\n" >&2
+    printW "$(${DATETIME_CMD}): $(basename $0): Script will exit soon."
     exit 1
 }
 
 handle_sigQUIT()
 {
-    printf "\e[0;33m$(${DATETIME_CMD}): $(basename $0): Script will exit soon.\e[0m\n" >&2
+    printW "$(${DATETIME_CMD}): $(basename $0): Script will exit soon."
     exit 1
 }
 
@@ -91,10 +107,10 @@ do
     [ $(echo "${git_root}" | grep '^[ \t]*$' -c) -eq 0 ] || git_root="${DEFAULT_GIT_ROOT}"
 
     if [ -e ${git_root}/${repo_name} ]; then
-        printf "\e[0;33mUpdating ${git_root}/${repo_name} ...\e[0m\n"
+        printW "Updating ${git_root}/${repo_name} ..."
         cd ${git_root}/${repo_name} && git status && git pull
     else
-        printf "\e[0;33mCreating new Git repo: ${git_root}/${repo_name} ...\e[0m\n"
+        printW "Creating new Git repo: ${git_root}/${repo_name} ..."
         cd ${git_root} && git clone ${repo_url} ${repo_name}
     fi
 done < "${REPO_CONFIG}"
@@ -109,5 +125,8 @@ done < "${REPO_CONFIG}"
 #
 # >>> V1.0.1|2023-02-12, Man Hung-Coeng <udc577@126.com>:
 #   01. Automatically create ~/etc directory if it does not exist.
+#
+# >>> V1.0.2|2023-02-14, Man Hung-Coeng <udc577@126.com>:
+#   01. Add 3 new functions: printW(), printE() and eexit().
 #
 

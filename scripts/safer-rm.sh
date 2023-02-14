@@ -34,15 +34,31 @@ version()
     grep "^# >>> V[0-9.]\+[ ]*|" "$0" | tail -n 1 | sed 's/.*\(V[0-9.]\+[ ]*|[0-9-]\+\),.*/\1/'
 }
 
+printW()
+{
+    printf "\e[0;33m$*\e[0m\n" >&2
+}
+
+printE()
+{
+    printf "\e[0;31m$*\e[0m\n" >&2
+}
+
+eexit()
+{
+    [ $# -gt 0 ] && printE "$*"
+    exit 1
+}
+
 handle_sigINT()
 {
-    printf "\e[0;33m$(${DATETIME_CMD}): $(basename $0): Script will exit soon.\e[0m\n" >&2
+    printW "$(${DATETIME_CMD}): $(basename $0): Script will exit soon."
     exit 1
 }
 
 handle_sigQUIT()
 {
-    printf "\e[0;33m$(${DATETIME_CMD}): $(basename $0): Script will exit soon.\e[0m\n" >&2
+    printW "$(${DATETIME_CMD}): $(basename $0): Script will exit soon."
     exit 1
 }
 
@@ -112,7 +128,7 @@ do
 
             item_len=${#item_real_path}
             if [ "${param_real_path:0:$item_len}" = "${item_real_path}" ]; then
-                echo "$(basename $0): skipping: ${cmd_params[$param_index]}" >&2
+                printW "$(basename $0): skipping: ${cmd_params[$param_index]}"
                 unset cmd_params[$param_index]
                 break
             fi
@@ -135,5 +151,8 @@ fi
 #
 # >>> V0.9.0|2023-02-12, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> V0.9.1|2023-02-14, Man Hung-Coeng <udc577@126.com>:
+#   01. Add 3 new functions: printW(), printE() and eexit().
 #
 

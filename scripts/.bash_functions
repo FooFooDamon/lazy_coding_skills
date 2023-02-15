@@ -64,9 +64,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
 
         printf '\nSCRIPTS:\n'
         cd "${LAZY_CODING_HOME}/scripts"
-        set +e
         ls *.exp *.sh *.py 2> /dev/null | grep -v "^_" | sed 's/\(.*\)/ \1/' | nl -s . -w 3
-        set -e
         cd - > /dev/null
         echo '-- Run "<name> -h" to see usage of a script, e.g. safer-rm.sh -h'
 
@@ -94,5 +92,8 @@ fi
 #
 # >>> 2023-02-13, Man Hung-Coeng <udc577@126.com>:
 #   01. Add a command line argument checking in man2pdf().
+#
+# >>> 2023-02-15, Man Hung-Coeng <udc577@126.com>:
+#   01. Remove "set -e" to avoid weird sideeffects.
 #
 

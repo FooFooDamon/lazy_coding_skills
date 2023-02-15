@@ -18,7 +18,6 @@
 
 time if [ -n "${LAZY_CODING_HOME}" ]; then
     [ -n "${LCS_IMPORT_COUNT}" ] || export LCS_IMPORT_COUNT=0
-    set -eu
 
     [ ${LCS_IMPORT_COUNT} -lt 1 ] && export PATH=${PATH}:${LAZY_CODING_HOME}/scripts:${LAZY_CODING_HOME}/scripts/private
 
@@ -37,7 +36,6 @@ time if [ -n "${LAZY_CODING_HOME}" ]; then
     echo " * Tip-02: To do terminal logging, run: tl"
     echo "-- Less code, better world!  Please try and enjoy! --"
 
-    set +eu
     export LCS_IMPORT_COUNT=$((${LCS_IMPORT_COUNT} + 1))
 fi
 
@@ -62,5 +60,6 @@ fi
 #
 # >>> 2023-02-15, Man Hung-Coeng <udc577@126.com>:
 #   01. Add a counter variable LCS_IMPORT_COUNT.
+#   02. Remove "set -e -u" to avoid weird sideeffects.
 #
 

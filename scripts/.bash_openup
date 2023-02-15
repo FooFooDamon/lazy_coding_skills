@@ -19,8 +19,6 @@
 #
 
 if [ -n "${LAZY_CODING_HOME}" ]; then
-    set +e
-
     for j in "${LAZY_CODING_HOME}/scripts" "${LAZY_CODING_HOME}/scripts/private"
     do
         [ -e "${j}" ] && cd "${j}" || continue
@@ -29,8 +27,6 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
         cd - > /dev/null
     done
     unset j
-
-    set -e
 fi
 
 #
@@ -48,5 +44,8 @@ fi
 # >>> 2023-02-14, Man Hung-Coeng <udc577@126.com>:
 #   01. Go back to previous directory after each setting,
 #       instead of going to user home in the end.
+#
+# >>> 2023-02-15, Man Hung-Coeng <udc577@126.com>:
+#   01. Remove "set -e" to avoid weird sideeffects.
 #
 

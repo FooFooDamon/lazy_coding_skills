@@ -17,9 +17,10 @@
 #
 
 time if [ -n "${LAZY_CODING_HOME}" ]; then
+    [ -n "${LCS_IMPORT_COUNT}" ] || export LCS_IMPORT_COUNT=0
     set -eu
 
-    export PATH=${PATH}:${LAZY_CODING_HOME}/scripts:${LAZY_CODING_HOME}/scripts/private
+    [ ${LCS_IMPORT_COUNT} -lt 1 ] && export PATH=${PATH}:${LAZY_CODING_HOME}/scripts:${LAZY_CODING_HOME}/scripts/private
 
     for i in .bash_aliases .bash_variables .bash_functions .bash_openup .bash_completions
     do
@@ -37,6 +38,7 @@ time if [ -n "${LAZY_CODING_HOME}" ]; then
     echo "-- Less code, better world!  Please try and enjoy! --"
 
     set +eu
+    export LCS_IMPORT_COUNT=$((${LCS_IMPORT_COUNT} + 1))
 fi
 
 #
@@ -57,5 +59,8 @@ fi
 #
 # >>> 2023-02-14, Man Hung-Coeng <udc577@126.com>:
 #   01. Put .bash_completions after .bash_openup.
+#
+# >>> 2023-02-15, Man Hung-Coeng <udc577@126.com>:
+#   01. Add a counter variable LCS_IMPORT_COUNT.
 #
 

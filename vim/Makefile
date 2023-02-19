@@ -36,15 +36,18 @@ install: uninstall
 	echo "let g:LCS_EMAIL = '${LCS_EMAIL}'" >> ${VIM_RC}
 	echo "source $(shell pwd)/main.vim" >> ${VIM_RC}
 	[ -e "${VIM_PRIVATE}" ] && ln -s "${VIM_PRIVATE}" "$(shell pwd)/private" || :
+	@printf '\n\e[0;33m~ ~ ~ Congratulations! Installation finished successfully! ~ ~ ~\e[0m\n'
 
 uninstall:
 	rm -f "$(shell pwd)/private"
+	touch ${VIM_RC}
 	export vimrc_linenum=$$(grep -n "$(shell pwd)/main.vim" ${VIM_RC} | awk -F : '{ print $$1 }'); \
 	if [ -n "$${vimrc_linenum}" ]; then \
 		sed -i "$${vimrc_linenum}d" ${VIM_RC}; \
 	fi
 	sed -i "/g:LCS_EMAIL/d" ${VIM_RC}
 	sed -i "/g:LCS_USER/d" ${VIM_RC}
+	@printf '\n\e[0;33m~ ~ ~ Uninstallation finished successfully! ~ ~ ~\e[0m\n'
 
 check:
 	@echo "check: Unneeded."
@@ -99,5 +102,9 @@ examples:
 #
 # >>> 2023-02-13, Man Hung-Coeng <udc577@126.com>:
 #   01. Fix the error of one-line-linking of private directory.
+#
+# >>> 2023-02-19, Man Hung-Coeng <udc577@126.com>:
+#   01. Add congratulations in "install" command.
+#   02. Add farewells in "uninstall" command.
 #
 

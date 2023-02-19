@@ -46,19 +46,22 @@ If return value is greater than 0, it means success and the execution result is 
 vary from function to function, e.g., it meaning sending N bytes successfully for \*_send()).
 
 * 对于可解释执行的脚本，例如`Python`或`Shell`，既可使用`import`、`source`等指令导入到其他文件使用，
-亦可在命令行直接执行，后者通过指定`-h`或`--help`选项可查看其用法。
+亦可在命令行直接执行，后者通过指定`-h`或`--help`选项可查看其用法。若目录内有`Makefile`，
+可执行`make help`获取帮助。
 
 > For an interpreted script, `Python` or `Shell` for example, it's okay to import it into another file
 using `import`/`source`/... directive, or run it in command line. For the latter,
 `-h` or `--help` option can be specified on execution to show usage of script.
+If there is a `Makefile` in a directory, then it's okay to run `make help` for help.
 
 ## 测试 | Test
 
 * `C/C++`：在`c_and_cpp/native`子目录，执行`make check`（需安装clang和cppcheck）可进行代码静态检查，
-执行`make test`（需安装g++）或`make <模块名>`（例如`make signal_handling`）再运行相应的可执行文件即可进行功能性测试。
+执行`make test-execs`（需安装g++）或`make <模块名>`（例如`make signal_handling`），
+再运行相应的可执行文件即可进行功能性测试。
 
 > `C/C++`: In `c_and_cpp/native`sub-directory, execute `make check` (clang and cppcheck required)
-to do code static checking, execute `make test` (g++ required) or `make <module>` (e.g., `make signal_handling`)
+to do code static checking, execute `make test-execs` (g++ required) or `make <module>` (e.g., `make signal_handling`),
 and run the executable of a certain module to do functional test.
 
 * `Python`：正在完善，敬请期待……

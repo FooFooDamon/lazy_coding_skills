@@ -50,6 +50,8 @@ install: build uninstall
 uninstall:
 	rm -f "$(shell pwd)/private"
 	sed -i "/LAZY_CODING_HOME/d" "${BASH_RC}"
+	@printf '\n\e[0;33m~ ~ ~ Uninstallation finished successfully! ~ ~ ~\e[0m\n'
+	@printf "\n\e[0;33m~ ~ ~ This environment won't take effect in new terminal windows or tabs. ~ ~ ~\e[0m\n\n"
 
 check:
 	@echo "check: Unneeded."
@@ -98,5 +100,6 @@ examples:
 #
 # >>> 2023-02-19, Man Hung-Coeng <udc577@126.com>:
 #   01. Add congratulations in "install" command.
+#   02. Add farewells in "uninstall" command.
 #
 

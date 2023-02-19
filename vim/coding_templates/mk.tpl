@@ -1,4 +1,4 @@
-#!/usr/bin/env make
+#!/usr/bin/make -f
 
 #
 # TODO: Brief description of this makefile.

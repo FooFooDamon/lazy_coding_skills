@@ -44,6 +44,8 @@ install: build uninstall
 	echo 'export LAZY_CODING_HOME=${LAZY_CODING_HOME}' >> "${BASH_RC}"
 	echo '. $${LAZY_CODING_HOME}/scripts/__import__.sh' >> "${BASH_RC}"
 	[ -e "${SCRIPT_PRIVATE_DIR}" ] && ln -s "${SCRIPT_PRIVATE_DIR}" "$(shell pwd)/private" || :
+	@printf '\n\e[0;33m~ ~ ~ Congratulations! Installation finished successfully! ~ ~ ~\e[0m\n'
+	@printf '\n\e[0;33m~ ~ ~ Enjoy this environment in new terminal windows or tabs. ~ ~ ~\e[0m\n\n'
 
 uninstall:
 	rm -f "$(shell pwd)/private"
@@ -93,5 +95,8 @@ examples:
 #
 # >>> 2023-02-13, Man Hung-Coeng <udc577@126.com>:
 #   01. Fix the error of one-line-linking of private directory.
+#
+# >>> 2023-02-19, Man Hung-Coeng <udc577@126.com>:
+#   01. Add congratulations in "install" command.
 #
 

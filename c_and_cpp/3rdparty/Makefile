@@ -13,7 +13,7 @@ EXECS :=
 ${EXECS}: %: %.o
 	${CXX_LINK}
 
-test:
+test-execs:
 	for i in ${EXECS}; \
 	do \
 		make $$i; \
@@ -21,6 +21,12 @@ test:
 
 clean:
 	rm -f ${EXECS} ${OBJS}
+
+help:
+	@echo "Available commands:"
+	@echo "  all        - Generate object files, with or without \"all\"."
+	@echo "  test-execs - Generate test executables."
+	@echo "  clean      - Remove all generated files."
 
 include ../../makefile/basic_rules_for_c_and_cpp.mk
 

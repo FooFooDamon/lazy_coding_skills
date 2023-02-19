@@ -26,7 +26,7 @@ EXECS := $(filter-out , $(basename ${OBJS}))
 ${EXECS}: %: %.o
 	${CXX_LINK}
 
-test:
+test-execs:
 	for i in ${EXECS}; \
 	do \
 		make $$i; \
@@ -49,6 +49,13 @@ check:
 
 clean:
 	rm -f ${EXECS} ${OBJS} *.plist
+
+help:
+	@echo "Available commands:"
+	@echo "  all        - Generate object files, with or without \"all\"."
+	@echo "  test-execs - Generate test executables."
+	@echo "  check      - Do static checkings."
+	@echo "  clean      - Remove all generated files."
 
 include ../../makefile/basic_rules_for_c_and_cpp.mk
 

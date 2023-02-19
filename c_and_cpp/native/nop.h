@@ -31,7 +31,7 @@ inline void nop(const char *format, ...){}
 #elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 static inline void nop(const char *format, ...){}
 #else
-#error The keyword "inline" is available in C++, or C99 or above!
+#define nop()   {}
 #endif
 
 #ifdef __cplusplus
@@ -47,5 +47,8 @@ static inline void nop(const char *format, ...){}
  *
  * >>> 2022-05-16, Man Hung-Coeng:
  *  01. Create.
+ *
+ * >>> 2023-02-19, Man Hung-Coeng:
+ *  01. Let nop() be a macro in C89.
  */
 

@@ -16,14 +16,13 @@
 # limitations under the License.
 #
 
-DATETIME_CMD="date +%Y-%m-%d_%H:%M:%S.%N"
-
 usage()
 {
     printf "\n$(basename $0) - <Brief description of this script>\n"
     printf "\nUSAGE: $(basename $0) [OPTIONS ...]\n"
     printf "  -h, --help     Show this help message.\n"
     printf "  -v, --version  Show version info.\n"
+    # TODO: Put more options if any.
     printf "\nEXAMPLES:\n"
     printf "  1. $(basename $0) <An example showing how actual arguments should be like>\n"
     # TODO: Put more examples if necessary.
@@ -51,6 +50,8 @@ eexit()
     exit 1
 }
 
+DATETIME_CMD="date +%Y-%m-%d_%H:%M:%S.%N"
+
 handle_sigINT()
 {
     # TODO: Define what to do here when SIGINT arises.
@@ -65,18 +66,12 @@ handle_sigQUIT()
     exit 1
 }
 
-#
-# Register signals.
-#
 SIGNAL_ITEMS=(INT QUIT)
 for i in ${SIGNAL_ITEMS[@]}
 do
     trap "handle_sig${i}" ${i}
 done
 
-#
-# Parse command line options.
-#
 for i in "$@"
 do
     if [ "${i}" = "-h" ] || [ "${i}" = "--help" ]; then

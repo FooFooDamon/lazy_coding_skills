@@ -1,4 +1,4 @@
-#!/usr/bin/env make
+#!/usr/bin/make -f
 
 #
 # Installation script of this directory.
@@ -40,18 +40,20 @@ build: init
 init:
 	-chmod +x *.sh
 
-install: build uninstall
+install: __clear
 	echo 'export LAZY_CODING_HOME=${LAZY_CODING_HOME}' >> "${BASH_RC}"
 	echo '. $${LAZY_CODING_HOME}/scripts/__import__.sh' >> "${BASH_RC}"
 	[ -e "${SCRIPT_PRIVATE_DIR}" ] && ln -s "${SCRIPT_PRIVATE_DIR}" "$(shell pwd)/private" || :
 	@printf '\n\e[0;33m~ ~ ~ Congratulations! Installation finished successfully! ~ ~ ~\e[0m\n'
 	@printf '\n\e[0;33m~ ~ ~ Enjoy this environment in new terminal windows or tabs. ~ ~ ~\e[0m\n\n'
 
-uninstall:
-	rm -f "$(shell pwd)/private"
-	sed -i "/LAZY_CODING_HOME/d" "${BASH_RC}"
+uninstall: __clear
 	@printf '\n\e[0;33m~ ~ ~ Uninstallation finished successfully! ~ ~ ~\e[0m\n'
 	@printf "\n\e[0;33m~ ~ ~ This environment won't take effect in new terminal windows or tabs. ~ ~ ~\e[0m\n\n"
+
+__clear:
+	rm -f "$(shell pwd)/private"
+	sed -i "/LAZY_CODING_HOME/d" "${BASH_RC}"
 
 check:
 	@echo "check: Unneeded."
@@ -101,5 +103,7 @@ examples:
 # >>> 2023-02-19, Man Hung-Coeng <udc577@126.com>:
 #   01. Add congratulations in "install" command.
 #   02. Add farewells in "uninstall" command.
+#   03. Take essential parts of "uninstall" command
+#       to make a new command "__clear".
 #
 

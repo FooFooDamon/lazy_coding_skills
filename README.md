@@ -15,6 +15,8 @@ reducing repetitions, refining code quantity and improving code quality.
 
 > My opinions: ***Quality is more important than quantity. Less code, better world!***
 
+**[温馨提示 | Warm Tips](WARM_TIPS.md)**
+
 ## 适用平台 | Supported Platforms
 
 按支持程度从高到低依次为：`Linux` > 兼容**POSIX**接口的`类UNIX`系统 > `Windows`。

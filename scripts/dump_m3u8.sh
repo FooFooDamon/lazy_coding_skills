@@ -128,8 +128,8 @@ shopt -s expand_aliases
 [ -n "${LCS_HTTP_USER_AGENT}" ] || LCS_HTTP_USER_AGENT="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36"
 #export WGET="wget -t ${LCS_RETRIES} --no-check-certificate --user-agent=\"${LCS_HTTP_USER_AGENT}\"" # Does not work.
 alias WGET="wget -t ${LCS_RETRIES} --no-check-certificate --user-agent=\"${LCS_HTTP_USER_AGENT}\""
-export REMOTE_PLAYLIST=remote_playlist.lz.m3u8
-export LOCAL_PLAYLIST=local_playlist.lz.m3u8
+export REMOTE_PLAYLIST=remote_playlist.lc.m3u8
+export LOCAL_PLAYLIST=local_playlist.lc.m3u8
 export RESULT_FILE=result.log
 if [ -f "$1" ]; then
     export url="$(realpath "$1")"
@@ -140,7 +140,7 @@ else
 fi
 [ -n "$2" ] && video_name="$2" || video_name="${md5}.mp4"
 
-mkdir -p lz_video_stream.${md5} && cd lz_video_stream.${md5} || exit 1
+mkdir -p lc-m3u8.${md5} && cd lc-m3u8.${md5} || exit 1
 
 #
 # Download playlist if needed.
@@ -222,5 +222,8 @@ ffmpeg -allowed_extensions ALL -protocol_whitelist "file,http,https,crypto,tcp,t
 #
 # >>> V1.0.1|2023-02-14, Man Hung-Coeng <udc577@126.com>:
 #   01. Add 3 new functions: printW(), printE() and eexit().
+#
+# >>> V1.0.2|2023-03-05, Man Hung-Coeng <udc577@126.com>:
+#   01. Change "lz" to "lc", "lz_video_stream" to "lc-m3u8".
 #
 

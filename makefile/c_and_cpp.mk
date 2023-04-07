@@ -100,5 +100,6 @@ CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS}
 #
 # >>> 2023-04-08, Man Hung-Coeng:
 #   01. Remove definition __VER__ because it exists in another file __ver__.mk.
+#   02. Rename this file to c_and_cpp.mk.
 #
 

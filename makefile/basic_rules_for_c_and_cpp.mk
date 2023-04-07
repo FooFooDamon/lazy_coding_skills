@@ -25,39 +25,6 @@ AR ?= ar
 ARFLAGS ?= -r -s
 STRIP ?= strip
 
-VCS ?= git
-
-ifeq (${VCS}, git)
-
-    __DIRTY_FLAG = $(shell \
-        [ -z "$$(git diff | head -n 1)" ] \
-        && echo "" \
-        || echo ".dirty")
-
-    VCS_VERSION ?= $(shell \
-        git log --abbrev-commit --abbrev=12 --pretty=oneline \
-        | head -n 1 \
-        | awk '{ print $$1 }')${__DIRTY_FLAG}
-
-else ifeq (${VCS}, svn)
-
-    __DIRTY_FLAG = $(shell \
-        [ -z "$$(svn status | head -n 1)" ] \
-        && echo "" \
-        || echo ".dirty")
-
-    VCS_VERSION ?= $(shell \
-        LANG=en_US.UTF-8 LANGUAGE=en_US.EN \
-        svn info \
-        | grep 'Last Changed Rev' \
-        | sed 's/.* \([0-9]\)/\1/')${__DIRTY_FLAG}
-
-else
-    VCS_VERSION ?= 0123456789abcdef
-endif
-
-__VER__ ?= ${VCS_VERSION}
-
 COMMON_COMPILE_FLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC -Wall -Werror \
     -ansi -Wpedantic -Wno-variadic-macros # -fstack-protector-strong
 
@@ -130,5 +97,8 @@ CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS}
 #
 # >>> 2022-10-25, Man Hung-Coeng:
 #   01. Add ARFLAGS, and modify AR.
+#
+# >>> 2023-04-08, Man Hung-Coeng:
+#   01. Remove definition __VER__ because it exists in another file __ver__.mk.
 #
 

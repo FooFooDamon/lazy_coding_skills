@@ -126,7 +126,7 @@ APP_CFLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC -Wall -Werror -ansi -W
 
 all: ${DRVNAME}.ko ${APP_NAME}
 
-${DRVNAME}.ko:
+${DRVNAME}.ko: ${obj-m:.o=.c} ${${DRVNAME}-objs:.o=.c}
 	make -C ${KERNEL_ROOT} M=`pwd` modules # Also includes the generation of .o files.
 	[ -f $@ ] || mv $$(ls *.ko | head -n 1) $@
 	[ -z "${NDEBUG}" ] || ${STRIP} -d $@
@@ -152,5 +152,8 @@ clean:
 #
 # >>> 2023-04-07, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> 2023-04-08, Man Hung-Coeng <udc577@126.com>:
+#   01. Fix the bug of ${DRVNAME}.ko not recompiling while it's sources are changed.
 #
 

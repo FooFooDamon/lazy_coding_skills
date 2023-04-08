@@ -57,5 +57,5 @@ help:
 	@echo "  check      - Do static checkings."
 	@echo "  clean      - Remove all generated files."
 
-include ../../makefile/basic_rules_for_c_and_cpp.mk
+include ../../makefile/c_and_cpp.mk
 

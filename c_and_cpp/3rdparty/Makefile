@@ -28,5 +28,5 @@ help:
 	@echo "  test-execs - Generate test executables."
 	@echo "  clean      - Remove all generated files."
 
-include ../../makefile/basic_rules_for_c_and_cpp.mk
+include ../../makefile/c_and_cpp.mk
 

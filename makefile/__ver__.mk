@@ -20,7 +20,7 @@ VCS ?= git
 
 ifeq (${VCS}, git)
 
-    __DIRTY_FLAG = $(shell \
+    __DIRTY_FLAG ?= $(shell \
         [ -z "$$(git diff | head -n 1)" ] \
         && echo "" \
         || echo ".dirty")
@@ -32,7 +32,7 @@ ifeq (${VCS}, git)
 
 else ifeq (${VCS}, svn)
 
-    __DIRTY_FLAG = $(shell \
+    __DIRTY_FLAG ?= $(shell \
         [ -z "$$(svn status | head -n 1)" ] \
         && echo "" \
         || echo ".dirty")
@@ -49,6 +49,10 @@ endif
 
 __VER__ ?= ${VCS_VERSION}
 
+ifdef EVAL_VERSION_ONCE
+    export __DIRTY_FLAG VCS_VERSION __VER__
+endif
+
 #
 # ================
 #   CHANGE LOG
@@ -56,5 +60,9 @@ __VER__ ?= ${VCS_VERSION}
 #
 # >>> 2023-04-07, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> 2023-04-09, Man Hung-Coeng <udc577@126.com>:
+#   01. Add a new macro EVAL_VERSION_ONCE
+#   	to control whether to do version evaluation only once.
 #
 

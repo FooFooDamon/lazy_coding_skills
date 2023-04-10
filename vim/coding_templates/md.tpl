@@ -1,6 +1,6 @@
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-# 标题 | Title
+# ${TITLE}
 
 ## 第1章 | Chapter 1
 

@@ -32,9 +32,11 @@ let CMD_ADJUST_YEAR = "g/${YEAR}/s//".strftime('%Y')."/g"
 let CMD_ADJUST_DATE = "g/${DATE}/s//".strftime('%Y-%m-%d')."/g"
 let CMD_ADJUST_HEADER_LOCK = "g/${HEADER_LOCK}/s//".toupper(fnamemodify(expand('%:r'), ':t'))."/g"
 let CMD_ADJUST_SELF_HEADER = "g/${SELF_HEADER}/s//".fnamemodify(expand('%:r'), ':t')."/g"
+let CMD_ADJUST_TITLE = "g/${TITLE}/s//".fnamemodify(expand('%:r'), ':t')."/g"
 let EXEC_ADJUST_ALL = "execute CMD_ADJUST_USER | execute CMD_ADJUST_EMAIL"
     \. " | execute CMD_ADJUST_YEAR | execute CMD_ADJUST_DATE"
     \. " | execute CMD_ADJUST_HEADER_LOCK | execute CMD_ADJUST_SELF_HEADER"
+    \. " | execute CMD_ADJUST_TITLE"
 
 for i in PUBLIC_TEMPLATES
     let template_file = fnamemodify(i, ':t')
@@ -83,5 +85,8 @@ autocmd BufNewFile [Mm][Aa][Kk][Ee][Ff][Ii][Ll][Ee] 0r $MK_TEMPLATE | execute EX
 "   01. Fix the mismatching bug of autocmd BufNewFile.
 "   02. Fix the substitution error in creation of a C/C++ source or header
 "       file when the file path contains slash(es).
+"
+" >>> 2023-04-10, Man Hung-Coeng <udc577@126.com>:
+"   01. Add CMD_ADJUST_TITLE.
 "
 

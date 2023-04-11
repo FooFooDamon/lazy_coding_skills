@@ -22,21 +22,33 @@ let PUBLIC_TEMPLATE_DIR = THIS_DIR . "/" . $BASENAME
 let PUBLIC_TEMPLATES = split(globpath(PUBLIC_TEMPLATE_DIR, '*.tpl'), '\n')
 let PRIVATE_TEMPLATE_DIR = THIS_DIR . "/private/" . $BASENAME
 let PRIVATE_TEMPLATES = split(globpath(PRIVATE_TEMPLATE_DIR, '*.tpl'), '\n')
-"let LCS_USER = expand(has_key(environ(), 'LCS_USER') ? "$LCS_USER" : "$USER")
-let LCS_USER = exists('g:LCS_USER') ? g:LCS_USER : expand("$USER")
-"let LCS_EMAIL = has_key(environ(), 'LCS_EMAIL') ? expand("$LCS_EMAIL") : expand("$USER")."@123456.com"
-let LCS_EMAIL = exists('g:LCS_EMAIL') ? g:LCS_EMAIL : expand("$USER")."@123456.com"
-let CMD_ADJUST_USER = "g/${LCS_USER}/s//".LCS_USER."/g"
-let CMD_ADJUST_EMAIL = "g/${LCS_EMAIL}/s//".LCS_EMAIL."/g"
-let CMD_ADJUST_YEAR = "g/${YEAR}/s//".strftime('%Y')."/g"
-let CMD_ADJUST_DATE = "g/${DATE}/s//".strftime('%Y-%m-%d')."/g"
-let CMD_ADJUST_HEADER_LOCK = "g/${HEADER_LOCK}/s//".toupper(fnamemodify(expand('%:r'), ':t'))."/g"
-let CMD_ADJUST_SELF_HEADER = "g/${SELF_HEADER}/s//".fnamemodify(expand('%:r'), ':t')."/g"
-let CMD_ADJUST_TITLE = "g/${TITLE}/s//".fnamemodify(expand('%:r'), ':t')."/g"
-let EXEC_ADJUST_ALL = "execute CMD_ADJUST_USER | execute CMD_ADJUST_EMAIL"
-    \. " | execute CMD_ADJUST_YEAR | execute CMD_ADJUST_DATE"
-    \. " | execute CMD_ADJUST_HEADER_LOCK | execute CMD_ADJUST_SELF_HEADER"
-    \. " | execute CMD_ADJUST_TITLE"
+
+function LoadTemplate(template)
+    echo "Load from a temple? [Y/n] "
+    let confirm = getcharstr()
+
+    if confirm == 'n' || confirm == 'N'
+        return
+    endif
+
+    "let LCS_USER = expand(has_key(environ(), 'LCS_USER') ? "$LCS_USER" : "$USER")
+    let LCS_USER = exists('g:LCS_USER') ? g:LCS_USER : expand("$USER")
+    "let LCS_EMAIL = has_key(environ(), 'LCS_EMAIL') ? expand("$LCS_EMAIL") : expand("$USER")."@123456.com"
+    let LCS_EMAIL = exists('g:LCS_EMAIL') ? g:LCS_EMAIL : expand("$USER")."@123456.com"
+    let CMD_ADJUST_USER = "g/${LCS_USER}/s//".LCS_USER."/g"
+    let CMD_ADJUST_EMAIL = "g/${LCS_EMAIL}/s//".LCS_EMAIL."/g"
+    let CMD_ADJUST_YEAR = "g/${YEAR}/s//".strftime('%Y')."/g"
+    let CMD_ADJUST_DATE = "g/${DATE}/s//".strftime('%Y-%m-%d')."/g"
+    let CMD_ADJUST_HEADER_LOCK = "g/${HEADER_LOCK}/s//".toupper(fnamemodify(expand('%:r'), ':t'))."/g"
+    let CMD_ADJUST_SELF_HEADER = "g/${SELF_HEADER}/s//".fnamemodify(expand('%:r'), ':t')."/g"
+    let CMD_ADJUST_TITLE = "g/${TITLE}/s//".fnamemodify(expand('%:r'), ':t')."/g"
+    let EXEC_ADJUST_ALL = "execute CMD_ADJUST_USER | execute CMD_ADJUST_EMAIL"
+        \. " | execute CMD_ADJUST_YEAR | execute CMD_ADJUST_DATE"
+        \. " | execute CMD_ADJUST_HEADER_LOCK | execute CMD_ADJUST_SELF_HEADER"
+        \. " | execute CMD_ADJUST_TITLE"
+
+    execute "0r " . a:template . " | " . EXEC_ADJUST_ALL
+endfunction
 
 for i in PUBLIC_TEMPLATES
     let template_file = fnamemodify(i, ':t')
@@ -48,7 +60,7 @@ for i in PUBLIC_TEMPLATES
 
     for j in split(template_file, '\.')
         if j != 'tpl'
-            execute "autocmd BufNewFile *." . j . " 0r " . i . " | " . EXEC_ADJUST_ALL
+            execute "autocmd BufNewFile *." . j . " call LoadTemplate('" . i . "')"
         endif
     endfor
 endfor
@@ -56,7 +68,7 @@ endfor
 for i in PRIVATE_TEMPLATES
     for j in split(fnamemodify(i, ':t'), '\.')
         if j != 'tpl'
-            execute "autocmd BufNewFile *." . j . " 0r " . i . " | " . EXEC_ADJUST_ALL
+            execute "autocmd BufNewFile *." . j . " call LoadTemplate('" . i . "')"
         endif
     endfor
 endfor
@@ -66,12 +78,7 @@ if index(PRIVATE_TEMPLATES, $MK_TEMPLATE) < 0
     let $MK_TEMPLATE = PUBLIC_TEMPLATE_DIR . "/" . "mk.tpl"
 endif
 
-" This will generate two times of original contents for *.mk.
-"autocmd BufNewFile,FileType make 0r $MK_TEMPLATE | execute EXEC_ADJUST_ALL
-
-autocmd BufNewFile [Mm][Aa][Kk][Ee][Ff][Ii][Ll][Ee] 0r $MK_TEMPLATE | execute EXEC_ADJUST_ALL
-"   \ | execute CMD_ADJUST_USER | execute CMD_ADJUST_EMAIL
-"   \ | execute CMD_ADJUST_YEAR | execute CMD_ADJUST_DATE
+execute "autocmd BufNewFile [Mm][Aa][Kk][Ee][Ff][Ii][Ll][Ee] call LoadTemplate('" . $MK_TEMPLATE . "')"
 
 "
 " ================
@@ -88,5 +95,8 @@ autocmd BufNewFile [Mm][Aa][Kk][Ee][Ff][Ii][Ll][Ee] 0r $MK_TEMPLATE | execute EX
 "
 " >>> 2023-04-10, Man Hung-Coeng <udc577@126.com>:
 "   01. Add CMD_ADJUST_TITLE.
+"
+" >>> 2023-04-12, Man Hung-Coeng <udc577@126.com>:
+"   01. Add a confirmation before loading a template.
 "
 

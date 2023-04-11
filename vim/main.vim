@@ -16,9 +16,9 @@
 " limitations under the License.
 "
 
-let THIS_PATH = expand('<sfile>:p')
-let $THIS_DIR = fnamemodify(THIS_PATH, ':h')
-let $PRIVATE_SCRIPT = $THIS_DIR . '/private/' . fnamemodify(THIS_PATH, ':t')
+let s:THIS_PATH = expand('<sfile>:p')
+let $THIS_DIR = fnamemodify(s:THIS_PATH, ':h')
+let $PRIVATE_SCRIPT = $THIS_DIR . '/private/' . fnamemodify(s:THIS_PATH, ':t')
 
 source $THIS_DIR/minimum_settings.vim
 source $THIS_DIR/coding_templates.vim
@@ -33,5 +33,8 @@ endif
 "
 " >>> 2023-02-10, Man Hung-Coeng <udc577@126.com>:
 "   01. Create.
+"
+" >>> 2023-04-12, Man Hung-Coeng <udc577@126.com>:
+"   01. Turn all global variables into local ones.
 "
 

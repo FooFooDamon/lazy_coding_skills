@@ -18,9 +18,9 @@
 
 " Check platform.
 if has('win32') || filereadable(expand('$HOME/.cygwin'))
-  let g:is_on_windows = 1
+  let s:is_on_windows = 1
 else
-  let g:is_on_windows = 0
+  let s:is_on_windows = 0
 endif
 
 " Use VIM configurations instead of those of VI.
@@ -35,7 +35,7 @@ set backspace=2
 " DO NOT generate viminfo files.
 " This is primarily used on some versions of Cygwin
 " to avoid generating many annoying info files.
-if is_on_windows == 1
+if s:is_on_windows == 1
   set viminfo=
 endif
 
@@ -61,7 +61,7 @@ set autoindent
 set number
 
 " Set file encoding priorities.
-if is_on_windows == 1
+if s:is_on_windows == 1
   set fileencodings=gb18030,cp936,utf-8,ucs-bom,gbk,gb2312,latin1
 else
   set fileencodings=utf-8,gb18030,cp936,ucs-bom,gbk,gb2312,latin1
@@ -79,7 +79,7 @@ set incsearch
 
 " Mark the column and line which the cursor locates at,
 " with a colored block or line.
-if is_on_windows == 1
+if s:is_on_windows == 1
   hi Normal ctermfg=white ctermbg=black
   hi CursorColumn cterm=NONE ctermbg=white ctermfg=red guibg=NONE guifg=NONE
   hi CursorLine cterm=NONE ctermbg=white ctermfg=red guibg=NONE guifg=NONE
@@ -130,4 +130,7 @@ inoremap #en #end
 "
 " >>> 2023-02-10, Man Hung-Coeng <udc577@126.com>:
 "   01. Create.
+"
+" >>> 2023-04-12, Man Hung-Coeng <udc577@126.com>:
+"   01. Turn all global variables into local ones.
 "

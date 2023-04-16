@@ -45,10 +45,10 @@ check:
 	cppcheck --quiet --enable=all --language=c++ --std=c++11 ${PARALLEL_OPTION} -D__cplusplus=201103L ${CXX_DEFINES} \
 		${CXX_INCLUDES} ${CXX_SRCS}
 	clang --analyze ${C_SRCS} ${CFLAGS} -std=gnu89
-	clang --analyze ${CXX_SRCS} ${CXXFLAGS} -std=c++11
+	clang --analyze ${CXX_SRCS} ${CXXFLAGS}
 
 clean:
-	rm -f ${EXECS} ${OBJS} *.plist
+	rm -f ${EXECS} ${OBJS} ${D_FILES} *.plist
 
 help:
 	@echo "Available commands:"
@@ -57,5 +57,6 @@ help:
 	@echo "  check      - Do static checkings."
 	@echo "  clean      - Remove all generated files."
 
+include ../../makefile/__ver__.mk
 include ../../makefile/c_and_cpp.mk
 

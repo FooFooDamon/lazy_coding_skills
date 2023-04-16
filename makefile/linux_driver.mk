@@ -137,7 +137,7 @@ ${APP_NAME}: ${APP_OBJS}
 	${APP_CC} -o $@ -fPIE $^ ${APP_LDFLAGS}
 	[ -z "${NDEBUG}" ] || ${STRIP} -s $@
 
-D_FILES := $(foreach i, ${APP_OBJS:.o=.c}, ${i}.d)
+D_FILES := $(foreach i, ${APP_OBJS}, ${i}.d)
 CMD_FILES := $(shell find . -name ".*.o.cmd" | grep -v "\.mod\.o\.cmd")
 
 # Dependencies for auto-detection of header content update.
@@ -148,10 +148,12 @@ ifneq (${CMD_FILES},)
 endif
 
 %.o: %.c # This only affects application object files. See the rule of ${DRVNAME}.ko above.
-	${APP_CC} -Wp,-MD,$<.d ${APP_CFLAGS} -c -o $@ $<
+	${APP_CC} -Wp,-MMD,$@.d ${APP_CFLAGS} -c -o $@ $<
 
 debug:
 	make NDEBUG=""
+
+# TODO: Add a "check" target for code static checking.
 
 clean:
 	rm -f ${APP_NAME} ${APP_OBJS} ${D_FILES}

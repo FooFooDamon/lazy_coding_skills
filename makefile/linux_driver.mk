@@ -137,14 +137,24 @@ ${APP_NAME}: ${APP_OBJS}
 	${APP_CC} -o $@ -fPIE $^ ${APP_LDFLAGS}
 	[ -z "${NDEBUG}" ] || ${STRIP} -s $@
 
+D_FILES := $(foreach i, ${APP_OBJS:.o=.c}, ${i}.d)
+CMD_FILES := $(shell find . -name ".*.o.cmd" | grep -v "\.mod\.o\.cmd")
+
+# Dependencies for auto-detection of header content update.
+-include ${D_FILES}
+ifneq (${CMD_FILES},)
+    # TODO: This does not work! Why?
+    include ${CMD_FILES}
+endif
+
 %.o: %.c # This only affects application object files. See the rule of ${DRVNAME}.ko above.
-	${APP_CC} ${APP_CFLAGS} -c -o $@ $<
+	${APP_CC} -Wp,-MD,$<.d ${APP_CFLAGS} -c -o $@ $<
 
 debug:
 	make NDEBUG=""
 
 clean:
-	rm -f ${APP_NAME} ${APP_OBJS}
+	rm -f ${APP_NAME} ${APP_OBJS} ${D_FILES}
 	make -C ${KERNEL_ROOT} M=`pwd` clean # modname=${DRVNAME}
 
 #
@@ -162,5 +172,6 @@ clean:
 #   01. Add ${PREREQUISITES} to "all" target to make it possible
 #   	to make some optional preparations before compilation.
 #   02. Specify target "all", "debug" and "clean" as ".PHONY".
+#   03. Add dependencies for auto-detection of header content update.
 #
 

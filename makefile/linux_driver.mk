@@ -124,7 +124,7 @@ APP_CFLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC -Wall -Werror -ansi -W
     -Wno-implicit-fallthrough ${APP_DEBUG_FLAGS} ${APP_DEFINES} ${APP_INCLUDES} \
     ${OTHER_APP_CFLAGS}
 
-all: ${DRVNAME}.ko ${APP_NAME}
+all: ${PREREQUISITES} ${DRVNAME}.ko ${APP_NAME}
 
 ${DRVNAME}.ko: ${obj-m:.o=.c} ${${DRVNAME}-objs:.o=.c}
 	make -C ${KERNEL_ROOT} M=`pwd` modules # Also includes the generation of .o files.
@@ -155,5 +155,9 @@ clean:
 #
 # >>> 2023-04-08, Man Hung-Coeng <udc577@126.com>:
 #   01. Fix the bug of ${DRVNAME}.ko not recompiling while it's sources are changed.
+#
+# >>> 2023-04-16, Man Hung-Coeng <udc577@126.com>:
+#   01. Add ${PREREQUISITES} to "all" target to make it possible
+#   	to make some optional preparations before compilation.
 #
 

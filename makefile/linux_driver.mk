@@ -124,6 +124,8 @@ APP_CFLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC -Wall -Werror -ansi -W
     -Wno-implicit-fallthrough ${APP_DEBUG_FLAGS} ${APP_DEFINES} ${APP_INCLUDES} \
     ${OTHER_APP_CFLAGS}
 
+.PHONY: all debug clean
+
 all: ${PREREQUISITES} ${DRVNAME}.ko ${APP_NAME}
 
 ${DRVNAME}.ko: ${obj-m:.o=.c} ${${DRVNAME}-objs:.o=.c}
@@ -159,5 +161,6 @@ clean:
 # >>> 2023-04-16, Man Hung-Coeng <udc577@126.com>:
 #   01. Add ${PREREQUISITES} to "all" target to make it possible
 #   	to make some optional preparations before compilation.
+#   02. Specify target "all", "debug" and "clean" as ".PHONY".
 #
 

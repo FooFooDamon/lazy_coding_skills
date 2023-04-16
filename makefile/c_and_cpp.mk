@@ -1,7 +1,7 @@
 #
 # Basic rules for C/C++ compilation.
 #
-# Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2021-2023 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -39,8 +39,10 @@ endif
 DEFAULT_CFLAGS ?= ${COMMON_COMPILE_FLAGS} ${DEBUG_FLAGS}
 DEFAULT_CXXFLAGS ?= ${COMMON_COMPILE_FLAGS} ${DEBUG_FLAGS}
 
-CFLAGS ?= ${DEFAULT_CFLAGS} ${C_DEFINES} ${C_INCLUDES} ${OTHER_CFLAGS}
-CXXFLAGS ?= ${DEFAULT_CXXFLAGS} ${CXX_DEFINES} ${CXX_INCLUDES} ${OTHER_CXXFLAGS}
+D_FLAG ?= -Wp,-MMD,$@.d
+
+CFLAGS ?= ${D_FLAG} ${DEFAULT_CFLAGS} ${C_DEFINES} ${C_INCLUDES} ${OTHER_CFLAGS}
+CXXFLAGS ?= ${D_FLAG} ${DEFAULT_CXXFLAGS} ${CXX_DEFINES} ${CXX_INCLUDES} ${OTHER_CXXFLAGS}
 
 C_COMPILE ?= ${CC} ${CFLAGS} -c -o $@ $<
 CXX_COMPILE ?= ${CXX} ${CXXFLAGS} -c -o $@ $<
@@ -62,6 +64,13 @@ CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS}
 # note that there's no built-in rule for it.
 %.o: %.cxx
 	${CXX_COMPILE}
+
+# Dependencies for auto-detection of header content update.
+#D_FILES ?= $(foreach i, $(shell find ./ -name "*.c" -o -name "*.cpp" -o -name "*.cxx" -o -name "*.cc"), $(basename ${i}).o.d)
+D_FILES ?= $(foreach i, ${OBJS}, ${i}.d)
+ifneq (${D_FILES},)
+    -include ${D_FILES}
+endif
 
 #
 # ================
@@ -101,5 +110,8 @@ CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS}
 # >>> 2023-04-08, Man Hung-Coeng:
 #   01. Remove definition __VER__ because it exists in another file __ver__.mk.
 #   02. Rename this file to c_and_cpp.mk.
+#
+# >>> 2023-04-16, Man Hung-Coeng:
+#   01. Add dependencies for auto-detection of header content update.
 #
 

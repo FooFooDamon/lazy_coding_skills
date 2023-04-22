@@ -1,3 +1,6 @@
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<base target="_blank" />
+
 # 懒编程秘笈 | Lazy Coding Skills
 
 ## 简介 | Introduction

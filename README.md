@@ -1,6 +1,3 @@
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<base target="_blank" />
-
 # 懒编程秘笈 | Lazy Coding Skills
 
 ## 简介 | Introduction
@@ -58,6 +55,10 @@ vary from function to function, e.g., it meaning sending N bytes successfully fo
 using `import`/`source`/... directive, or run it in command line. For the latter,
 `-h` or `--help` option can be specified on execution to show usage of script.
 If there is a `Makefile` in a directory, then it's okay to run `make help` for help.
+
+* 其余详见每个子目录的`README.md`（若有的话）。
+
+> For more information, see `README.md` in each subdirectory (if any).
 
 ## 测试 | Test
 

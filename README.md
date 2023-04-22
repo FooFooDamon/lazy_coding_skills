@@ -80,7 +80,9 @@ and run the executable of a certain module to do functional test.
 
 * `Email`: <udc577@126.com>
 
-* `GitHub`: https://github.com/FooFooDamon/
+* `GitHub Home`: https://github.com/FooFooDamon/
+
+* `GitHub Pages`: https://foofoodamon.github.io/
 
 ## 许可证 | License
 

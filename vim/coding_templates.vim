@@ -25,7 +25,8 @@ let s:PRIVATE_TEMPLATES = split(globpath(s:PRIVATE_TEMPLATE_DIR, '*.tpl'), '\n')
 
 function s:load_template(template)
     echo "Load from a temple? [Y/n] "
-    let l:confirm = getcharstr()
+    "let l:confirm = getcharstr()
+    let l:confirm = nr2char(getchar())
 
     if l:confirm == 'n' || l:confirm == 'N'
         return
@@ -99,5 +100,9 @@ execute "autocmd BufNewFile [Mm][Aa][Kk][Ee][Ff][Ii][Ll][Ee] call s:load_templat
 " >>> 2023-04-12, Man Hung-Coeng <udc577@126.com>:
 "   01. Add a confirmation before loading a template.
 "   02. Turn all global variables and functions into local ones.
+"
+" >>> 2023-05-16, Man Hung-Coeng <udc577@126.com>:
+"   01. Replace getcharstr() with nr2char(getchar()) in load_template()
+"       for backward compatibility.
 "
 

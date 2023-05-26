@@ -23,6 +23,7 @@ export IDE_PARENT_DIR ?= /opt/st
 export DEBUG_DEVICE ?= stlink
 export CPU_SERIES ?= stm32f1x
 export FLASH_ADDR_START ?= 0x08000000
+export RAM_ADDR_START ?= 0x20000000
 
 all: build
 
@@ -34,12 +35,22 @@ build:
 build_debug:
 	make build MODE=Debug
 
-download:
+download: download_to_flash
+
+download_to_flash:
 	[ $$(ls ${MODE}/*.bin | wc -l) -eq 1 ] && openocd -f /usr/share/openocd/scripts/interface/${DEBUG_DEVICE}.cfg \
 		-f /usr/share/openocd/scripts/target/${CPU_SERIES}.cfg \
 		-c init -c "reset halt" -c wait_halt \
 		-c "flash write_image erase $$(ls ${MODE}/*.bin) ${FLASH_ADDR_START}" \
 		-c reset -c shutdown || :
+
+download_to_ram:
+	[ $$(ls ${MODE}/*.bin | wc -l) -eq 1 ] && openocd -f /usr/share/openocd/scripts/interface/${DEBUG_DEVICE}.cfg \
+		-f /usr/share/openocd/scripts/target/${CPU_SERIES}.cfg \
+		-c init -c "reset halt" -c wait_halt \
+		-c "load_image $$(ls ${MODE}/*.bin) ${RAM_ADDR_START}" \
+		-c "reg pc ${RAM_ADDR_START}" \
+		-c resume -c shutdown || :
 
 gen_ycm_conf:
 	make clean
@@ -73,5 +84,8 @@ clean_debug:
 #
 # >>> 2023-05-25, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> 2023-05-26, Man Hung-Coeng <udc577@126.com>:
+#   01. Add RAM_ADDR_START variable and download_to_ram target.
 #
 

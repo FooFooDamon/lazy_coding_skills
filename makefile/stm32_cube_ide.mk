@@ -35,6 +35,12 @@ build:
 build_debug:
 	make build MODE=Debug
 
+burn: download
+
+burn_to_flash: download_to_flash
+
+burn_to_ram: download_to_ram
+
 download: download_to_flash
 
 download_to_flash:
@@ -77,6 +83,8 @@ clean:
 clean_debug:
 	make clean MODE=Debug
 
+-include ${CPU_SERIES}_private.mk
+
 #
 # ================
 #   CHANGE LOG
@@ -87,5 +95,7 @@ clean_debug:
 #
 # >>> 2023-05-26, Man Hung-Coeng <udc577@126.com>:
 #   01. Add RAM_ADDR_START variable and download_to_ram target.
+#   02. Add burn, burn_to_flash and burn_to_ram target aliases.
+#   03. Include ${CPU_SERIES}_private.mk.
 #
 

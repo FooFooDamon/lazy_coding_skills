@@ -92,7 +92,7 @@ if [ ! -f "${REPO_CONFIG}" ]; then
     touch "${REPO_CONFIG}" || exit 1
     echo "lazy_coding_skills ::: https://github.com/FooFooDamon/lazy_coding_skills.git" > "${REPO_CONFIG}"
     echo "copy_of_lcs ::: https://github.com/FooFooDamon/lazy_coding_skills.git ::: ${HOME}" >> "${REPO_CONFIG}"
-    echo "# inactive_repo ::: https://github.com/FooFooDamon/lazy_coding_skills.git" > "${REPO_CONFIG}"
+    echo "# inactive_repo ::: https://github.com/FooFooDamon/lazy_coding_skills.git" >> "${REPO_CONFIG}"
 fi
 echo "Read Git repositories from: ${REPO_CONFIG}."
 
@@ -128,5 +128,8 @@ done < "${REPO_CONFIG}"
 #
 # >>> V1.0.2|2023-02-14, Man Hung-Coeng <udc577@126.com>:
 #   01. Add 3 new functions: printW(), printE() and eexit().
+#
+# >>> V1.0.3|2023-05-29, Man Hung-Coeng <udc577@126.com>:
+#   01. Fix a redirection error in creating the configuration file.
 #
 

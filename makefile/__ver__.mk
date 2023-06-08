@@ -20,22 +20,24 @@ VCS ?= git
 
 ifeq (${VCS}, git)
 
-    __DIRTY_FLAG ?= $(shell \
-        [ -z "$$(git diff | head -n 1)" ] \
-        && echo "" \
-        || echo ".dirty")
+    #__DIRTY_FLAG ?= $(shell \
+    #    [ -z "$$(git diff | head -n 1)" ] \
+    #    && echo "" \
+    #    || echo "-dirty")
 
-    VCS_VERSION ?= $(shell \
-        git log --abbrev-commit --abbrev=12 --pretty=oneline \
-        | head -n 1 \
-        | awk '{ print $$1 }')${__DIRTY_FLAG}
+    #VCS_VERSION ?= $(shell \
+    #    git log --abbrev-commit --abbrev=12 --pretty=oneline \
+    #    | head -n 1 \
+    #    | awk '{ print $$1 }')${__DIRTY_FLAG}
+
+    VCS_VERSION ?= $(shell git describe --abbrev=12 --dirty --always --tags)
 
 else ifeq (${VCS}, svn)
 
     __DIRTY_FLAG ?= $(shell \
         [ -z "$$(svn status | head -n 1)" ] \
         && echo "" \
-        || echo ".dirty")
+        || echo "-dirty")
 
     VCS_VERSION ?= $(shell \
         LANG=en_US.UTF-8 LANGUAGE=en_US.EN \
@@ -64,5 +66,8 @@ endif
 # >>> 2023-04-09, Man Hung-Coeng <udc577@126.com>:
 #   01. Add a new macro EVAL_VERSION_ONCE
 #   	to control whether to do version evaluation only once.
+#
+# >>> 2023-06-08, Man Hung-Coeng <udc577@126.com>:
+#   01. Refine the command of fetching a git commit hash.
 #
 

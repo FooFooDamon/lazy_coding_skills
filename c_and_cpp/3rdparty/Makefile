@@ -1,5 +1,3 @@
-CC := gcc
-
 C_INCLUDES :=
 OTHER_CFLAGS := -DTEST
 
@@ -8,9 +6,9 @@ OBJS := $(addsuffix .o, $(basename ${SRCS}))
 
 all: ${OBJS}
 
-EXECS :=
+EXECS := $(addsuffix .elf, $(basename ${OBJS}))
 
-${EXECS}: %: %.o
+%.elf: %.o
 	${CXX_LINK}
 
 test-execs:

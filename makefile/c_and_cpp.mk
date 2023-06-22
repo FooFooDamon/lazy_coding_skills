@@ -19,11 +19,17 @@
 #        then include this file at the end of it.
 #
 
-CC ?= gcc
-CXX ?= g++
-AR ?= ar
+ifeq (${CC}, cc)
+    undefine CC
+endif
+CC ?= ${CROSS_COMPILE}gcc
+ifeq (${CXX}, g++)
+    undefine CXX
+endif
+CXX ?= ${CROSS_COMPILE}g++
+AR ?= ${CROSS_COMPILE}ar
 ARFLAGS ?= -r -s
-STRIP ?= strip
+STRIP ?= ${CROSS_COMPILE}strip
 
 COMMON_COMPILE_FLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC -Wall -Werror \
     -ansi -Wpedantic -Wno-variadic-macros # -fstack-protector-strong
@@ -113,5 +119,8 @@ endif
 #
 # >>> 2023-04-16, Man Hung-Coeng:
 #   01. Add dependencies for auto-detection of header content update.
+#
+# >>> 2023-06-22, Man Hung-Coeng:
+#   01. Add ${CROSS_COMPILE} prefix to values of CC, CXX, AR and STRIP.
 #
 

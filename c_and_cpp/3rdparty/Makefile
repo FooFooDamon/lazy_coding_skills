@@ -8,17 +8,13 @@ all: ${OBJS}
 
 EXECS := $(addsuffix .elf, $(basename ${OBJS}))
 
-%.elf: %.o
+${EXECS}: %.elf: %.o
 	${CXX_LINK}
 
-test-execs:
-	for i in ${EXECS}; \
-	do \
-		make $$i; \
-	done
+test-execs: ${EXECS}
 
 clean:
-	rm -f ${EXECS} ${OBJS}
+	rm -f ${EXECS} ${OBJS} ${D_FILES}
 
 help:
 	@echo "Available commands:"

@@ -19,31 +19,56 @@
 #        then include this file at the end of it.
 #
 
-ifeq (${CC}, cc)
+ifeq ($(origin CC), default)
     undefine CC
 endif
 CC ?= ${CROSS_COMPILE}gcc
-ifeq (${CXX}, g++)
+
+ifeq ($(origin CXX), default)
     undefine CXX
 endif
 CXX ?= ${CROSS_COMPILE}g++
+
+ifeq ($(origin AR), default)
+    undefine AR
+endif
 AR ?= ${CROSS_COMPILE}ar
-ARFLAGS ?= -r -s
+
+ifeq ($(origin STRIP), default)
+    undefine STRIP
+endif
 STRIP ?= ${CROSS_COMPILE}strip
 
-COMMON_COMPILE_FLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC -Wall -Werror \
-    -ansi -Wpedantic -Wno-variadic-macros # -fstack-protector-strong
+RM ?= $(shell which rm)
+
+FLAGS_WARN ?= -Wall -Werror
+FLAGS_ANSI ?= -ansi -Wpedantic
+FLAGS_FOR_DEBUG ?= -O0 -g -ggdb
+FLAGS_FOR_RELEASE ?= -O3 -DNDEBUG
+
+COMMON_COMPILE_FLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC ${FLAGS_WARN} \
+    ${FLAGS_ANSI} -Wno-variadic-macros # -fstack-protector-strong
 
 EXTRA_COMPILE_FLAGS ?= -W -Wno-unused-parameter -Wno-missing-field-initializers -Wno-implicit-fallthrough
 
-ifeq (${NDEBUG}, 1)
-    DEBUG_FLAGS ?= -O3 -DNDEBUG
+NDEBUG ?= y
+ifneq ($(filter n N no NO No 0, ${NDEBUG}),)
+    NDEBUG :=
+endif
+ifeq (${NDEBUG},)
+    undefine NDEBUG
+endif
+ifdef NDEBUG
+    DEBUG_FLAGS ?= ${FLAGS_FOR_RELEASE}
 else
-    DEBUG_FLAGS ?= -O0 -g -ggdb
+    DEBUG_FLAGS ?= ${FLAGS_FOR_DEBUG}
 endif
 
-DEFAULT_CFLAGS ?= ${COMMON_COMPILE_FLAGS} ${DEBUG_FLAGS}
-DEFAULT_CXXFLAGS ?= ${COMMON_COMPILE_FLAGS} ${DEBUG_FLAGS}
+C_STD_FLAG ?= --std=c89
+CXX_STD_FLAG ?= --std=c++11
+
+DEFAULT_CFLAGS ?= ${DEBUG_FLAGS} ${COMMON_COMPILE_FLAGS} ${C_STD_FLAG}
+DEFAULT_CXXFLAGS ?= ${DEBUG_FLAGS} ${COMMON_COMPILE_FLAGS} ${CXX_STD_FLAG}
 
 D_FLAG ?= -Wp,-MMD,$@.d
 
@@ -53,10 +78,17 @@ CXXFLAGS ?= ${D_FLAG} ${DEFAULT_CXXFLAGS} ${CXX_DEFINES} ${CXX_INCLUDES} ${OTHER
 C_COMPILE ?= ${CC} ${CFLAGS} -c -o $@ $<
 CXX_COMPILE ?= ${CXX} ${CXXFLAGS} -c -o $@ $<
 
-#C_LINK ?= ${CC} -o $@ -fPIE -Wl,--start-group $^ ${C_LDFLAGS} -Wl,--end-group
-C_LINK ?= ${CC} -o $@ -fPIE $^ ${C_LDFLAGS}
-#CXX_LINK ?= ${CXX} -o $@ -fPIE -Wl,--start-group $^ ${CXX_LDFLAGS} -Wl,--end-group
-CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS}
+STRIP_SYMBOLS ?= if [ -n "${NDEBUG}" ]; then ${STRIP} -s -v $@; fi
+ifdef ALLOW_REORDER_ON_LINKING
+    C_LINK ?= ${CC} -o $@ -fPIE -Wl,--start-group $^ ${C_LDFLAGS} -Wl,--end-group && ${STRIP_SYMBOLS}
+    CXX_LINK ?= ${CXX} -o $@ -fPIE -Wl,--start-group $^ ${CXX_LDFLAGS} -Wl,--end-group && ${STRIP_SYMBOLS}
+else
+    C_LINK ?= ${CC} -o $@ -fPIE $^ ${C_LDFLAGS} && ${STRIP_SYMBOLS}
+    CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS} && ${STRIP_SYMBOLS}
+endif
+
+MAKE_STATIC_LIB ?= ${AR} rsv $@ $^
+MAKE_SHARED_LIB ?= ${CXX} -shared -o $@ $^
 
 # This is a built-in rule and needn't be written out explicitly.
 #%.o: %.c
@@ -71,12 +103,37 @@ CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS}
 %.o: %.cxx
 	${CXX_COMPILE}
 
+OBJS := $(addsuffix .o, $(basename ${C_SRCS} ${CXX_SRCS}))
+
 # Dependencies for auto-detection of header content update.
 #D_FILES ?= $(foreach i, $(shell find ./ -name "*.c" -o -name "*.cpp" -o -name "*.cxx" -o -name "*.cc"), $(basename ${i}).o.d)
 D_FILES ?= $(foreach i, ${OBJS}, ${i}.d)
 ifneq (${D_FILES},)
     -include ${D_FILES}
 endif
+
+PARALLEL_OPTION ?= -j $(shell grep -c "processor" /proc/cpuinfo)
+__cplusplus ?= 201103L
+
+check:
+	if [ -n "${C_SRCS}" ]; then \
+		cppcheck --quiet --enable=all --language=c ${C_STD_FLAG} ${PARALLEL_OPTION} \
+			${C_DEFINES} ${C_INCLUDES} ${C_SRCS}; \
+		clang --analyze ${CFLAGS} ${C_SRCS}; \
+	fi
+	if [ -n "${CXX_SRCS}" ]; then \
+		cppcheck --quiet --enable=all --language=c++ ${CXX_STD_FLAG} ${PARALLEL_OPTION} \
+			-D__cplusplus=${__cplusplus} ${CXX_DEFINES} ${CXX_INCLUDES} ${CXX_SRCS}; \
+		clang --analyze ${CXXFLAGS} ${CXX_SRCS}; \
+	fi
+
+clean:
+	[ -z "${EXECS}" ] || ${RM} ${EXECS}
+	[ -z "${STATIC_LIBS}" ] || ${RM} ${STATIC_LIBS}
+	[ -z "${SHARED_LIBS}" ] || ${RM} ${SHARED_LIBS}
+	[ -z "${OBJS}" ] || ${RM} ${OBJS}
+	[ -z "${OBJS}" ] || ${RM} ${OBJS:.o=.plist}
+	[ -z "${D_FILES}" ] || ${RM} ${D_FILES} check.d
 
 #
 # ================
@@ -122,5 +179,13 @@ endif
 #
 # >>> 2023-06-22, Man Hung-Coeng:
 #   01. Add ${CROSS_COMPILE} prefix to values of CC, CXX, AR and STRIP.
+#
+# >>> 2023-06-23, Man Hung-Coeng:
+#   01. Judge CC, CXX, AR and STRIP more precisely.
+#   02. Remove ARFLAGS.
+#   03. Add variable RM, FLAGS_*, *_STD_FLAG and MAKE_*_LIB.
+#   04. Add target check and clean.
+#   05. Define NDEBUG, and change the way of using it.
+#   06. Enhance C_LINK and CXX_LINK.
 #
 

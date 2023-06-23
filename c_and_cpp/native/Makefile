@@ -41,7 +41,7 @@ check:
 	clang --analyze ${CXX_SRCS} ${CXXFLAGS}
 
 clean:
-	rm -f ${EXECS} ${OBJS} ${D_FILES} *.plist
+	rm -f ${EXECS} ${OBJS} ${D_FILES} check.d *.plist
 
 help:
 	@echo "Available commands:"

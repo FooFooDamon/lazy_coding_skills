@@ -20,14 +20,10 @@ all: ${OBJS}
 
 EXECS := $(filter-out , $(addsuffix .elf, $(basename ${OBJS})))
 
-%.elf: %.o
+${EXECS}: %.elf: %.o
 	${CXX_LINK}
 
-test-execs:
-	for i in ${EXECS}; \
-	do \
-		make $$i; \
-	done
+test-execs: ${EXECS}
 
 NON_ANSI_C_SRCS = ./logger_on_syslog.c ./signal_handling.c ./sleeps.c
 

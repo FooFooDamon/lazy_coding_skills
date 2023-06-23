@@ -51,7 +51,7 @@ extern "C" {
  */
 
 #ifndef __VER__
-#define __VER__         "0123456789abcdef"
+#define __VER__         "<none>"
 #endif
 
 #ifdef __cplusplus
@@ -67,5 +67,8 @@ extern "C" {
  *
  * >>> 2023-04-16, Man Hung-Coeng <udc577@126.com>:
  *  01. Create.
+ *
+ * >>> 2023-06-23, Man Hung-Coeng <udc577@126.com>:
+ *  01. Change the default value of __VER__ from 0123456789abcdef to <none>.
  */
 

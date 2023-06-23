@@ -29,8 +29,12 @@ ifeq (${VCS}, git)
     #    git log --abbrev-commit --abbrev=12 --pretty=oneline \
     #    | head -n 1 \
     #    | awk '{ print $$1 }')${__DIRTY_FLAG}
+	#
+	#VCS_VERSION ?= $(shell git log --abbrev-commit --abbrev=12 --pretty=format:%h -n 1)${__DIRTY_FLAG}
 
-    VCS_VERSION ?= $(shell git describe --abbrev=12 --dirty --always --tags)
+    VCS_VERSION ?= $(shell \
+        git describe --abbrev=12 --dirty --always \
+        | sed 's/.*\([0-9a-z]\{12,\}\)\(\(-dirty\)*\)/\1\2/')
 
 else ifeq (${VCS}, svn)
 
@@ -46,7 +50,7 @@ else ifeq (${VCS}, svn)
         | sed 's/.* \([0-9]\)/\1/')${__DIRTY_FLAG}
 
 else
-    VCS_VERSION ?= 0123456789abcdef
+    VCS_VERSION ?= <none>
 endif
 
 __VER__ ?= ${VCS_VERSION}
@@ -69,5 +73,9 @@ endif
 #
 # >>> 2023-06-08, Man Hung-Coeng <udc577@126.com>:
 #   01. Refine the command of fetching a git commit hash.
+#
+# >>> 2023-06-23, Man Hung-Coeng <udc577@126.com>:
+#   01. Change the default value of VCS_VERSION from 0123456789abcdef to <none>.
+#   02. Remove unwanted contents of "git describe" result.
 #
 

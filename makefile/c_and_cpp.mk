@@ -112,16 +112,18 @@ endif
 
 ifndef C_SRCS
     $(warning Guessing C source files ...)
-    C_SRCS := $(shell \
+    C_SRCS := $(sort $(shell \
         make ${EXECS} ${STATIC_LIBS} ${SHARED_LIBS} C_SRCS=_ CXX_SRCS=_ --dry-run --always-make \
-        | grep '^${CC} ' | grep ' -o [^ ]\+\.o' | sed 's/.*[ ]\+\([^ ]\+\.c\)[ ]*.*/\1/')
+        | grep '^${CC} ' | grep ' -o [^ ]\+\.o' \
+        | sed -e "s/'//g" -e 's/"//g' -e 's/.*[ ]\+\([^ ]\+\.c\)[ ]*.*/\1/'))
 endif
 
 ifndef CXX_SRCS
     $(warning Guessing CXX source files ...)
-    CXX_SRCS := $(shell \
+    CXX_SRCS := $(sort $(shell \
         make ${EXECS} ${STATIC_LIBS} ${SHARED_LIBS} CXX_SRCS=_ C_SRCS=_ --dry-run --always-make \
-        | grep '^${CXX} ' | grep ' -o [^ ]\+\.o' | sed 's/.*[ ]\+\([^ ]\+\.\(cc\|cpp\|cxx\)\)[ ]*.*/\1/')
+        | grep '^${CXX} ' | grep ' -o [^ ]\+\.o' \
+        | sed -e "s/'//g" -e 's/"//g' -e 's/.*[ ]\+\([^ ]\+\.\(cc\|cpp\|cxx\)\)[ ]*.*/\1/'))
 endif
 
 ifeq ($(strip ${C_SRCS} ${CXX_SRCS}),)
@@ -183,7 +185,7 @@ clean:
 #
 # >>> 2021-12-26, Man Hung-Coeng:
 #   01. Remove some flags like -fstack-protector-strong and -Wl,--start-group,
-#   	which may not be supported on other platforms (e.g., MinGW and OS X).
+#       which may not be supported on other platforms (e.g., MinGW and OS X).
 #
 # >>> 2022-02-21, Man Hung-Coeng:
 #   01. Add -D_REENTRANT into COMMON_COMPILE_FLAGS.
@@ -218,5 +220,9 @@ clean:
 #   03. Label target "check" and "clean" as .PHONY.
 #   04. Change C_STD_FLAG to C_STD, CXX_STD_FLAG to CXX_STD.
 #   05. Make the condition statements of target "clean" more precise.
+#
+# >>> 2023-06-25, Man Hung-Coeng:
+#   01. Remove duplicate items of C_SRCS and CXX_SRCS, and make their rules
+#       more robust when facing interferences of single/double quotation marks.
 #
 

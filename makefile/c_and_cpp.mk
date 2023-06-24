@@ -45,6 +45,9 @@ ifneq ($(filter n N no NO No 0, ${__STRICT__}),)
     __STRICT__ :=
 endif
 
+C_STD ?= c11
+CXX_STD ?= c++11
+
 FLAGS_WARN ?= -Wall -Wextra $(if ${__STRICT__}, -Werror) -Wno-unused-parameter \
     -Wno-variadic-macros # -Wno-missing-field-initializers -Wno-implicit-fallthrough
 FLAGS_ANSI ?= -ansi -Wpedantic
@@ -67,11 +70,8 @@ endif
 COMMON_COMPILE_FLAGS ?= ${DEBUG_FLAGS} -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC \
     ${FLAGS_WARN} ${FLAGS_ANSI} # -fstack-protector-strong
 
-C_STD_FLAG ?= --std=c89
-CXX_STD_FLAG ?= --std=c++11
-
-DEFAULT_CFLAGS ?= ${COMMON_COMPILE_FLAGS} ${C_STD_FLAG}
-DEFAULT_CXXFLAGS ?= ${COMMON_COMPILE_FLAGS} ${CXX_STD_FLAG}
+DEFAULT_CFLAGS ?= ${COMMON_COMPILE_FLAGS} -std=${C_STD}
+DEFAULT_CXXFLAGS ?= ${COMMON_COMPILE_FLAGS} -std=${CXX_STD}
 
 D_FLAG ?= -Wp,-MMD,$@.d
 
@@ -141,12 +141,12 @@ __cplusplus ?= 201103L
 
 check:
 	if [ -n "${C_SRCS}" ]; then \
-		cppcheck --quiet --enable=all --language=c ${C_STD_FLAG} ${PARALLEL_OPTION} \
+		cppcheck --quiet --enable=all --language=c --std=${C_STD} ${PARALLEL_OPTION} \
 			${C_DEFINES} ${C_INCLUDES} ${C_SRCS}; \
 		clang --analyze ${CFLAGS} ${C_SRCS}; \
 	fi
 	if [ -n "${CXX_SRCS}" ]; then \
-		cppcheck --quiet --enable=all --language=c++ ${CXX_STD_FLAG} ${PARALLEL_OPTION} \
+		cppcheck --quiet --enable=all --language=c++ --std=${CXX_STD} ${PARALLEL_OPTION} \
 			-D__cplusplus=${__cplusplus} ${CXX_DEFINES} ${CXX_INCLUDES} ${CXX_SRCS}; \
 		clang --analyze ${CXXFLAGS} ${CXX_SRCS}; \
 	fi
@@ -216,5 +216,6 @@ clean:
 #   01. Remove OBJS, and guess C_SRCS and CXX_SRCS if they're not defined.
 #   02. Merge EXTRA_COMPILE_FLAGS into FLAGS_WARN.
 #   03. Label target "check" and "clean" as .PHONY.
+#   04. Change C_STD_FLAG to C_STD, CXX_STD_FLAG to CXX_STD.
 #
 

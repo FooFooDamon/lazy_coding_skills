@@ -125,7 +125,7 @@ ifndef CXX_SRCS
 endif
 
 ifeq ($(strip ${C_SRCS} ${CXX_SRCS}),)
-    $(error No available C or CXX source files)
+    $(error Can not guess any C or CXX source file)
 endif
 
 # Dependencies for auto-detection of header content update.
@@ -152,12 +152,12 @@ check:
 	fi
 
 clean:
-	[ -z "${EXECS}" ] || ${RM} ${EXECS}
-	[ -z "${STATIC_LIBS}" ] || ${RM} ${STATIC_LIBS}
-	[ -z "${SHARED_LIBS}" ] || ${RM} ${SHARED_LIBS}
-	[ -z "${D_FILES}" ] || ${RM} ${D_FILES:.d=}
-	[ -z "${D_FILES}" ] || ${RM} ${D_FILES:.o.d=.plist}
-	[ -z "${D_FILES}" ] || ${RM} ${D_FILES} check.d
+	[ -z "$(word 1, ${EXECS})" ] || ${RM} ${EXECS}
+	[ -z "$(word 1, ${STATIC_LIBS})" ] || ${RM} ${STATIC_LIBS}
+	[ -z "$(word 1, ${SHARED_LIBS})" ] || ${RM} ${SHARED_LIBS}
+	${RM} ${D_FILES:.d=}
+	${RM} ${D_FILES:.o.d=.plist}
+	${RM} ${D_FILES} check.d
 
 #
 # ================
@@ -217,5 +217,6 @@ clean:
 #   02. Merge EXTRA_COMPILE_FLAGS into FLAGS_WARN.
 #   03. Label target "check" and "clean" as .PHONY.
 #   04. Change C_STD_FLAG to C_STD, CXX_STD_FLAG to CXX_STD.
+#   05. Make the condition statements of target "clean" more precise.
 #
 

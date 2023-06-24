@@ -103,11 +103,30 @@ MAKE_SHARED_LIB ?= ${CXX} -shared -o $@ $^
 %.o: %.cxx
 	${CXX_COMPILE}
 
-OBJS := $(addsuffix .o, $(basename ${C_SRCS} ${CXX_SRCS}))
+ifeq ($(strip ${EXECS} ${STATIC_LIBS} ${SHARED_LIBS}),)
+    $(error None of EXECS, STATIC_LIBS and SHARED_LIBS is defined)
+endif
+
+ifndef C_SRCS
+    $(warning Guessing C source files ...)
+    C_SRCS := $(shell \
+        make ${EXECS} ${STATIC_LIBS} ${SHARED_LIBS} C_SRCS=_ CXX_SRCS=_ --dry-run --always-make \
+        | grep '^${CC} ' | grep ' -o [^ ]\+\.o' | sed 's/.*[ ]\+\([^ ]\+\.c\)[ ]*.*/\1/')
+endif
+
+ifndef CXX_SRCS
+    $(warning Guessing CXX source files ...)
+    CXX_SRCS := $(shell \
+        make ${EXECS} ${STATIC_LIBS} ${SHARED_LIBS} CXX_SRCS=_ C_SRCS=_ --dry-run --always-make \
+        | grep '^${CXX} ' | grep ' -o [^ ]\+\.o' | sed 's/.*[ ]\+\([^ ]\+\.\(cc\|cpp\|cxx\)\)[ ]*.*/\1/')
+endif
+
+ifeq ($(strip ${C_SRCS} ${CXX_SRCS}),)
+    $(error No available C or CXX source files)
+endif
 
 # Dependencies for auto-detection of header content update.
-#D_FILES ?= $(foreach i, $(shell find ./ -name "*.c" -o -name "*.cpp" -o -name "*.cxx" -o -name "*.cc"), $(basename ${i}).o.d)
-D_FILES ?= $(foreach i, ${OBJS}, ${i}.d)
+D_FILES ?= ${C_SRCS:.c=.o.d} $(foreach i, $(basename ${CXX_SRCS}), ${i}.o.d)
 ifneq (${D_FILES},)
     -include ${D_FILES}
 endif
@@ -131,8 +150,8 @@ clean:
 	[ -z "${EXECS}" ] || ${RM} ${EXECS}
 	[ -z "${STATIC_LIBS}" ] || ${RM} ${STATIC_LIBS}
 	[ -z "${SHARED_LIBS}" ] || ${RM} ${SHARED_LIBS}
-	[ -z "${OBJS}" ] || ${RM} ${OBJS}
-	[ -z "${OBJS}" ] || ${RM} ${OBJS:.o=.plist}
+	[ -z "${D_FILES}" ] || ${RM} ${D_FILES:.d=}
+	[ -z "${D_FILES}" ] || ${RM} ${D_FILES:.o.d=.plist}
 	[ -z "${D_FILES}" ] || ${RM} ${D_FILES} check.d
 
 #
@@ -184,8 +203,11 @@ clean:
 #   01. Judge CC, CXX, AR and STRIP more precisely.
 #   02. Remove ARFLAGS.
 #   03. Add variable RM, FLAGS_*, *_STD_FLAG and MAKE_*_LIB.
-#   04. Add target check and clean.
+#   04. Add target "check" and "clean".
 #   05. Define NDEBUG, and change the way of using it.
 #   06. Enhance C_LINK and CXX_LINK.
+#
+# >>> 2023-06-24, Man Hung-Coeng:
+#   01. Remove OBJS, and guess C_SRCS and CXX_SRCS if they're not defined.
 #
 

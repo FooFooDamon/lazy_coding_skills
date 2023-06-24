@@ -41,15 +41,15 @@ STRIP ?= ${CROSS_COMPILE}strip
 
 RM ?= $(shell which rm)
 
-FLAGS_WARN ?= -Wall -Werror
+ifneq ($(filter n N no NO No 0, ${__STRICT__}),)
+    __STRICT__ :=
+endif
+
+FLAGS_WARN ?= -Wall -Wextra $(if ${__STRICT__}, -Werror) -Wno-unused-parameter \
+    -Wno-variadic-macros # -Wno-missing-field-initializers -Wno-implicit-fallthrough
 FLAGS_ANSI ?= -ansi -Wpedantic
 FLAGS_FOR_DEBUG ?= -O0 -g -ggdb
 FLAGS_FOR_RELEASE ?= -O3 -DNDEBUG
-
-COMMON_COMPILE_FLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC ${FLAGS_WARN} \
-    ${FLAGS_ANSI} -Wno-variadic-macros # -fstack-protector-strong
-
-EXTRA_COMPILE_FLAGS ?= -W -Wno-unused-parameter -Wno-missing-field-initializers -Wno-implicit-fallthrough
 
 NDEBUG ?= y
 ifneq ($(filter n N no NO No 0, ${NDEBUG}),)
@@ -64,11 +64,14 @@ else
     DEBUG_FLAGS ?= ${FLAGS_FOR_DEBUG}
 endif
 
+COMMON_COMPILE_FLAGS ?= ${DEBUG_FLAGS} -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC \
+    ${FLAGS_WARN} ${FLAGS_ANSI} # -fstack-protector-strong
+
 C_STD_FLAG ?= --std=c89
 CXX_STD_FLAG ?= --std=c++11
 
-DEFAULT_CFLAGS ?= ${DEBUG_FLAGS} ${COMMON_COMPILE_FLAGS} ${C_STD_FLAG}
-DEFAULT_CXXFLAGS ?= ${DEBUG_FLAGS} ${COMMON_COMPILE_FLAGS} ${CXX_STD_FLAG}
+DEFAULT_CFLAGS ?= ${COMMON_COMPILE_FLAGS} ${C_STD_FLAG}
+DEFAULT_CXXFLAGS ?= ${COMMON_COMPILE_FLAGS} ${CXX_STD_FLAG}
 
 D_FLAG ?= -Wp,-MMD,$@.d
 
@@ -127,7 +130,7 @@ endif
 
 # Dependencies for auto-detection of header content update.
 D_FILES ?= ${C_SRCS:.c=.o.d} $(foreach i, $(basename ${CXX_SRCS}), ${i}.o.d)
-ifneq (${D_FILES},)
+ifneq ($(strip ${D_FILES}),)
     -include ${D_FILES}
 endif
 
@@ -209,5 +212,6 @@ clean:
 #
 # >>> 2023-06-24, Man Hung-Coeng:
 #   01. Remove OBJS, and guess C_SRCS and CXX_SRCS if they're not defined.
+#   02. Merge EXTRA_COMPILE_FLAGS into FLAGS_WARN.
 #
 

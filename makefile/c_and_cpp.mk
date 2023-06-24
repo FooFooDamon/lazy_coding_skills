@@ -137,6 +137,8 @@ endif
 PARALLEL_OPTION ?= -j $(shell grep -c "processor" /proc/cpuinfo)
 __cplusplus ?= 201103L
 
+.PHONY: check clean
+
 check:
 	if [ -n "${C_SRCS}" ]; then \
 		cppcheck --quiet --enable=all --language=c ${C_STD_FLAG} ${PARALLEL_OPTION} \
@@ -213,5 +215,6 @@ clean:
 # >>> 2023-06-24, Man Hung-Coeng:
 #   01. Remove OBJS, and guess C_SRCS and CXX_SRCS if they're not defined.
 #   02. Merge EXTRA_COMPILE_FLAGS into FLAGS_WARN.
+#   03. Label target "check" and "clean" as .PHONY.
 #
 

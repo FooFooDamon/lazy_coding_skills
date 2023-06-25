@@ -42,7 +42,7 @@ STRIP ?= ${CROSS_COMPILE}strip
 RM ?= $(shell which rm)
 
 ifneq ($(filter n N no NO No 0, ${__STRICT__}),)
-    __STRICT__ :=
+    override __STRICT__ :=
 endif
 
 C_STD ?= c11
@@ -56,10 +56,10 @@ FLAGS_FOR_RELEASE ?= -O3 -DNDEBUG
 
 NDEBUG ?= y
 ifneq ($(filter n N no NO No 0, ${NDEBUG}),)
-    NDEBUG :=
+    override NDEBUG :=
 endif
 ifeq (${NDEBUG},)
-    undefine NDEBUG
+    override undefine NDEBUG
 endif
 ifdef NDEBUG
     DEBUG_FLAGS ?= ${FLAGS_FOR_RELEASE}
@@ -224,5 +224,7 @@ clean:
 # >>> 2023-06-25, Man Hung-Coeng:
 #   01. Remove duplicate items of C_SRCS and CXX_SRCS, and make their rules
 #       more robust when facing interferences of single/double quotation marks.
+#   02. While clearing and undefining __STRICT__ and NDEBUG,
+#       override their counterparts from command line as well.
 #
 

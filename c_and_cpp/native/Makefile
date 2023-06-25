@@ -12,18 +12,17 @@ CXX_LDFLAGS := -lpthread
 C_SRCS := $(shell find ./ -name "*.c")
 CXX_SRCS := $(shell find ./ -name "*.cpp")
 
-EXECS := $(filter-out , $(addsuffix .elf, $(basename ${C_SRCS} ${CXX_SRCS})))
+GOALS := $(filter-out , $(addsuffix .elf, $(basename ${C_SRCS} ${CXX_SRCS})))
 
 .PHONY: all
-all: ${EXECS}
+all: ${GOALS}
 
-${EXECS}: %.elf: %.o
+${GOALS}: %.elf: %.o
 	${CXX_LINK}
 
 NON_ANSI_C_SRCS = ./logger_on_syslog.c ./signal_handling.c ./sleeps.c
 
-${NON_ANSI_C_SRCS:.c=.o}: %.o: %.c
-	${CC} ${CFLAGS} --std=gnu99 -c -o $@ $<
+${NON_ANSI_C_SRCS:.c=.o}: C_STD = gnu99
 
 help:
 	@echo "Available commands:"

@@ -4,6 +4,7 @@ C_SRCS := $(shell find ./ -name "*.c" | grep -v "./windows_only")
 
 EXECS := $(addsuffix .elf, $(basename ${C_SRCS}))
 
+.PHONY: all
 all: ${EXECS}
 
 ${EXECS}: %.elf: %.o

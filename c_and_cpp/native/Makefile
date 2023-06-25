@@ -1,3 +1,7 @@
+__STRICT__ := y
+
+C_STD := c89
+
 C_DEFINES := -DTEST -D__ORDER_LITTLE_ENDIAN__=1234 -D__ORDER_BIG_ENDIAN__=4321 \
 		-D__BYTE_ORDER__=__ORDER_LITTLE_ENDIAN__ -DCOMMPROTO_BIG_ENDIAN -D'likely(x)=__builtin_expect(!!(x), 1)' \
 		-D'unlikely(x)=__builtin_expect(!!(x), 0)'
@@ -10,6 +14,7 @@ CXX_SRCS := $(shell find ./ -name "*.cpp")
 
 EXECS := $(filter-out , $(addsuffix .elf, $(basename ${C_SRCS} ${CXX_SRCS})))
 
+.PHONY: all
 all: ${EXECS}
 
 ${EXECS}: %.elf: %.o

@@ -107,7 +107,7 @@ MAKE_SHARED_LIB ?= ${CXX} -shared -o $@ $^
 	${CXX_COMPILE}
 
 ifeq ($(strip ${GOAL} ${GOALS}),)
-    $(error Neither GOAL nor GOALS variable is defined)
+    $(error Neither GOAL nor GOALS variable is defined and non-empty)
 endif
 
 ifndef C_SRCS

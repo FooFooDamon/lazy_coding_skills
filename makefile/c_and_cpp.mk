@@ -113,7 +113,7 @@ endif
 ifndef C_SRCS
     $(warning Guessing C source files ...)
     C_SRCS := $(sort $(shell \
-        make ${EXECS} ${STATIC_LIBS} ${SHARED_LIBS} C_SRCS=_ CXX_SRCS=_ --dry-run --always-make \
+        ${MAKE} ${EXECS} ${STATIC_LIBS} ${SHARED_LIBS} C_SRCS=_ CXX_SRCS=_ --dry-run --always-make \
         | grep '^${CC} ' | grep " -o [\"']\?[^ ]\+\.o" \
         | sed "s/.*[ ]\+[\"']\?\([^ ]\+\.c\)[\"']\?[ ]*.*/\1/"))
 endif
@@ -121,7 +121,7 @@ endif
 ifndef CXX_SRCS
     $(warning Guessing CXX source files ...)
     CXX_SRCS := $(sort $(shell \
-        make ${EXECS} ${STATIC_LIBS} ${SHARED_LIBS} CXX_SRCS=_ C_SRCS=_ --dry-run --always-make \
+        ${MAKE} ${EXECS} ${STATIC_LIBS} ${SHARED_LIBS} CXX_SRCS=_ C_SRCS=_ --dry-run --always-make \
         | grep '^${CXX} ' | grep " -o [\"']\?[^ ]\+\.o" \
         | sed "s/.*[ ]\+[\"']\?\([^ ]\+\.\(cc\|cpp\|cxx\)\)[\"']\?[ ]*.*/\1/"))
 endif

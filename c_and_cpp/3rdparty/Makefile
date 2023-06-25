@@ -2,12 +2,12 @@ OTHER_CFLAGS := -DTEST
 
 C_SRCS := $(shell find ./ -name "*.c" | grep -v "./windows_only")
 
-EXECS := $(addsuffix .elf, $(basename ${C_SRCS}))
+GOALS := $(addsuffix .elf, $(basename ${C_SRCS}))
 
 .PHONY: all
-all: ${EXECS}
+all: ${GOALS}
 
-${EXECS}: %.elf: %.o
+${GOALS}: %.elf: %.o
 	${CXX_LINK}
 
 help:

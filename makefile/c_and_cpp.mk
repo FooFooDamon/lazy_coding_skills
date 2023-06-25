@@ -106,14 +106,14 @@ MAKE_SHARED_LIB ?= ${CXX} -shared -o $@ $^
 %.o: %.cxx
 	${CXX_COMPILE}
 
-ifeq ($(strip ${EXECS} ${STATIC_LIBS} ${SHARED_LIBS}),)
-    $(error None of EXECS, STATIC_LIBS and SHARED_LIBS is defined)
+ifeq ($(strip ${GOAL} ${GOALS}),)
+    $(error Neither GOAL nor GOALS variable is defined)
 endif
 
 ifndef C_SRCS
     $(warning Guessing C source files ...)
     C_SRCS := $(sort $(shell \
-        ${MAKE} ${EXECS} ${STATIC_LIBS} ${SHARED_LIBS} C_SRCS=_ CXX_SRCS=_ --dry-run --always-make \
+        ${MAKE} ${GOAL} ${GOALS} C_SRCS=_ CXX_SRCS=_ --dry-run --always-make \
         | grep '^${CC} ' | grep " -o [\"']\?[^ ]\+\.o" \
         | sed "s/.*[ ]\+[\"']\?\([^ ]\+\.c\)[\"']\?[ ]*.*/\1/"))
 endif
@@ -121,7 +121,7 @@ endif
 ifndef CXX_SRCS
     $(warning Guessing CXX source files ...)
     CXX_SRCS := $(sort $(shell \
-        ${MAKE} ${EXECS} ${STATIC_LIBS} ${SHARED_LIBS} CXX_SRCS=_ C_SRCS=_ --dry-run --always-make \
+        ${MAKE} ${GOAL} ${GOALS} CXX_SRCS=_ C_SRCS=_ --dry-run --always-make \
         | grep '^${CXX} ' | grep " -o [\"']\?[^ ]\+\.o" \
         | sed "s/.*[ ]\+[\"']\?\([^ ]\+\.\(cc\|cpp\|cxx\)\)[\"']\?[ ]*.*/\1/"))
 endif
@@ -142,21 +142,19 @@ __cplusplus ?= 201103L
 .PHONY: check clean
 
 check:
-	if [ -n "${C_SRCS}" ]; then \
+	if [ -n "$(word 1, ${C_SRCS})" ]; then \
 		cppcheck --quiet --enable=all --language=c --std=${C_STD} ${PARALLEL_OPTION} \
 			${C_DEFINES} ${C_INCLUDES} ${C_SRCS}; \
 		clang --analyze ${CFLAGS} ${C_SRCS}; \
 	fi
-	if [ -n "${CXX_SRCS}" ]; then \
+	if [ -n "$(word 1, ${CXX_SRCS})" ]; then \
 		cppcheck --quiet --enable=all --language=c++ --std=${CXX_STD} ${PARALLEL_OPTION} \
 			-D__cplusplus=${__cplusplus} ${CXX_DEFINES} ${CXX_INCLUDES} ${CXX_SRCS}; \
 		clang --analyze ${CXXFLAGS} ${CXX_SRCS}; \
 	fi
 
 clean:
-	[ -z "$(word 1, ${EXECS})" ] || ${RM} ${EXECS}
-	[ -z "$(word 1, ${STATIC_LIBS})" ] || ${RM} ${STATIC_LIBS}
-	[ -z "$(word 1, ${SHARED_LIBS})" ] || ${RM} ${SHARED_LIBS}
+	[ -z "$(word 1, ${GOAL} ${GOALS})" ] || ${RM} ${GOAL} ${GOALS}
 	${RM} ${D_FILES:.d=}
 	${RM} ${D_FILES:.o.d=.plist}
 	${RM} ${D_FILES} check.d
@@ -226,5 +224,7 @@ clean:
 #       more robust when facing interferences of single/double quotation marks.
 #   02. While clearing and undefining __STRICT__ and NDEBUG,
 #       override their counterparts from command line as well.
+#   03. Change the required variables from EXECS, STATIC_LIBS, SHARED_LIBS
+#       to GOAL, GOALS.
 #
 

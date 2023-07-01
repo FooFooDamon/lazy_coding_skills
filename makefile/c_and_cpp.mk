@@ -55,7 +55,8 @@ FLAGS_FOR_RELEASE ?= -O3 -DNDEBUG
 
 DEBUG_FLAGS ?= $(if ${NDEBUG},${FLAGS_FOR_RELEASE},${FLAGS_FOR_DEBUG})
 
-COMMON_COMPILE_FLAGS ?= -D${ARCH} ${DEBUG_FLAGS} -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC \
+COMMON_COMPILE_FLAGS ?= -D$(shell echo __ARCH_${ARCH}__ | tr 'a-z' 'A-Z') \
+    ${DEBUG_FLAGS} -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC \
     ${FLAGS_WARN} ${FLAGS_ANSI} # -fstack-protector-strong
 
 DEFAULT_CFLAGS ?= ${COMMON_COMPILE_FLAGS} -std=${C_STD}
@@ -214,7 +215,9 @@ ifeq (${Q},)
     $(info You can override any of variables above to meet your need.)
     $(info -)
 else
-    $(info Run with "V=1" or "VERBOSE=1" if you're interested in compilation details.)
+    ifeq (${MAKELEVEL}, 0)
+        $(info Run with "V=1" or "VERBOSE=1" if you're interested in compilation details.)
+    endif
 endif
 
 #

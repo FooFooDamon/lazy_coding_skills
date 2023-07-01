@@ -21,31 +21,31 @@ VCS ?= git
 ifeq (${VCS}, git)
 
     #__DIRTY_FLAG ?= $(shell \
-    #    [ -z "$$(git diff | head -n 1)" ] \
+    #    [ -z "$$(git diff 2> /dev/null | head -n 1)" ] \
     #    && echo "" \
     #    || echo "-dirty")
 
     #VCS_VERSION ?= $(shell \
-    #    git log --abbrev-commit --abbrev=12 --pretty=oneline \
+    #    git log --abbrev-commit --abbrev=12 --pretty=oneline 2> /dev/null \
     #    | head -n 1 \
     #    | awk '{ print $$1 }')${__DIRTY_FLAG}
 	#
-	#VCS_VERSION ?= $(shell git log --abbrev-commit --abbrev=12 --pretty=format:%h -n 1)${__DIRTY_FLAG}
+	#VCS_VERSION ?= $(shell git log --abbrev-commit --abbrev=12 --pretty=format:%h -n 1 2> /dev/null)${__DIRTY_FLAG}
 
     VCS_VERSION ?= $(shell \
-        git describe --abbrev=12 --dirty --always \
+        git describe --abbrev=12 --dirty --always 2> /dev/null \
         | sed 's/.*\([0-9a-z]\{12,\}\)\(\(-dirty\)*\)/\1\2/')
 
 else ifeq (${VCS}, svn)
 
     __DIRTY_FLAG ?= $(shell \
-        [ -z "$$(svn status | head -n 1)" ] \
+        [ -z "$$(svn status 2> /dev/null | head -n 1)" ] \
         && echo "" \
         || echo "-dirty")
 
     VCS_VERSION ?= $(shell \
         LANG=en_US.UTF-8 LANGUAGE=en_US.EN \
-        svn info \
+        svn info 2> /dev/null \
         | grep 'Last Changed Rev' \
         | sed 's/.* \([0-9]\)/\1/')${__DIRTY_FLAG}
 
@@ -77,5 +77,9 @@ endif
 # >>> 2023-06-23, Man Hung-Coeng <udc577@126.com>:
 #   01. Change the default value of VCS_VERSION from 0123456789abcdef to <none>.
 #   02. Remove unwanted contents of "git describe" result.
+#
+# >>> 2023-07-01, Man Hung-Coeng <udc577@126.com>:
+#   01. Filter out the error message produced by ${VCS}
+#       while the target project is not under versioning control.
 #
 

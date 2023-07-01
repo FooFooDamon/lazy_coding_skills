@@ -19,55 +19,43 @@
 #        then include this file at the end of it.
 #
 
-ifeq ($(origin CC), default)
-    undefine CC
-endif
-CC ?= ${CROSS_COMPILE}gcc
+define reassign_if_default
+    ifeq ($(origin $1), default)
+        $(eval undefine $1)
+    endif
+    $1 ?= $2
+endef
 
-ifeq ($(origin CXX), default)
-    undefine CXX
-endif
-CXX ?= ${CROSS_COMPILE}g++
-
-ifeq ($(origin AR), default)
-    undefine AR
-endif
-AR ?= ${CROSS_COMPILE}ar
-
-ifeq ($(origin STRIP), default)
-    undefine STRIP
-endif
-STRIP ?= ${CROSS_COMPILE}strip
-
+$(eval $(call reassign_if_default, CC, ${CROSS_COMPILE}gcc))
+$(eval $(call reassign_if_default, CXX, ${CROSS_COMPILE}g++))
+$(eval $(call reassign_if_default, AR, ${CROSS_COMPILE}ar))
+$(eval $(call reassign_if_default, STRIP, ${CROSS_COMPILE}strip))
 RM ?= $(shell which rm)
 
 ifneq ($(filter n N no NO No 0, ${__STRICT__}),)
     override __STRICT__ :=
 endif
 
-C_STD ?= c11
-CXX_STD ?= c++11
-
-FLAGS_WARN ?= -Wall -Wextra $(if ${__STRICT__}, -Werror) -Wno-unused-parameter \
-    -Wno-variadic-macros # -Wno-missing-field-initializers -Wno-implicit-fallthrough
-FLAGS_ANSI ?= -ansi -Wpedantic
-FLAGS_FOR_DEBUG ?= -O0 -g -ggdb
-FLAGS_FOR_RELEASE ?= -O3 -DNDEBUG
+# Q is short for "quiet".
+Q := $(if $(strip $(filter-out n N no NO No 0, ${V} ${VERBOSE})),,@)
 
 NDEBUG ?= y
 ifneq ($(filter n N no NO No 0, ${NDEBUG}),)
     override NDEBUG :=
 endif
-ifeq (${NDEBUG},)
-    override undefine NDEBUG
-endif
-ifdef NDEBUG
-    DEBUG_FLAGS ?= ${FLAGS_FOR_RELEASE}
-else
-    DEBUG_FLAGS ?= ${FLAGS_FOR_DEBUG}
-endif
 
-COMMON_COMPILE_FLAGS ?= ${DEBUG_FLAGS} -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC \
+C_STD ?= c11
+CXX_STD ?= c++11
+
+FLAGS_WARN ?= -Wall -Wextra $(if ${__STRICT__},-Werror) -Wno-unused-parameter \
+    -Wno-variadic-macros # -Wno-missing-field-initializers -Wno-implicit-fallthrough
+FLAGS_ANSI ?= -ansi -Wpedantic
+FLAGS_FOR_DEBUG ?= -O0 -g -ggdb
+FLAGS_FOR_RELEASE ?= -O3 -DNDEBUG
+
+DEBUG_FLAGS ?= $(if ${NDEBUG},${FLAGS_FOR_RELEASE},${FLAGS_FOR_DEBUG})
+
+COMMON_COMPILE_FLAGS ?= -D${ARCH} ${DEBUG_FLAGS} -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC \
     ${FLAGS_WARN} ${FLAGS_ANSI} # -fstack-protector-strong
 
 DEFAULT_CFLAGS ?= ${COMMON_COMPILE_FLAGS} -std=${C_STD}
@@ -81,30 +69,35 @@ CXXFLAGS ?= ${D_FLAG} ${DEFAULT_CXXFLAGS} ${CXX_DEFINES} ${CXX_INCLUDES} ${OTHER
 C_COMPILE ?= ${CC} ${CFLAGS} -c -o $@ $<
 CXX_COMPILE ?= ${CXX} ${CXXFLAGS} -c -o $@ $<
 
-STRIP_SYMBOLS ?= if [ -n "${NDEBUG}" ]; then ${STRIP} -s -v $@; fi
-ifdef ALLOW_REORDER_ON_LINKING
-    C_LINK ?= ${CC} -o $@ -fPIE -Wl,--start-group $^ ${C_LDFLAGS} -Wl,--end-group && ${STRIP_SYMBOLS}
-    CXX_LINK ?= ${CXX} -o $@ -fPIE -Wl,--start-group $^ ${CXX_LDFLAGS} -Wl,--end-group && ${STRIP_SYMBOLS}
+STRIP_SYMBOLS ?= [ -z "${NDEBUG}" ] || ${STRIP} -s $(if ${Q},,-v) $@
+
+ALLOW_REORDER_ON_LINKING ?= y
+ifneq ($(strip $(filter-out n N no NO No 0, ${ALLOW_REORDER_ON_LINKING})),)
+    C_LINK ?= ${CC} -o $@ -fPIE -Wl,--start-group $^ ${C_LDFLAGS} -Wl,--end-group
+    CXX_LINK ?= ${CXX} -o $@ -fPIE -Wl,--start-group $^ ${CXX_LDFLAGS} -Wl,--end-group
 else
-    C_LINK ?= ${CC} -o $@ -fPIE $^ ${C_LDFLAGS} && ${STRIP_SYMBOLS}
-    CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS} && ${STRIP_SYMBOLS}
+    C_LINK ?= ${CC} -o $@ -fPIE $^ ${C_LDFLAGS}
+    CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS}
 endif
 
-MAKE_STATIC_LIB ?= ${AR} rsv $@ $^
+MAKE_STATIC_LIB ?= ${AR} rs$(if ${Q},,v) $@ $^
 MAKE_SHARED_LIB ?= ${CXX} -shared -o $@ $^
 
-# This is a built-in rule and needn't be written out explicitly.
-#%.o: %.c
-#	${C_COMPILE}
+%.o: %.c
+	$(if ${Q},@printf 'CC\t$<\n')
+	${Q}${C_COMPILE}
 
-# Another built-in rule. Also applicable to .C and .cc.
-#%.o: %.cpp
-#	${CXX_COMPILE}
+%.o: %.cc
+	$(if ${Q},@printf 'CXX\t$<\n')
+	${Q}${CXX_COMPILE}
 
-# Some developers like .cxx suffix for C++,
-# note that there's no built-in rule for it.
+%.o: %.cpp
+	$(if ${Q},@printf 'CXX\t$<\n')
+	${Q}${CXX_COMPILE}
+
 %.o: %.cxx
-	${CXX_COMPILE}
+	$(if ${Q},@printf 'CXX\t$<\n')
+	${Q}${CXX_COMPILE}
 
 ifeq ($(strip ${GOAL} ${GOALS}),)
     $(error Neither GOAL nor GOALS variable is defined and non-empty)
@@ -121,43 +114,108 @@ endif
 ifndef CXX_SRCS
     $(warning Guessing CXX source files ...)
     CXX_SRCS := $(sort $(shell \
-        ${MAKE} ${GOAL} ${GOALS} CXX_SRCS=_ C_SRCS=_ --dry-run --always-make \
+        ${MAKE} ${GOAL} ${GOALS} C_SRCS=_ CXX_SRCS=_ --dry-run --always-make \
         | grep '^${CXX} ' | grep " -o [\"']\?[^ ]\+\.o" \
         | sed "s/.*[ ]\+[\"']\?\([^ ]\+\.\(cc\|cpp\|cxx\)\)[\"']\?[ ]*.*/\1/"))
 endif
 
 ifeq ($(strip ${C_SRCS} ${CXX_SRCS}),)
-    $(error Can not guess any C or CXX source file)
+    $(error Can not find any C or CXX source file)
 endif
 
 # Dependencies for auto-detection of header content update.
 D_FILES ?= ${C_SRCS:.c=.o.d} $(foreach i, $(basename ${CXX_SRCS}), ${i}.o.d)
 ifneq ($(strip ${D_FILES}),)
-    -include ${D_FILES}
+    #-include ${D_FILES} # Arguments might overflow if item count of ${D_FILES} is too large.
+    $(foreach i, ${D_FILES}, $(eval -include ${i}))
 endif
 
+ARCH_LIST ?= arm avr host mips powerpc x86
+# NOTE: The "host" is the architecture of host computer CPU, which is usually x86.
+ARCH ?= host
+CROSS_COMPILE_FOR_arm ?= arm-linux-gnueabihf-
+CROSS_COMPILE_FOR_avr ?= avr-
+CROSS_COMPILE_FOR_mips ?= mips-linux-gnu-
+CROSS_COMPILE_FOR_powerpc ?= powerpc-linux-gnu-
 PARALLEL_OPTION ?= -j $(shell grep -c "processor" /proc/cpuinfo)
 __cplusplus ?= 201103L
 
-.PHONY: check clean
+.PHONY: all $(foreach i, ${ARCH_LIST}, ${i}-release ${i}-debug) check clean
+
+all: ${ARCH}-release
+
+${GOAL} ${GOALS}: %:
+	${Q}if [ -n "$$(echo '$@' | grep '^lib.*\.a.*')" ]; then \
+		$(if ${Q},printf 'AR\t$@\n';) \
+		${MAKE_STATIC_LIB}; \
+	elif [ -n "$$(echo '$@' | grep '^lib.*\.so.*')" ]; then \
+		$(if ${Q},printf 'LD\t$@\n';) \
+		${MAKE_SHARED_LIB}; \
+	else \
+		$(if ${Q},printf 'LD\t$@\n';) \
+		${CXX_LINK}; \
+		[ -z "${NDEBUG}" ] || $(if ${Q},printf 'STRIP\t$@\n',:); \
+		${STRIP_SYMBOLS}; \
+	fi
+
+$(foreach i, ${ARCH_LIST}, ${i}-release): %:
+	${Q}${MAKE} ${GOAL} ${GOALS} ${PARALLEL_OPTION} \
+		ARCH=${@:-release=} CROSS_COMPILE=${CROSS_COMPILE_FOR_${@:-release=}}
+
+$(foreach i, ${ARCH_LIST}, ${i}-debug): %:
+	${Q}${MAKE} ${GOAL} ${GOALS} ${PARALLEL_OPTION} \
+		ARCH=${@:-debug=} CROSS_COMPILE=${CROSS_COMPILE_FOR_${@:-debug=}} NDEBUG=0
 
 check:
-	if [ -n "$(word 1, ${C_SRCS})" ]; then \
+	$(if ${Q},@printf '>>> CHECK: Begin.\n')
+	$(if ${Q},@printf '>>> CHECK: Patience ...\n')
+	${Q}if [ -n "$(word 1, ${C_SRCS})" ]; then \
 		cppcheck --quiet --enable=all --language=c --std=${C_STD} ${PARALLEL_OPTION} \
 			${C_DEFINES} ${C_INCLUDES} ${C_SRCS}; \
 		clang --analyze ${CFLAGS} ${C_SRCS}; \
 	fi
-	if [ -n "$(word 1, ${CXX_SRCS})" ]; then \
+	${Q}if [ -n "$(word 1, ${CXX_SRCS})" ]; then \
 		cppcheck --quiet --enable=all --language=c++ --std=${CXX_STD} ${PARALLEL_OPTION} \
 			-D__cplusplus=${__cplusplus} ${CXX_DEFINES} ${CXX_INCLUDES} ${CXX_SRCS}; \
 		clang --analyze ${CXXFLAGS} ${CXX_SRCS}; \
 	fi
+	$(if ${Q},@printf '>>> CHECK: Done.\n')
 
 clean:
-	[ -z "$(word 1, ${GOAL} ${GOALS})" ] || ${RM} ${GOAL} ${GOALS}
-	${RM} ${D_FILES:.d=}
-	${RM} ${D_FILES:.o.d=.plist}
-	${RM} ${D_FILES} check.d
+	$(if ${Q},@printf '>>> CLEAN: Begin.\n')
+	${Q}[ -z "$(word 1, ${GOAL} ${GOALS})" ] || ${RM} ${GOAL} ${GOALS}
+	${Q}${RM} ${D_FILES:.d=}
+	${Q}${RM} ${D_FILES:.o.d=.plist} *.plist
+	${Q}${RM} ${D_FILES} check.d
+	$(if ${Q},@printf '>>> CLEAN: Done.\n')
+
+__VARS__ := CROSS_COMPILE CC CXX AR STRIP RM __STRICT__ C_STD CXX_STD __cplusplus \
+    FLAGS_WARN FLAGS_ANSI FLAGS_FOR_DEBUG FLAGS_FOR_RELEASE NDEBUG D_FLAG \
+    C_DEFINES CXX_DEFINES C_INCLUDES CXX_INCLUDES OTHER_CFLAGS OTHER_CXXFLAGS \
+    CFLAGS CXXFLAGS C_COMPILE CXX_COMPILE ALLOW_REORDER_ON_LINKING C_LINK CXX_LINK STRIP_SYMBOLS \
+	MAKE_STATIC_LIB MAKE_SHARED_LIB GOAL GOALS C_SRCS CXX_SRCS \
+    ARCH_LIST ARCH $(foreach i, ${ARCH_LIST}, CROSS_COMPILE_FOR_${i}) \
+    PARALLEL_OPTION
+
+ifeq (${Q},)
+    $(info -)
+    $(foreach i, ${__VARS__}, \
+        $(eval \
+            $(info \
+                - ${i}: ${$i} \
+                $(if \
+                    $(filter-out CROSS_COMPILE, $(filter %_COMPILE %_LINK MAKE_%_LIB D_FLAG STRIP_SYMBOLS, ${i})), \
+                    <-- Might miss "$$@" or/and "$$<" or/and "$$^" on displaying. \
+                ) \
+            ) \
+        ) \
+    )
+    $(info -)
+    $(info You can override any of variables above to meet your need.)
+    $(info -)
+else
+    $(info Run with "V=1" or "VERBOSE=1" if you're interested in compilation details.)
+endif
 
 #
 # ================
@@ -226,5 +284,12 @@ clean:
 #       override their counterparts from command line as well.
 #   03. Change the required variables from EXECS, STATIC_LIBS, SHARED_LIBS
 #       to GOAL, GOALS.
+#
+# >>> 2023-07-01, Man Hung-Coeng:
+#   01. Use function $(eval) and $(if) to refine some logic blocks,
+#       and improve robustness and readability.
+#   02. Support quiet working mode and multiple architectures.
+#   03. Enable parallel compilation by default.
+#   04. Provide important variables printing.
 #
 

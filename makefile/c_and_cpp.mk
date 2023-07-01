@@ -222,47 +222,47 @@ endif
 #   CHANGE LOG
 # ================
 #
-# >>> 2021-12-11, Man Hung-Coeng:
+# >>> 2021-12-11, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
 #
-# >>> 2021-12-12, Man Hung-Coeng:
+# >>> 2021-12-12, Man Hung-Coeng <udc577@126.com>:
 #   01. Rename variable BIZ_VERSION to VCS_VERSION.
 #   02. Add variable AR, STRIP and __VER__.
 #
-# >>> 2021-12-14, Man Hung-Coeng:
+# >>> 2021-12-14, Man Hung-Coeng <udc577@126.com>:
 #   01. Use ${} instead of $() to reference a variable.
 #   02. Add variable C_COMPILE and CXX_COMPILE.
 #   03. Comment out .c-to-.o, .cc-to.o and .cpp-to-.o rules,
 #       since they're built-in rules.
 #   04. Add -Werror into COMMON_COMPILE_FLAGS to make compilation stricter.
 #
-# >>> 2021-12-21, Man Hung-Coeng:
+# >>> 2021-12-21, Man Hung-Coeng <udc577@126.com>:
 #   01. Add ${C_DEFINES} into CFLAGS, ${CXX_DEFINES} into CXXFLAGS.
 #
-# >>> 2021-12-26, Man Hung-Coeng:
+# >>> 2021-12-26, Man Hung-Coeng <udc577@126.com>:
 #   01. Remove some flags like -fstack-protector-strong and -Wl,--start-group,
 #       which may not be supported on other platforms (e.g., MinGW and OS X).
 #
-# >>> 2022-02-21, Man Hung-Coeng:
+# >>> 2022-02-21, Man Hung-Coeng <udc577@126.com>:
 #   01. Add -D_REENTRANT into COMMON_COMPILE_FLAGS.
 #
-# >>> 2022-09-13, Man Hung-Coeng:
+# >>> 2022-09-13, Man Hung-Coeng <udc577@126.com>:
 #   01. Add EXTRA_COMPILE_FLAGS and -DNDEBUG.
 #
-# >>> 2022-10-25, Man Hung-Coeng:
+# >>> 2022-10-25, Man Hung-Coeng <udc577@126.com>:
 #   01. Add ARFLAGS, and modify AR.
 #
-# >>> 2023-04-08, Man Hung-Coeng:
+# >>> 2023-04-08, Man Hung-Coeng <udc577@126.com>:
 #   01. Remove definition __VER__ because it exists in another file __ver__.mk.
 #   02. Rename this file to c_and_cpp.mk.
 #
-# >>> 2023-04-16, Man Hung-Coeng:
+# >>> 2023-04-16, Man Hung-Coeng <udc577@126.com>:
 #   01. Add dependencies for auto-detection of header content update.
 #
-# >>> 2023-06-22, Man Hung-Coeng:
+# >>> 2023-06-22, Man Hung-Coeng <udc577@126.com>:
 #   01. Add ${CROSS_COMPILE} prefix to values of CC, CXX, AR and STRIP.
 #
-# >>> 2023-06-23, Man Hung-Coeng:
+# >>> 2023-06-23, Man Hung-Coeng <udc577@126.com>:
 #   01. Judge CC, CXX, AR and STRIP more precisely.
 #   02. Remove ARFLAGS.
 #   03. Add variable RM, FLAGS_*, *_STD_FLAG and MAKE_*_LIB.
@@ -270,14 +270,14 @@ endif
 #   05. Define NDEBUG, and change the way of using it.
 #   06. Enhance C_LINK and CXX_LINK.
 #
-# >>> 2023-06-24, Man Hung-Coeng:
+# >>> 2023-06-24, Man Hung-Coeng <udc577@126.com>:
 #   01. Remove OBJS, and guess C_SRCS and CXX_SRCS if they're not defined.
 #   02. Merge EXTRA_COMPILE_FLAGS into FLAGS_WARN.
 #   03. Label target "check" and "clean" as .PHONY.
 #   04. Change C_STD_FLAG to C_STD, CXX_STD_FLAG to CXX_STD.
 #   05. Make the condition statements of target "clean" more precise.
 #
-# >>> 2023-06-25, Man Hung-Coeng:
+# >>> 2023-06-25, Man Hung-Coeng <udc577@126.com>:
 #   01. Remove duplicate items of C_SRCS and CXX_SRCS, and make their rules
 #       more robust when facing interferences of single/double quotation marks.
 #   02. While clearing and undefining __STRICT__ and NDEBUG,
@@ -285,7 +285,7 @@ endif
 #   03. Change the required variables from EXECS, STATIC_LIBS, SHARED_LIBS
 #       to GOAL, GOALS.
 #
-# >>> 2023-07-01, Man Hung-Coeng:
+# >>> 2023-07-01, Man Hung-Coeng <udc577@126.com>:
 #   01. Use function $(eval) and $(if) to refine some logic blocks,
 #       and improve robustness and readability.
 #   02. Support quiet working mode and multiple architectures.

@@ -62,13 +62,13 @@ COMMON_COMPILE_FLAGS ?= -D$(shell echo __ARCH_${ARCH}__ | tr 'a-z' 'A-Z') \
 DEFAULT_CFLAGS ?= ${COMMON_COMPILE_FLAGS} -std=${C_STD}
 DEFAULT_CXXFLAGS ?= ${COMMON_COMPILE_FLAGS} -std=${CXX_STD}
 
-D_FLAG ?= -Wp,-MMD,$@.d
+D_FLAG ?= -Wp,-MMD,$*.d
 
-CFLAGS ?= ${D_FLAG} ${DEFAULT_CFLAGS} ${C_DEFINES} ${C_INCLUDES} ${OTHER_CFLAGS}
-CXXFLAGS ?= ${D_FLAG} ${DEFAULT_CXXFLAGS} ${CXX_DEFINES} ${CXX_INCLUDES} ${OTHER_CXXFLAGS}
+CFLAGS ?= ${DEFAULT_CFLAGS} ${C_DEFINES} ${C_INCLUDES} ${OTHER_CFLAGS}
+CXXFLAGS ?= ${DEFAULT_CXXFLAGS} ${CXX_DEFINES} ${CXX_INCLUDES} ${OTHER_CXXFLAGS}
 
-C_COMPILE ?= ${CC} ${CFLAGS} -c -o $@ $<
-CXX_COMPILE ?= ${CXX} ${CXXFLAGS} -c -o $@ $<
+C_COMPILE ?= ${CC} ${D_FLAG} ${CFLAGS} -c -o $@ $<
+CXX_COMPILE ?= ${CXX} ${D_FLAG} ${CXXFLAGS} -c -o $@ $<
 
 STRIP_SYMBOLS ?= [ -z "${NDEBUG}" ] || ${STRIP} -s $(if ${Q},,-v) $@
 
@@ -106,16 +106,16 @@ endif
 
 ifndef C_SRCS
     $(warning Guessing C source files ...)
-    C_SRCS := $(sort $(shell \
-        ${MAKE} ${GOAL} ${GOALS} C_SRCS=_ CXX_SRCS=_ --dry-run --always-make \
+    export C_SRCS := $(sort $(shell \
+        ${MAKE} ${GOAL} ${GOALS} C_SRCS=_ CXX_SRCS=$(if ${CXX_SRCS},'${CXX_SRCS}',_) --dry-run --always-make \
         | grep '^${CC} ' | grep " -o [\"']\?[^ ]\+\.o" \
         | sed "s/.*[ ]\+[\"']\?\([^ ]\+\.c\)[\"']\?[ ]*.*/\1/"))
 endif
 
 ifndef CXX_SRCS
     $(warning Guessing CXX source files ...)
-    CXX_SRCS := $(sort $(shell \
-        ${MAKE} ${GOAL} ${GOALS} C_SRCS=_ CXX_SRCS=_ --dry-run --always-make \
+    export CXX_SRCS := $(sort $(shell \
+        ${MAKE} ${GOAL} ${GOALS} C_SRCS=$(if ${C_SRCS},'${C_SRCS}',_) CXX_SRCS=_ --dry-run --always-make \
         | grep '^${CXX} ' | grep " -o [\"']\?[^ ]\+\.o" \
         | sed "s/.*[ ]\+[\"']\?\([^ ]\+\.\(cc\|cpp\|cxx\)\)[\"']\?[ ]*.*/\1/"))
 endif
@@ -125,7 +125,7 @@ ifeq ($(strip ${C_SRCS} ${CXX_SRCS}),)
 endif
 
 # Dependencies for auto-detection of header content update.
-D_FILES ?= ${C_SRCS:.c=.o.d} $(foreach i, $(basename ${CXX_SRCS}), ${i}.o.d)
+D_FILES ?= ${C_SRCS:.c=.d} $(foreach i, $(basename ${CXX_SRCS}), ${i}.d)
 ifneq ($(strip ${D_FILES}),)
     #-include ${D_FILES} # Arguments might overflow if item count of ${D_FILES} is too large.
     $(foreach i, ${D_FILES}, $(eval -include ${i}))
@@ -185,9 +185,9 @@ check:
 clean:
 	$(if ${Q},@printf '>>> CLEAN: Begin.\n')
 	${Q}[ -z "$(word 1, ${GOAL} ${GOALS})" ] || ${RM} ${GOAL} ${GOALS}
-	${Q}${RM} ${D_FILES:.d=}
-	${Q}${RM} ${D_FILES:.o.d=.plist} *.plist
-	${Q}${RM} ${D_FILES} check.d
+	${Q}${RM} ${D_FILES:.d=.o}
+	${Q}${RM} ${D_FILES:.d=.plist} *.plist
+	${Q}${RM} ${D_FILES}
 	$(if ${Q},@printf '>>> CLEAN: Done.\n')
 
 __VARS__ := CROSS_COMPILE CC CXX AR STRIP RM __STRICT__ C_STD CXX_STD __cplusplus \
@@ -294,5 +294,11 @@ endif
 #   02. Support quiet working mode and multiple architectures.
 #   03. Enable parallel compilation by default.
 #   04. Provide important variables printing.
+#
+# >>> 2023-07-13, Man Hung-Coeng <udc577@126.com>:
+#   01. Change the dependency file suffix from .o.d to .d
+#       and eliminate check.d which is accidentally generated on "make check".
+#   02. Fix the bug of an unexpected target "_" showing up due to deduction of
+#       C_SRCS and CXX_SRCS during parallel compilation.
 #
 

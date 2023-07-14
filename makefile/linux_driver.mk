@@ -20,7 +20,7 @@
 # >>>>>>>> USAGE <<<<<<<<
 #
 # Including this file in your own makefile and doing some customizations
-# is preferable to modifing this file directly.
+# is preferable to modifying this file directly.
 #
 # Example 1 (Simplest; Usually for tiny tests or practices):
 # (1) Assume you have multiple tests like:
@@ -36,20 +36,15 @@
 #             `-- testN
 #                     `-- testN.c
 # (2) Put this file in ${HOME}/src directory, or anywhere you want.
-#     The path to Linux kernel source code directory is ${HOME}/src/linux,
-#     if not, make a symbolic link.
-# (3) If you're an ARM driver developer, you don't even need to write a makefile,
+# (3) If you're developing drivers for host computer,
+#     you don't even need to write a makefile,
 # 	  just making a symbolic link is enough, take test1 as example:
 #         $ ln -s ${HOME}/src/linux_driver.mk /path/to/test1/Makefile
-# (3') If you're developing drivers of other platforms, e.g. X86,
-# 	  a little more jobs need to be done.
-# 	  First, create a file with a path of ${HOME}/src/x86_driver.mk
-# 	  and with content as below:
-# 	  	  STRIP := strip
-# 	  	  APP_CC := gcc
-# 	  	  include ${HOME}/src/linux_driver.mk
-# 	  Then, make a symbolic link for each test case, take test1 as example:
-#         $ ln -s ${HOME}/src/x86_driver.mk /path/to/test1/Makefile
+# (3') If you're developing drivers for another platform, e.g. ARM,
+# 	  one more step needs to be done first:
+# 	  Download Linux kernel source code and make a symbolic link:
+#         $ ln -s /path/to/kernel/source/code ${HOME}/src/linux
+# 	  Then, make a symbolic link for each test case as step (3).
 #
 # Example 2 (A bit complicated; Usually for formal projects):
 # (1) Assume you have a formal project like:
@@ -72,34 +67,86 @@
 #                     `-- driverN # containing stuff similar to driver1
 # (2) Put this file in the common directory.
 # (3) Edit the makefile of each driver according to the actual situation,
-#     let's take driver1 as example, it's makefile may be like:
-#         KERNEL_ROOT := ${PWD}/../../kernel
-#         DRVNAME := driver1
-#         ${DRVNAME}-objs := driver1_main.o driver1_utils.o
-#         APP_NAME := driver1_app
-#         APP_OBJS := driver1_app_main.o driver1_app_utils.o
-#         # Other settings if needed: STRIP, APP_CC, APP_DEFINES, etc.
+#     let's take driver1 as example, its makefile may be like:
+#         export CROSS_KERNEL_DIR := ${PWD}/../../kernel
+#         export DRVNAME := driver1
+#         export ${DRVNAME}-objs := driver1_main.o driver1_utils.o
+#         export APP_NAME := driver1_app
+#         export APP_OBJS := driver1_app_main.o driver1_app_utils.o
+#         # Other settings if needed: APP_DEFINES, APP_INCLUDES, OTHER_APP_CFLAGS, etc.
 #         include ${PWD}/../../common/__ver__.mk
 #         include ${PWD}/../../common/linux_driver.mk
 #
+# Supported compilation commands:
+#   make
+#   make clean
+#   make {arm|host|x86|...}-release
+#   make {arm|host|x86|...}-debug
+#   make clean-{arm|host|x86|...}
+#   make ${DRVNAME}.ko [ARCH={arm|host|x86|...}]
+#   make clean-driver [ARCH={arm|host|x86|...}]
+#   make ${APP_NAME}.elf [ARCH={arm|host|x86|...}]
+#   make clean-app
+#
+
+define reassign_if_default
+    ifeq ($(origin $1), default)
+        $(eval undefine $1)
+    endif
+    $1 ?= $2
+endef
 
 #=======================
 # Global settings.
 #=======================
-STRIP ?= arm-linux-gnueabihf-strip
+
+ARCH_LIST ?= arm avr32 host mips powerpc x86
+export HOST_ARCH ?= $(shell uname -m | sed 's/\(.*\)[-_]\(32\|64\)\?$$/\1/')
+# NOTE: The "host" is the architecture of host computer CPU, which is usually x86.
+ARCH ?= host
+ifeq (${ARCH},host)
+    override ARCH := ${HOST_ARCH}
+endif
+CROSS_COMPILE_FOR_arm ?= arm-linux-gnueabihf-
+CROSS_COMPILE_FOR_avr32 ?= avr-
+CROSS_COMPILE_FOR_mips ?= mips-linux-gnu-
+CROSS_COMPILE_FOR_powerpc ?= powerpc-linux-gnu-
+CROSS_COMPILE ?= ${CROSS_COMPILE_FOR_${ARCH}}
+
+# DO NOT modify the value of CC, otherwise something weird will happen
+# while running kernel scripts during host driver compilation.
+# To avoid this, define a new variable APP_CC for application in the following.
+#$(eval $(call reassign_if_default, CC, ${CROSS_COMPILE}gcc))
+
+$(eval $(call reassign_if_default, STRIP, ${CROSS_COMPILE}strip))
+
+RM ?= $(shell which rm) -f
+
+# Q is short for "quiet".
+Q := $(if $(strip $(filter-out n N no NO No 0, ${V} ${VERBOSE})),,@)
+
 NDEBUG ?= y
+ifneq ($(filter n N no NO No 0, ${NDEBUG}),)
+    override NDEBUG :=
+endif
 
 #=======================
 # For device driver.
 #=======================
-KERNEL_ROOT ?= ${HOME}/src/linux # Or set it to another path in your own makefile if you have a different one.
+
+HOST_KERNEL_DIR ?= /lib/modules/`uname -r`/build
+CROSS_KERNEL_DIR ?= ${HOME}/src/linux
+ROOT ?= $(if $(filter host ${HOST_ARCH}, ${ARCH}),${HOST_KERNEL_DIR},${CROSS_KERNEL_DIR})
+
 ifeq (${DRVNAME},) # Define it explicitly in your own makefile if there're multiple source files for this driver.
     export DRVNAME := $(basename $(notdir $(shell find ./ -name "*.c" | grep -v '_app\.c$$' | head -n 1)))
     ifeq (${DRVNAME},)
         $(error DRVNAME not specified and not deductive)
     endif
 endif
+
 obj-m := ${DRVNAME}.o
+
 # CFLAGS is not permitted here, otherwise an error will be triggered with a message below:
 # *** CFLAGS was changed in "...". Fix it to use ccflags-y.
 ccflags-y += -D__VER__=\"${__VER__}\" # Define the version number in another makefile, or just ignore it.
@@ -110,54 +157,109 @@ endif
 #=======================
 # For application demo.
 #=======================
-APP_NAME ?= $(basename $(shell find ./ -name "*.c" | grep '_app\.c$$' | head -n 1))
-APP_OBJS ?= ${APP_NAME}.o
-# CC is not suitable here, because it has a default value of "cc" which mean it's not empty.
-APP_CC ?= arm-linux-gnueabihf-gcc
+
+ifneq ($(filter n N no NO No 0, ${__STRICT__}),)
+    override __STRICT__ :=
+endif
+
+APP_CC ?= ${CROSS_COMPILE}gcc
+export APP_NAME ?= $(basename $(shell find ./ -name "*.c" | grep '_app\.c$$' | head -n 1))
+export APP_OBJS ?= ${APP_NAME}.o
 ifeq (${NDEBUG},)
     APP_DEBUG_FLAGS ?= -O0 -g
 else
     APP_DEBUG_FLAGS ?= -O2 -DNDEBUG
 endif
-APP_CFLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC -Wall -Werror -ansi -Wpedantic \
-    -W -Wno-variadic-macros -Wno-unused-parameter -Wno-missing-field-initializers \
+APP_CFLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC -Wall -Wextra \
+    $(if ${__STRICT__},-Werror) -ansi -Wpedantic \
+    -Wno-variadic-macros -Wno-unused-parameter -Wno-missing-field-initializers \
     -Wno-implicit-fallthrough ${APP_DEBUG_FLAGS} ${APP_DEFINES} ${APP_INCLUDES} \
     ${OTHER_APP_CFLAGS}
 
-.PHONY: all debug clean
+#=======================
+# Targets and Rules.
+#=======================
 
-all: ${PREREQUISITES} ${DRVNAME}.ko ${APP_NAME}
+export PARALLEL_OPTION ?= -j $(shell grep -c "processor" /proc/cpuinfo)
+
+.PHONY: all $(foreach i, ${ARCH_LIST}, ${i}-release ${i}-debug clean-${i}) \
+    clean clean-app clean-driver
+
+all: ${PREREQUISITES} ${ARCH}-release
 
 ${DRVNAME}.ko: ${obj-m:.o=.c} ${${DRVNAME}-objs:.o=.c}
-	make -C ${KERNEL_ROOT} M=`pwd` modules # Also includes the generation of .o files.
-	[ -f $@ ] || mv $$(ls *.ko | head -n 1) $@
-	[ -z "${NDEBUG}" ] || ${STRIP} -d $@
+	${Q}# Also includes the generation of .o files.
+	${Q}${MAKE} -C ${ROOT} M=`pwd` ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} modules
+	${Q}[ -f $@ ] || mv $$(ls *.ko | head -n 1) $@
+	${Q}[ -z "${NDEBUG}" ] || $(if ${Q}, printf 'STRIP\t$@\n', :)
+	${Q}[ -z "${NDEBUG}" ] || ${STRIP} -d $(if ${Q},,-v) $@
 
-${APP_NAME}: ${APP_OBJS}
-	${APP_CC} -o $@ -fPIE $^ ${APP_LDFLAGS}
-	[ -z "${NDEBUG}" ] || ${STRIP} -s $@
+${APP_NAME}.elf: ${APP_OBJS}
+	$(if ${Q},@printf 'LD\t$@\n')
+	${Q}${APP_CC} -o $@ -fPIE -Wl,--start-group $^ ${APP_LDFLAGS} -Wl,--end-group
+	${Q}[ -z "${NDEBUG}" ] || $(if ${Q}, printf 'STRIP\t$@\n', :)
+	${Q}[ -z "${NDEBUG}" ] || ${STRIP} -s $(if ${Q},,-v) $@
 
-D_FILES := $(foreach i, ${APP_OBJS}, ${i}.d)
+$(foreach i, ${ARCH_LIST}, ${i}-release): %:
+	${Q}${MAKE} ${DRVNAME}.ko ${APP_NAME}.elf ${PARALLEL_OPTION} ARCH=${@:-release=}
+
+$(foreach i, ${ARCH_LIST}, ${i}-debug): %:
+	${Q}${MAKE} ${DRVNAME}.ko ${APP_NAME}.elf ${PARALLEL_OPTION} ARCH=${@:-debug=} NDEBUG=0
+
+D_FILES := $(foreach i, ${APP_OBJS}, ${i:.o=.d})
 CMD_FILES := $(shell find . -name ".*.o.cmd" | grep -v "\.mod\.o\.cmd")
 
 # Dependencies for auto-detection of header content update.
 -include ${D_FILES}
 ifneq (${CMD_FILES},)
     # TODO: This does not work! Why?
-    include ${CMD_FILES}
+    -include ${CMD_FILES}
 endif
 
 %.o: %.c # This only affects application object files. See the rule of ${DRVNAME}.ko above.
-	${APP_CC} -Wp,-MMD,$@.d ${APP_CFLAGS} -c -o $@ $<
-
-debug:
-	make NDEBUG=""
+	$(if ${Q},@printf 'CC\t$<\n')
+	${Q}${APP_CC} -Wp,-MMD,$*.d ${APP_CFLAGS} -c -o $@ $<
 
 # TODO: Add a "check" target for code static checking.
 
-clean:
-	rm -f ${APP_NAME} ${APP_OBJS} ${D_FILES}
-	make -C ${KERNEL_ROOT} M=`pwd` clean # modname=${DRVNAME}
+clean-app:
+	$(if ${Q},@printf '>>> CLEAN[${APP_NAME}.elf]: Begin.\n')
+	${Q}${RM} ${APP_NAME}.elf ${APP_OBJS} ${D_FILES}
+	$(if ${Q},@printf '>>> CLEAN[${APP_NAME}.elf]: Done.\n')
+
+clean-driver:
+	$(if ${Q},@printf '>>> CLEAN[${DRVNAME}.ko]: Begin.\n')
+	${Q}${MAKE} -C ${ROOT} M=`pwd` ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} clean # modname=${DRVNAME}
+	$(if ${Q},@printf '>>> CLEAN[${DRVNAME}.ko]: Done.\n')
+
+clean: clean-app clean-driver
+
+$(foreach i, ${ARCH_LIST}, clean-${i}): %:
+	${Q}${MAKE} clean ARCH=${@:clean-%=%}
+
+__VARS__ := ARCH_LIST HOST_ARCH ARCH $(foreach i, ${ARCH_LIST}, CROSS_COMPILE_FOR_${i}) CROSS_COMPILE \
+    APP_CC CC STRIP RM __STRICT__ NDEBUG \
+    HOST_KERNEL_DIR CROSS_KERNEL_DIR DRVNAME ${DRVNAME}-objs obj-m ccflags-y \
+    APP_NAME APP_OBJS APP_DEBUG_FLAGS APP_DEFINES APP_INCLUDES OTHER_APP_CFLAGS APP_CFLAGS \
+    PARALLEL_OPTION
+
+ifeq (${Q},)
+    $(info -)
+    $(foreach i, ${__VARS__}, \
+        $(eval \
+            $(info \
+                - ${i}: ${$i} \
+            ) \
+        ) \
+    )
+    $(info -)
+    $(info You can override most of variables above to meet your need.)
+    $(info -)
+else
+    ifeq (${MAKELEVEL}, 0)
+        $(info Run with "V=1" or "VERBOSE=1" if you're interested in compilation details.)
+    endif
+endif
 
 #
 # ================
@@ -175,5 +277,8 @@ clean:
 #   	to make some optional preparations before compilation.
 #   02. Specify target "all", "debug" and "clean" as ".PHONY".
 #   03. Add dependencies for auto-detection of header content update.
+#
+# >>> 2023-07-14, Man Hung-Coeng <udc577@126.com>:
+#   01. Support multiple architectures.
 #
 

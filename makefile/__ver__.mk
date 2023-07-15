@@ -55,6 +55,9 @@ endif
 
 __VER__ ?= ${VCS_VERSION}
 
+ifneq ($(filter n N no NO No 0, ${EVAL_VERSION_ONCE}),)
+    undefine EVAL_VERSION_ONCE
+endif
 ifdef EVAL_VERSION_ONCE
     export __DIRTY_FLAG VCS_VERSION __VER__
 endif
@@ -81,5 +84,8 @@ endif
 # >>> 2023-07-01, Man Hung-Coeng <udc577@126.com>:
 #   01. Filter out the error message produced by ${VCS}
 #       while the target project is not under versioning control.
+#
+# >>> 2023-07-15, Man Hung-Coeng <udc577@126.com>:
+#   01. Add some negative values that can invalidate EVAL_VERSION_ONCE.
 #
 

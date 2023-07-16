@@ -27,10 +27,10 @@ all: init
 
 
 
-LCS_ALIAS ?= lazy_coding
+LCS_ALIAS := lazy_coding
 # FIXME: You probably want to modify this directory.
-# For a formal project, $(abspath .) or somewhere else might be better.
-THIRD_PARTY_DIR ?= ${HOME}/src
+# For a formal project, ${CURDIR} or somewhere else might be better.
+THIRD_PARTY_DIR := ${HOME}/src
 # T is short for "type",
 # which Should be one of: app driver stm32cubeide stm32raw
 T := app
@@ -141,7 +141,7 @@ endif
 
 VCS_LIST := git svn
 VCS ?= $(word 1, ${VCS_LIST})
-LCS_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
+LCS_URL := https://github.com/FooFooDamon/lazy_coding_skills
 # Format of each project item: <alias>@@<method>@@<vcs>@@<default-branch>@@<url>
 # NOTES:
 # 1) If the method field of an item is by-tag or by-hash,
@@ -149,17 +149,20 @@ LCS_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 #   after "make seeds" and before "make init".
 # 2) The "partial" method only works in HTTP(S) way so far.
 # 3) SVN projects are not supported yet.
-THIRD_PARTY_PROJECTS ?= ${LCS_ALIAS}@@partial@@git@@main@@${LCS_URL} \
+THIRD_PARTY_PROJECTS := ${LCS_ALIAS}@@partial@@git@@main@@${LCS_URL} \
     #nvidia-docker-v2.12.0@@by-tag@@git@@main@@https://gitlab.com/nvidia/container-toolkit/nvidia-docker \
     #nvidia-docker-80902fe3afab@@by-hash@@git@@main@@git@gitlab.com:nvidia/container-toolkit/nvidia-docker.git \
     #rt-thread@@by-tag@@git@@master@@https://gitee.com/rtthread/rt-thread.git \
 	# FIXME: Add more items ahead of this line if needed. \
     # Beware that each line should begin with 4 spaces and end with a backslash.
 CHKOUT ?= ${LCS_ALIAS}
+# FIXME: You probably want to modify this directory.
+# For a formal project, $(abspath ./__chkout__) or somewhere else might be better.
+CHKOUT_CONF_DIR := ${THIRD_PARTY_DIR}
 
 seeds:
 	$(if ${Q},@printf '>>> SEEDS: Begin.\n')
-	${Q}mkdir -p ${THIRD_PARTY_DIR}
+	${Q}mkdir -p ${THIRD_PARTY_DIR} ${CHKOUT_CONF_DIR}
 	${Q}for i in ${VCS_LIST}; \
 	do \
 		[ ! -s ${THIRD_PARTY_DIR}/checkout.$${i}.mk ] || continue; \
@@ -173,9 +176,11 @@ seeds:
 		export VCS_CMD=$$(echo "$${i}" | awk -F '@@' '{ print $$3 }'); \
 		export CHKOUT_STEM=$$(echo "$${i}" | awk -F '@@' '{ print $$4 }'); \
 		export CHKOUT_URL=$$(echo "$${i}" | awk -F '@@' '{ print $$5 }'); \
-		export MKFILE=${THIRD_PARTY_DIR}/$${CHKOUT_ALIAS}.$${VCS_CMD}.chkout.mk; \
+		export MKFILE=${CHKOUT_CONF_DIR}/$${CHKOUT_ALIAS}.$${VCS_CMD}.chkout.mk; \
 		[ ! -e $${MKFILE} ] || continue; \
-		echo "export CHKOUT_PARENT_DIR := ${THIRD_PARTY_DIR}" > $${MKFILE}; \
+		echo "# It's better to use a relative path in a project under versioning control," > $${MKFILE}; \
+		echo "# or define this variable in absolute path through command line parameter." >> $${MKFILE}; \
+		echo "#export CHKOUT_PARENT_DIR := ${THIRD_PARTY_DIR}" >> $${MKFILE}; \
 		echo "export CHKOUT_ALIAS := $${CHKOUT_ALIAS}" >> $${MKFILE}; \
 		echo "export CHKOUT_TAG :=" >> $${MKFILE}; \
 		echo "export CHKOUT_HASH :=" >> $${MKFILE}; \
@@ -211,7 +216,7 @@ init:
 	do \
 		export CHKOUT_ALIAS=$$(echo "$${i}" | awk -F '@@' '{ print $$1 }'); \
 		export VCS_CMD=$$(echo "$${i}" | awk -F '@@' '{ print $$3 }'); \
-		export MKFILE=${THIRD_PARTY_DIR}/$${CHKOUT_ALIAS}.$${VCS_CMD}.chkout.mk; \
+		export MKFILE=${CHKOUT_CONF_DIR}/$${CHKOUT_ALIAS}.$${VCS_CMD}.chkout.mk; \
 		if [ ! -e $${MKFILE} ]; then \
 			echo "*** [$${MKFILE}] does not exist!" >&2; \
 			echo '*** Run "make seeds" to create it first!' >&2; \
@@ -219,12 +224,13 @@ init:
 		fi; \
 		ask_and_quit() { echo "*** Have you modified [$${MKFILE}] correctly ?!" >&2; exit 1; }; \
 		$(if ${Q},printf ">>> CHKOUT: Begin checking out [$${CHKOUT_ALIAS}].\n";) \
-		${MAKE} $(if ${Q},-s) checkout VCS=$${VCS_CMD} CHKOUT=$${CHKOUT_ALIAS} || ask_and_quit; \
+		${MAKE} $(if ${Q},-s) checkout VCS=$${VCS_CMD} CHKOUT=$${CHKOUT_ALIAS} CHKOUT_PARENT_DIR=${THIRD_PARTY_DIR} \
+			|| ask_and_quit; \
 		$(if ${Q},printf ">>> CHKOUT: Done checking out [$${CHKOUT_ALIAS}].\n";) \
 	done
 	$(if ${Q},@printf '>>> INIT: Done.\n')
 
--include ${THIRD_PARTY_DIR}/${CHKOUT}.${VCS}.chkout.mk
+-include ${CHKOUT_CONF_DIR}/${CHKOUT}.${VCS}.chkout.mk
 -include ${THIRD_PARTY_DIR}/checkout.${VCS}.mk
 
 

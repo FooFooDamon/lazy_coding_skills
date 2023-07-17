@@ -204,7 +204,7 @@ seeds:
 	done
 	$(if ${Q},@printf '>>> SEEDS: Done.\n')
 
-checkout:
+chkout-exec:
 	${Q}for i in ${VCS_LIST}; \
 	do \
 		[ ! -s ${THIRD_PARTY_DIR}/checkout.$${i}.mk ] || continue; \
@@ -240,7 +240,7 @@ pre-init:
 post-init:
 	${Q}:
 
-init: pre-init checkout post-init
+init: pre-init chkout-exec post-init
 
 
 

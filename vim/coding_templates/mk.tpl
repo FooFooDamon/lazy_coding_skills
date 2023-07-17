@@ -33,6 +33,7 @@ LCS_ALIAS := lazy_coding
 THIRD_PARTY_DIR := ${HOME}/src
 # T is short for "type",
 # which Should be one of: app driver stm32cubeide stm32raw
+# FIXME: Choose the right type for your project.
 T := app
 EVAL_VERSION_ONCE := $(if $(filter driver, ${T}), Y, N)
 
@@ -203,8 +204,7 @@ seeds:
 	done
 	$(if ${Q},@printf '>>> SEEDS: Done.\n')
 
-init:
-	$(if ${Q},@printf '>>> INIT: Begin.\n')
+checkout:
 	${Q}for i in ${VCS_LIST}; \
 	do \
 		[ ! -s ${THIRD_PARTY_DIR}/checkout.$${i}.mk ] || continue; \
@@ -228,10 +228,19 @@ init:
 			|| ask_and_quit; \
 		$(if ${Q},printf ">>> CHKOUT: Done checking out [$${CHKOUT_ALIAS}].\n";) \
 	done
-	$(if ${Q},@printf '>>> INIT: Done.\n')
 
 -include ${CHKOUT_CONF_DIR}/${CHKOUT}.${VCS}.chkout.mk
 -include ${THIRD_PARTY_DIR}/checkout.${VCS}.mk
+
+# FIXME: Customize some pre-initializations if needed.
+pre-init:
+	${Q}:
+
+# FIXME: Customize some post-initializations if needed.
+post-init:
+	${Q}:
+
+init: pre-init checkout post-init
 
 
 

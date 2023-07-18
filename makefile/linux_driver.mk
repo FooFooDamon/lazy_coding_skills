@@ -71,6 +71,7 @@
 #         export CROSS_KERNEL_DIR := ${PWD}/../../kernel
 #         export DRVNAME := driver1
 #         export ${DRVNAME}-objs := driver1_main.o driver1_utils.o
+#         export obj-m := ${DRVNAME}.o
 #         export APP_NAME := driver1_app
 #         export APP_OBJS := driver1_app_main.o driver1_app_utils.o
 #         # Other settings if needed: APP_DEFINES, APP_INCLUDES, OTHER_APP_CFLAGS, etc.
@@ -84,9 +85,9 @@
 #   make {arm|host|x86|...}-debug
 #   make clean-{arm|host|x86|...}
 #   make ${DRVNAME}.ko [ARCH={arm|host|x86|...}]
-#   make clean-driver [ARCH={arm|host|x86|...}]
+#   make clean-${DRVNAME}.ko [ARCH={arm|host|x86|...}]
 #   make ${APP_NAME}.elf [ARCH={arm|host|x86|...}]
-#   make clean-app
+#   make clean-${APP_NAME}.elf
 #
 
 define reassign_if_default
@@ -130,6 +131,8 @@ ifneq ($(filter n N no NO No 0, ${NDEBUG}),)
     override NDEBUG :=
 endif
 
+export SRCS := $(shell find ./ -name "*.c" | grep -v '\.mod\.c$$')
+
 #=======================
 # For device driver.
 #=======================
@@ -139,7 +142,7 @@ CROSS_KERNEL_DIR ?= ${HOME}/src/linux
 ROOT ?= $(if $(filter host ${HOST_ARCH}, ${ARCH}),${HOST_KERNEL_DIR},${CROSS_KERNEL_DIR})
 
 ifeq (${DRVNAME},) # Define it explicitly in your own makefile if there're multiple source files for this driver.
-    export DRVNAME := $(basename $(notdir $(shell find ./ -name "*.c" | grep -v '_app\.c$$' | head -n 1)))
+    export DRVNAME := $(notdir $(word 1, $(filter-out %_app, ${SRCS:.c=})))
     ifeq (${DRVNAME},)
         $(error DRVNAME not specified and not deductive)
     endif
@@ -163,8 +166,8 @@ ifneq ($(filter n N no NO No 0, ${__STRICT__}),)
 endif
 
 APP_CC ?= ${CROSS_COMPILE}gcc
-export APP_NAME ?= $(basename $(shell find ./ -name "*.c" | grep '_app\.c$$' | head -n 1))
-export APP_OBJS ?= ${APP_NAME}.o
+export APP_NAME ?= $(notdir $(word 1, $(filter %_app, ${SRCS:.c=})))
+export APP_OBJS ?= $(if ${APP_NAME},${APP_NAME}.o)
 ifeq (${NDEBUG},)
     APP_DEBUG_FLAGS ?= -O0 -g
 else
@@ -183,16 +186,18 @@ APP_CFLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC -Wall -Wextra \
 export PARALLEL_OPTION ?= -j $(shell grep -c "processor" /proc/cpuinfo)
 
 .PHONY: all $(foreach i, ${ARCH_LIST}, ${i}-release ${i}-debug clean-${i}) \
-    clean clean-app clean-driver
+    clean $(if ${APP_NAME}, clean-${APP_NAME}.elf) clean-${DRVNAME}.ko
 
 all: ${PREREQUISITES} ${ARCH}-release
 
-${DRVNAME}.ko: ${obj-m:.o=.c} ${${DRVNAME}-objs:.o=.c}
+${DRVNAME}.ko: $(if $(wildcard ${obj-m:.o=.c}), ${obj-m:.o=.c}) ${${DRVNAME}-objs:.o=.c}
 	${Q}# Also includes the generation of .o files.
 	${Q}${MAKE} -C ${ROOT} M=`pwd` ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} modules
 	${Q}[ -f $@ ] || mv $$(ls *.ko | head -n 1) $@
 	${Q}[ -z "${NDEBUG}" ] || $(if ${Q}, printf 'STRIP\t$@\n', :)
 	${Q}[ -z "${NDEBUG}" ] || ${STRIP} -d $(if ${Q},,-v) $@
+
+ifneq (${APP_NAME},)
 
 ${APP_NAME}.elf: ${APP_OBJS}
 	$(if ${Q},@printf 'LD\t$@\n')
@@ -200,11 +205,13 @@ ${APP_NAME}.elf: ${APP_OBJS}
 	${Q}[ -z "${NDEBUG}" ] || $(if ${Q}, printf 'STRIP\t$@\n', :)
 	${Q}[ -z "${NDEBUG}" ] || ${STRIP} -s $(if ${Q},,-v) $@
 
+endif
+
 $(foreach i, ${ARCH_LIST}, ${i}-release): %:
-	${Q}${MAKE} ${DRVNAME}.ko ${APP_NAME}.elf ${PARALLEL_OPTION} ARCH=${@:-release=}
+	${Q}${MAKE} ${DRVNAME}.ko $(if ${APP_NAME}, ${APP_NAME}.elf) ${PARALLEL_OPTION} ARCH=${@:-release=}
 
 $(foreach i, ${ARCH_LIST}, ${i}-debug): %:
-	${Q}${MAKE} ${DRVNAME}.ko ${APP_NAME}.elf ${PARALLEL_OPTION} ARCH=${@:-debug=} NDEBUG=0
+	${Q}${MAKE} ${DRVNAME}.ko $(if ${APP_NAME}, ${APP_NAME}.elf) ${PARALLEL_OPTION} ARCH=${@:-debug=} NDEBUG=0
 
 D_FILES := $(foreach i, ${APP_OBJS}, ${i:.o=.d})
 CMD_FILES := $(shell find . -name ".*.o.cmd" | grep -v "\.mod\.o\.cmd")
@@ -222,17 +229,21 @@ endif
 
 # TODO: Add a "check" target for code static checking.
 
-clean-app:
+ifneq (${APP_NAME},)
+
+clean-${APP_NAME}.elf:
 	$(if ${Q},@printf '>>> CLEAN[${APP_NAME}.elf]: Begin.\n')
 	${Q}${RM} ${APP_NAME}.elf ${APP_OBJS} ${D_FILES}
 	$(if ${Q},@printf '>>> CLEAN[${APP_NAME}.elf]: Done.\n')
 
-clean-driver:
+endif
+
+clean-${DRVNAME}.ko:
 	$(if ${Q},@printf '>>> CLEAN[${DRVNAME}.ko]: Begin.\n')
 	${Q}${MAKE} -C ${ROOT} M=`pwd` ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} clean # modname=${DRVNAME}
 	$(if ${Q},@printf '>>> CLEAN[${DRVNAME}.ko]: Done.\n')
 
-clean: clean-app clean-driver
+clean: $(if ${APP_NAME}, clean-${APP_NAME}.elf) clean-${DRVNAME}.ko
 
 $(foreach i, ${ARCH_LIST}, clean-${i}): %:
 	${Q}${MAKE} clean ARCH=${@:clean-%=%}
@@ -274,11 +285,16 @@ endif
 #
 # >>> 2023-04-16, Man Hung-Coeng <udc577@126.com>:
 #   01. Add ${PREREQUISITES} to "all" target to make it possible
-#   	to make some optional preparations before compilation.
+#       to make some optional preparations before compilation.
 #   02. Specify target "all", "debug" and "clean" as ".PHONY".
 #   03. Add dependencies for auto-detection of header content update.
 #
 # >>> 2023-07-14, Man Hung-Coeng <udc577@126.com>:
 #   01. Support multiple architectures.
+#
+# >>> 2023-07-19, Man Hung-Coeng <udc577@126.com>:
+#   01. Make the application demo program optional.
+#   02. Rename targets: clean-driver -> clean-${DRVNAME}.ko,
+#       clean-app -> clean-${APP_NAME}.elf.
 #
 

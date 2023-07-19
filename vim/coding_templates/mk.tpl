@@ -105,7 +105,27 @@ export obj-m := ${DRVNAME}.o
 # export APP_OBJS := xxx_app_main.o xxx_app_utils.o
 # Other settings if needed: APP_DEFINES, APP_INCLUDES, OTHER_APP_CFLAGS, etc.
 
+ifeq ($(strip $(filter-out n N no NO No 0, ${OLD})),)
+
 -include ${THIRD_PARTY_DIR}/${LCS_ALIAS}/makefile/linux_driver.mk
+
+else # For old kernels, which might throw an argument-list-too-long error if based on linux_driver.mk.
+
+# FIXME: Set the right path to ROOT if it isn't.
+ROOT := ${HOME}/src/linux
+
+CROSS_COMPILE=$(shell \
+    grep CROSS_COMPILE_FOR_${ARCH} ${THIRD_PARTY_DIR}/${LCS_ALIAS}/makefile/linux_driver.mk \
+    | awk '{ print $$3 }')
+
+all:
+	${MAKE} -C ${ROOT} M=${PWD} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} OLD=1 modules
+	[ -z "${APP_NAME}" ] || ${MAKE} ${APP_NAME}.elf ARCH=${ARCH} OLD=0
+
+endif
+
+old:
+	${MAKE} OLD=1
 
 
 #=======================

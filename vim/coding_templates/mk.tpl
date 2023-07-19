@@ -101,6 +101,7 @@ else ifeq (${T}, driver)
 # NOTE: DO NOT modify or comment out obj-m!
 #       It's defined outside linux_driver.mk to solve a weird problem!
 export obj-m := ${DRVNAME}.o
+ccflags-y += -D__VER__=\"${__VER__}\"
 # export APP_NAME := xxx_app
 # export APP_OBJS := xxx_app_main.o xxx_app_utils.o
 # Other settings if needed: APP_DEFINES, APP_INCLUDES, OTHER_APP_CFLAGS, etc.
@@ -177,7 +178,7 @@ THIRD_PARTY_PROJECTS := ${LCS_ALIAS}@@partial@@git@@main@@${LCS_URL} \
     #nvidia-docker-v2.12.0@@by-tag@@git@@main@@https://gitlab.com/nvidia/container-toolkit/nvidia-docker \
     #nvidia-docker-80902fe3afab@@by-hash@@git@@main@@git@gitlab.com:nvidia/container-toolkit/nvidia-docker.git \
     #rt-thread@@by-tag@@git@@master@@https://gitee.com/rtthread/rt-thread.git \
-	# FIXME: Add more items ahead of this line if needed. \
+    # FIXME: Add more items ahead of this line if needed. \
     # Beware that each line should begin with 4 spaces and end with a backslash.
 CHKOUT ?= ${LCS_ALIAS}
 # FIXME: You probably want to modify this directory.

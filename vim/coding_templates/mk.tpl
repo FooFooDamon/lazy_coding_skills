@@ -29,7 +29,7 @@ all: init
 
 LCS_ALIAS := lazy_coding
 # FIXME: You probably want to modify this directory.
-# For a formal project, ${CURDIR} or somewhere else might be better.
+# For a formal project, ${CURDIR}/3rdpary or somewhere else might be better.
 THIRD_PARTY_DIR := ${HOME}/src
 # T is short for "type",
 # which Should be one of: app driver stm32cubeide stm32raw
@@ -98,6 +98,9 @@ else ifeq (${T}, driver)
 # export CROSS_KERNEL_DIR := ${HOME}/src/linux
 # export DRVNAME := xxx
 # export ${DRVNAME}-objs := xxx_main.o xxx_utils.o
+# NOTE: DO NOT modify or comment out obj-m!
+#       It's defined outside linux_driver.mk to solve a weird problem!
+export obj-m := ${DRVNAME}.o
 # export APP_NAME := xxx_app
 # export APP_OBJS := xxx_app_main.o xxx_app_utils.o
 # Other settings if needed: APP_DEFINES, APP_INCLUDES, OTHER_APP_CFLAGS, etc.
@@ -183,12 +186,12 @@ seeds:
 		echo "# or define this variable in absolute path through command line parameter." >> $${MKFILE}; \
 		echo "#export CHKOUT_PARENT_DIR := ${THIRD_PARTY_DIR}" >> $${MKFILE}; \
 		echo "export CHKOUT_ALIAS := $${CHKOUT_ALIAS}" >> $${MKFILE}; \
+		echo "export CHKOUT_METHOD := $${CHKOUT_METHOD}" >> $${MKFILE}; \
 		echo "export CHKOUT_TAG :=" >> $${MKFILE}; \
 		echo "export CHKOUT_HASH :=" >> $${MKFILE}; \
 		echo "export CHKOUT_STEM := $${CHKOUT_STEM}" >> $${MKFILE}; \
 		echo "export CHKOUT_URL := $${CHKOUT_URL}" >> $${MKFILE}; \
 		echo "export CHKOUT_TAIL_PARAMS :=" >> $${MKFILE}; \
-		echo "export CHKOUT_METHOD := $${CHKOUT_METHOD}" >> $${MKFILE}; \
 		if [ "$${CHKOUT_ALIAS}" = "${LCS_ALIAS}" ]; then \
 			echo "export CHKOUT_PARTIAL_ITEMS := main/makefile/__ver__.mk \\" >> $${MKFILE}; \
 			echo "    adfce11edd4fa36f324f0e1ac6d4396341cc5266/makefile/c_and_cpp.mk \\" >> $${MKFILE}; \

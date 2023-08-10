@@ -87,7 +87,7 @@ echo "Default git root directory: ${DEFAULT_GIT_ROOT}"
 
 [ -e "${HOME}/etc" ] || mkdir "${HOME}/etc" || exit 1
 
-REPO_CONFIG="${HOME}/etc/git_repositories.txt"
+[ -n "${REPO_CONFIG}" ] || REPO_CONFIG="${HOME}/etc/git_repositories.txt"
 if [ ! -f "${REPO_CONFIG}" ]; then
     touch "${REPO_CONFIG}" || exit 1
     echo "lazy_coding_skills ::: https://github.com/FooFooDamon/lazy_coding_skills.git" > "${REPO_CONFIG}"
@@ -131,5 +131,8 @@ done < "${REPO_CONFIG}"
 #
 # >>> V1.0.3|2023-05-29, Man Hung-Coeng <udc577@126.com>:
 #   01. Fix a redirection error in creating the configuration file.
+#
+# >>> V1.0.4|2023-08-10, Man Hung-Coeng <udc577@126.com>:
+#   01. Allow setting REPO_CONFIG.
 #
 

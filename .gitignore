@@ -34,6 +34,7 @@ _tmp_
 core.*
 tags
 /c_and_cpp/native/ini_file_test.ini
+/res/custom
 /scripts/private
 /vim/private
 

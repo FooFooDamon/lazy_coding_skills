@@ -27,6 +27,8 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     alias L="cd ${LAZY_CODING_HOME}"
     alias make="time make"
     alias pst="ps -eLo uid,pid,ppid,lwp,psr,c,stime,tname,time,args" # Means displaying [t]hread info while executing ps.
+    alias report_last_op_status='[ $? -eq 0 ] && play_normal_exit_audio -T || play_abnormal_exit_audio -T'
+    alias report_last_op_status_once='[ $? -eq 0 ] && play_normal_exit_audio_once -T || play_abnormal_exit_audio_once -T'
     alias rm=safer-rm.sh
     alias startx="printf '\\e[0;33mstartx should not be used when you have entered a graphic desktop\\e[0m\n'"
     alias tailf="tail --follow=name"
@@ -44,5 +46,8 @@ fi
 #
 # >>> 2023-02-14, Man Hung-Coeng <udc577@126.com>:
 #   01. Add html2pdf and html2pic.
+#
+# >>> 2023-09-07, Man Hung-Coeng <udc577@126.com>:
+#   01. Add report_last_op_status*.
 #
 

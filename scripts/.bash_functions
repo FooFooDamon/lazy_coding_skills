@@ -80,6 +80,62 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
             man -t "$1" | ps2pdf - "${1}.pdf"
         fi
     }
+
+    play_abnormal_exit_audio()
+    {
+        [ $(echo $@ | grep -c "[ ]*-T[ ]*") -gt 0 ] && echo "Current date time: $(date '+%Y-%m-%d %H:%M:%S')" || :
+        while true
+        do
+            play_abnormal_exit_audio_once || break
+        done
+    }
+
+    play_abnormal_exit_audio_once()
+    {
+        [ $(echo $@ | grep -c "[ ]*-T[ ]*") -gt 0 ] && echo "Current date time: $(date '+%Y-%m-%d %H:%M:%S')" || :
+        if [ -r $LAZY_CODING_HOME/res/custom/audio/abnormal_termination.flac ]; then
+            mpv $LAZY_CODING_HOME/res/custom/audio/abnormal_termination.flac
+        else
+            mpv $LAZY_CODING_HOME/res/default/audio/abnormal_termination.flac
+        fi
+    }
+
+    play_normal_exit_audio()
+    {
+        [ $(echo $@ | grep -c "[ ]*-T[ ]*") -gt 0 ] && echo "Current date time: $(date '+%Y-%m-%d %H:%M:%S')" || :
+        while true
+        do
+            play_normal_exit_audio_once || break
+        done
+    }
+
+    play_normal_exit_audio_once()
+    {
+        [ $(echo $@ | grep -c "[ ]*-T[ ]*") -gt 0 ] && echo "Current date time: $(date '+%Y-%m-%d %H:%M:%S')" || :
+        if [ -r $LAZY_CODING_HOME/res/custom/audio/normal_termination.flac ]; then
+            mpv $LAZY_CODING_HOME/res/custom/audio/normal_termination.flac
+        else
+            mpv $LAZY_CODING_HOME/res/default/audio/normal_termination.flac
+        fi
+    }
+
+    remind_me_if_task_done()
+    {
+        if [ $# -lt 1 ]; then
+            echo '*** Usage: remind_me_if_task_done <grep-compatible regular expression>' >&2
+            echo '*** Example: remind_me_if_task_done "firefox"' >&2
+            return 1
+        else
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] Monitoring task[$1]."
+            while true
+            do
+                [ $(ps -ef | grep -v " grep " | grep -c "$1") -gt 0 ] || break
+                sleep 2
+            done
+            echo "[$(date '+%Y-%m-%d %H:%M:%S')] Task[$1] done."
+            play_normal_exit_audio
+        fi
+    }
 fi
 
 #
@@ -95,5 +151,8 @@ fi
 #
 # >>> 2023-02-15, Man Hung-Coeng <udc577@126.com>:
 #   01. Remove "set -e" to avoid weird sideeffects.
+#
+# >>> 2023-09-07, Man Hung-Coeng <udc577@126.com>:
+#   01. Add play_*_exit_audio*() and remind_me_if_task_done().
 #
 

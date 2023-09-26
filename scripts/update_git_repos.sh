@@ -101,9 +101,9 @@ do
     [ $(echo "${i}" | grep -c '^[ \t]*$') -eq 0 ] || continue
     [ $(echo "${i}" | grep -c '^[ \t]*#') -eq 0 ] || continue
 
-    repo_name=$(echo ${i} | awk -F ":::" '{ print $1 }')
-    repo_url=$(echo ${i} | awk -F ":::" '{ print $2 }')
-    git_root=$(echo ${i} | awk -F ":::" '{ print $3 }')
+    repo_name=$(eval echo ${i} | awk -F ":::" '{ print $1 }')
+    repo_url=$(eval echo ${i} | awk -F ":::" '{ print $2 }')
+    git_root=$(eval echo ${i} | awk -F ":::" '{ print $3 }')
     [ $(echo "${git_root}" | grep '^[ \t]*$' -c) -eq 0 ] || git_root="${DEFAULT_GIT_ROOT}"
 
     if [ -e ${git_root}/${repo_name} ]; then
@@ -134,5 +134,8 @@ done < "${REPO_CONFIG}"
 #
 # >>> V1.0.4|2023-08-10, Man Hung-Coeng <udc577@126.com>:
 #   01. Allow setting REPO_CONFIG.
+#
+# >>> V1.0.5|2023-09-26, Man Hung-Coeng <udc577@126.com>:
+#   01. Support environment variable expansion in configuration file.
 #
 

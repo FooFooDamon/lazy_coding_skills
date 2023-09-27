@@ -68,12 +68,11 @@
 # (2) Put this file in the common directory.
 # (3) Edit the makefile of each driver according to the actual situation,
 #     let's take driver1 as example, its makefile may be like:
-#         export CROSS_KERNEL_DIR := ${PWD}/../../kernel
-#         export DRVNAME := driver1
-#         export ${DRVNAME}-objs := driver1_main.o driver1_utils.o
-#         export obj-m := ${DRVNAME}.o
-#         export APP_NAME := driver1_app
-#         export APP_OBJS := driver1_app_main.o driver1_app_utils.o
+#         export CROSS_KERNEL_DIR ?= ${PWD}/../../kernel
+#         export DRVNAME ?= driver1
+#         export ${DRVNAME}-objs ?= driver1_main.o driver1_utils.o
+#         export APP_NAME ?= driver1_app
+#         export APP_OBJS ?= driver1_app_main.o driver1_app_utils.o
 #         # Other settings if needed: APP_DEFINES, APP_INCLUDES, OTHER_APP_CFLAGS, etc.
 #         include ${PWD}/../../common/__ver__.mk
 #         include ${PWD}/../../common/linux_driver.mk
@@ -114,10 +113,9 @@ CROSS_COMPILE_FOR_mips ?= mips-linux-gnu-
 CROSS_COMPILE_FOR_powerpc ?= powerpc-linux-gnu-
 CROSS_COMPILE ?= ${CROSS_COMPILE_FOR_${ARCH}}
 
-# DO NOT modify the value of CC, otherwise something weird will happen
-# while running kernel scripts during host driver compilation.
-# To avoid this, define a new variable APP_CC for application in the following.
-#$(eval $(call reassign_if_default, CC, ${CROSS_COMPILE}gcc))
+ifeq (${KERNELRELEASE},)
+$(eval $(call reassign_if_default, CC, ${CROSS_COMPILE}gcc))
+endif
 
 $(eval $(call reassign_if_default, STRIP, ${CROSS_COMPILE}strip))
 
@@ -131,7 +129,7 @@ ifneq ($(filter n N no NO No 0, ${NDEBUG}),)
     override NDEBUG :=
 endif
 
-export SRCS := $(shell find ./ -name "*.c" | grep -v '\.mod\.c$$')
+export SRCS ?= $(shell find ./ -name "*.c" | grep -v '\.mod\.c$$')
 
 #=======================
 # For device driver.
@@ -148,6 +146,8 @@ ifeq (${DRVNAME},) # Define it explicitly in your own makefile if there're multi
     endif
 endif
 
+ifneq (${KERNELRELEASE},)
+
 obj-m := ${DRVNAME}.o
 
 # CFLAGS is not permitted here, otherwise an error will be triggered with a message below:
@@ -157,6 +157,10 @@ ifeq (${NDEBUG},)
     ccflags-y += -O0 -g
 endif
 
+endif # ifneq (${KERNELRELEASE},)
+
+ifeq (${KERNELRELEASE},)
+
 #=======================
 # For application demo.
 #=======================
@@ -165,7 +169,6 @@ ifneq ($(filter n N no NO No 0, ${__STRICT__}),)
     override __STRICT__ :=
 endif
 
-APP_CC ?= ${CROSS_COMPILE}gcc
 export APP_NAME ?= $(notdir $(word 1, $(filter %_app, ${SRCS:.c=})))
 export APP_OBJS ?= $(if ${APP_NAME},${APP_NAME}.o)
 ifeq (${NDEBUG},)
@@ -201,7 +204,7 @@ ifneq (${APP_NAME},)
 
 ${APP_NAME}.elf: ${APP_OBJS}
 	$(if ${Q},@printf 'LD\t$@\n')
-	${Q}${APP_CC} -o $@ -fPIE -Wl,--start-group $^ ${APP_LDFLAGS} -Wl,--end-group
+	${Q}${CC} -o $@ -fPIE -Wl,--start-group $^ ${APP_LDFLAGS} -Wl,--end-group
 	${Q}[ -z "${NDEBUG}" ] || $(if ${Q}, printf 'STRIP\t$@\n', :)
 	${Q}[ -z "${NDEBUG}" ] || ${STRIP} -s $(if ${Q},,-v) $@
 
@@ -219,13 +222,12 @@ CMD_FILES := $(shell find . -name ".*.o.cmd" | grep -v "\.mod\.o\.cmd")
 # Dependencies for auto-detection of header content update.
 -include ${D_FILES}
 ifneq (${CMD_FILES},)
-    # TODO: This does not work! Why?
     -include ${CMD_FILES}
 endif
 
-%.o: %.c # This only affects application object files. See the rule of ${DRVNAME}.ko above.
+%.o: %.c
 	$(if ${Q},@printf 'CC\t$<\n')
-	${Q}${APP_CC} -Wp,-MMD,$*.d ${APP_CFLAGS} -c -o $@ $<
+	${Q}${CC} -Wp,-MMD,$*.d ${APP_CFLAGS} -c -o $@ $<
 
 # TODO: Add a "check" target for code static checking.
 
@@ -249,7 +251,7 @@ $(foreach i, ${ARCH_LIST}, clean-${i}): %:
 	${Q}${MAKE} clean ARCH=${@:clean-%=%}
 
 __VARS__ := ARCH_LIST HOST_ARCH ARCH $(foreach i, ${ARCH_LIST}, CROSS_COMPILE_FOR_${i}) CROSS_COMPILE \
-    APP_CC CC STRIP RM __STRICT__ NDEBUG \
+    CC STRIP RM __STRICT__ NDEBUG \
     HOST_KERNEL_DIR CROSS_KERNEL_DIR DRVNAME ${DRVNAME}-objs obj-m ccflags-y \
     APP_NAME APP_OBJS APP_DEBUG_FLAGS APP_DEFINES APP_INCLUDES OTHER_APP_CFLAGS APP_CFLAGS \
     PARALLEL_OPTION
@@ -271,6 +273,8 @@ else
         $(info Run with "V=1" or "VERBOSE=1" if you're interested in compilation details.)
     endif
 endif
+
+endif # ifeq (${KERNELRELEASE},)
 
 #
 # ================
@@ -296,5 +300,10 @@ endif
 #   01. Make the application demo program optional.
 #   02. Rename targets: clean-driver -> clean-${DRVNAME}.ko,
 #       clean-app -> clean-${APP_NAME}.elf.
+#
+# >>> 2023-09-27, Man Hung-Coeng <udc577@126.com>:
+#   01. Make some operations be conditionally executed depending on value of
+#   	KERNELRELEASE, so as to accelerate driver compilation
+#   	and meanwhile avoid some conflicts.
 #
 

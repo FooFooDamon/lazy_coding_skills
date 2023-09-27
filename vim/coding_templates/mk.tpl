@@ -30,7 +30,7 @@ all: init
 LCS_ALIAS := lazy_coding
 # FIXME: You probably want to modify this directory.
 # For a formal project, ${CURDIR}/3rdpary or somewhere else might be better.
-THIRD_PARTY_DIR := ${HOME}/src
+export THIRD_PARTY_DIR ?= ${HOME}/src
 # T is short for "type",
 # which Should be one of: app driver stm32cubeide stm32raw
 # FIXME: Choose the right type for your project.
@@ -96,37 +96,13 @@ else ifeq (${T}, driver)
 # ARCH := arm
 # export HOST_KERNEL_DIR := /lib/modules/`uname -r`/build
 # export CROSS_KERNEL_DIR := ${HOME}/src/linux
-# export DRVNAME := xxx
-# export ${DRVNAME}-objs := xxx_main.o xxx_utils.o
-# NOTE: DO NOT modify or comment out obj-m!
-#       It's defined outside linux_driver.mk to solve a weird problem!
-export obj-m := ${DRVNAME}.o
-ccflags-y += -D__VER__=\"${__VER__}\"
-# export APP_NAME := xxx_app
-# export APP_OBJS := xxx_app_main.o xxx_app_utils.o
+# export DRVNAME ?= xxx
+# export ${DRVNAME}-objs ?= xxx_main.o xxx_utils.o
+# export APP_NAME ?= xxx_app
+# export APP_OBJS ?= xxx_app_main.o xxx_app_utils.o
 # Other settings if needed: APP_DEFINES, APP_INCLUDES, OTHER_APP_CFLAGS, etc.
 
-ifeq ($(strip $(filter-out n N no NO No 0, ${OLD})),)
-
 -include ${THIRD_PARTY_DIR}/${LCS_ALIAS}/makefile/linux_driver.mk
-
-else # For old kernels, which might throw an argument-list-too-long error if based on linux_driver.mk.
-
-# FIXME: Set the right path to ROOT if it isn't.
-ROOT := ${HOME}/src/linux
-
-CROSS_COMPILE=$(shell \
-    grep CROSS_COMPILE_FOR_${ARCH} ${THIRD_PARTY_DIR}/${LCS_ALIAS}/makefile/linux_driver.mk \
-    | awk '{ print $$3 }')
-
-all:
-	${MAKE} -C ${ROOT} M=${PWD} ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} OLD=1 modules
-	[ -z "${APP_NAME}" ] || ${MAKE} ${APP_NAME}.elf ARCH=${ARCH} OLD=0
-
-endif
-
-old:
-	${MAKE} OLD=1
 
 
 #=======================

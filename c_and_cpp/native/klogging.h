@@ -27,19 +27,22 @@ extern "C" {
 #error KBUILD_MODNAME not defined!
 #endif
 
-#ifndef __DEVNAME__
-#define __DEVNAME__                                     KBUILD_MODNAME
+#ifndef __DRVNAME__
+#define __DRVNAME__                                     KBUILD_MODNAME
 #endif
 
 /* "v" is short for "verbose". */
 
-#define __print_logging_v(level, format, ...)	    \
-	pr_##level(__DEVNAME__ ": " __FILE__ ":%d %s(): " format, \
-		__LINE__, __func__, ##__VA_ARGS__)
+#ifdef pr_fmt
+#undef pr_fmt
+#endif
+#define pr_fmt(format)                                  __DRVNAME__ ": " format
 
-#define __print_logging_ratelimited_v(level, format, ...)	    \
-	pr_##level##_ratelimited(__DEVNAME__ ": " __FILE__ ":%d %s(): " format, \
-		__LINE__, __func__, ##__VA_ARGS__)
+#define __print_logging_v(level, format, ...)	        \
+	pr_##level(__FILE__ ":%d %s(): " format, __LINE__, __func__, ##__VA_ARGS__)
+
+#define __print_logging_ratelimited_v(level, format, ...)	\
+	pr_##level##_ratelimited(__FILE__ ":%d %s(): " format, __LINE__, __func__, ##__VA_ARGS__)
 
 /* Macros below need <linux/printk.h>. */
 #define pr_emerg_v(format, ...)                         __print_logging_v(emerg, format, ##__VA_ARGS__)
@@ -49,7 +52,6 @@ extern "C" {
 #define pr_warn_v(format, ...)                          __print_logging_v(warn, format, ##__VA_ARGS__)
 #define pr_notice_v(format, ...)                        __print_logging_v(notice, format, ##__VA_ARGS__)
 #define pr_info_v(format, ...)                          __print_logging_v(info, format, ##__VA_ARGS__)
-#define pr_cont_v(format, ...)                          __print_logging_v(cont, format, ##__VA_ARGS__)
 #define pr_devel_v(format, ...)                         __print_logging_v(devel, format, ##__VA_ARGS__)
 #define pr_debug_v(format, ...)                         __print_logging_v(debug, format, ##__VA_ARGS__)
 #define pr_emerg_ratelimited_v(format, ...)             __print_logging_ratelimited_v(emerg, format, ##__VA_ARGS__)
@@ -59,16 +61,15 @@ extern "C" {
 #define pr_warn_ratelimited_v(format, ...)              __print_logging_ratelimited_v(warn, format, ##__VA_ARGS__)
 #define pr_notice_ratelimited_v(format, ...)            __print_logging_ratelimited_v(notice, format, ##__VA_ARGS__)
 #define pr_info_ratelimited_v(format, ...)              __print_logging_ratelimited_v(info, format, ##__VA_ARGS__)
-/*#define pr_cont_ratelimited_v(format, ...)              __print_logging_ratelimited_v(cont, format, ##__VA_ARGS__)*/
 #define pr_devel_ratelimited_v(format, ...)             __print_logging_ratelimited_v(devel, format, ##__VA_ARGS__)
 #define pr_debug_ratelimited_v(format, ...)             __print_logging_ratelimited_v(debug, format, ##__VA_ARGS__)
 
 #define __device_logging_v(prefix, dev, level, format, ...)	    \
-	prefix##_##level(dev, __DEVNAME__ ": " __FILE__ ":%d %s(): " format, \
+	prefix##_##level(dev, __DRVNAME__ ": " __FILE__ ":%d %s(): " format, \
 		__LINE__, __func__, ##__VA_ARGS__)
 
 #define __device_logging_ratelimited_v(prefix, dev, level, format, ...)	    \
-	prefix##_##level##_ratelimited(dev, __DEVNAME__ ": " __FILE__ ":%d %s(): " format, \
+	prefix##_##level##_ratelimited(dev, __DRVNAME__ ": " __FILE__ ":%d %s(): " format, \
 		__LINE__, __func__, ##__VA_ARGS__)
 
 /* Macros below need <linux/netdevice.h> and <linux/net.h>. */
@@ -80,14 +81,14 @@ extern "C" {
 #define netdev_notice_v(dev, format, ...)               __device_logging_v(netdev, dev, notice, format, ##__VA_ARGS__)
 #define netdev_info_v(dev, format, ...)                 __device_logging_v(netdev, dev, info, format, ##__VA_ARGS__)
 #define netdev_debug_v(dev, format, ...)                __device_logging_v(netdev, dev, dbg, format, ##__VA_ARGS__)
-#define netdev_emerg_ratelimited_v(dev, format, ...)    net_ratelimited_function(netdev_emerg, dev, format, ##__VA_ARGS__)
-#define netdev_alert_ratelimited_v(dev, format, ...)    net_ratelimited_function(netdev_alert, dev, format, ##__VA_ARGS__)
-#define netdev_crit_ratelimited_v(dev, format, ...)     net_ratelimited_function(netdev_crit, dev, format, ##__VA_ARGS__)
-#define netdev_err_ratelimited_v(dev, format, ...)      net_ratelimited_function(netdev_err, dev, format, ##__VA_ARGS__)
-#define netdev_warn_ratelimited_v(dev, format, ...)     net_ratelimited_function(netdev_warn, dev, format, ##__VA_ARGS__)
-#define netdev_notice_ratelimited_v(dev, format, ...)   net_ratelimited_function(netdev_notice, dev, format, ##__VA_ARGS__)
-#define netdev_info_ratelimited_v(dev, format, ...)     net_ratelimited_function(netdev_info, dev, format, ##__VA_ARGS__)
-#define netdev_debug_ratelimited_v(dev, format, ...)    net_ratelimited_function(netdev_dbg, dev, format, ##__VA_ARGS__)
+#define netdev_emerg_ratelimited_v(dev, format, ...)    net_ratelimited_function(netdev_emerg_v, dev, format, ##__VA_ARGS__)
+#define netdev_alert_ratelimited_v(dev, format, ...)    net_ratelimited_function(netdev_alert_v, dev, format, ##__VA_ARGS__)
+#define netdev_crit_ratelimited_v(dev, format, ...)     net_ratelimited_function(netdev_crit_v, dev, format, ##__VA_ARGS__)
+#define netdev_err_ratelimited_v(dev, format, ...)      net_ratelimited_function(netdev_err_v, dev, format, ##__VA_ARGS__)
+#define netdev_warn_ratelimited_v(dev, format, ...)     net_ratelimited_function(netdev_warn_v, dev, format, ##__VA_ARGS__)
+#define netdev_notice_ratelimited_v(dev, format, ...)   net_ratelimited_function(netdev_notice_v, dev, format, ##__VA_ARGS__)
+#define netdev_info_ratelimited_v(dev, format, ...)     net_ratelimited_function(netdev_info_v, dev, format, ##__VA_ARGS__)
+#define netdev_debug_ratelimited_v(dev, format, ...)    net_ratelimited_function(netdev_dbg_v, dev, format, ##__VA_ARGS__)
 
 /* Macros below need <linux/device.h>. */
 #define dev_emerg_v(_dev_, format, ...)                 __device_logging_v(dev, _dev_, emerg, format, ##__VA_ARGS__)
@@ -120,5 +121,11 @@ extern "C" {
  *
  * >>> 2023-09-26, Man Hung-Coeng <udc577@126.com>:
  *  01. Create.
+ *
+ * >>> 2023-09-28, Man Hung-Coeng <udc577@126.com>:
+ *  01. Rename __DEVNAME__ to __DRVNAME__.
+ *  02. Add pr_fmt().
+ *  03. Remove pr_cont_*().
+ *  04. Fix netdev_*_ratelimited_v() definition errors.
  */
 

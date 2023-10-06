@@ -45,6 +45,7 @@ flags = [
     #, "-D__ASSEMBLY__"
     , "-DCC_USING_FENTRY"
     , "-DMODULE"
+    , '-DKBUILD_MODNAME="<auto_generated_during_compilation>"'
 ]
 
 SOURCE_EXTENSIONS = [ ".c" ]
@@ -55,13 +56,14 @@ def FlagsForFile(filename, **kwargs):
 if __name__ == "__main__":
     import sys
     print('*** DO NOT run this script directly!', file = sys.stderr)
-    print('Usage example 1: Make a symbolic link:', file = sys.stderr)
-    print('    $ ln -s /path/to/ycm_conf_for_linux_driver.py /path/to/your/directory/.ycm_extra_conf.py', file = sys.stderr)
-    print('Usage example 2: Create your own .ycm_extra_conf.py and input (at least) the following lines into it:', file = sys.stderr)
+    print('\nUsage example 1: Make a symbolic link:', file = sys.stderr)
+    print('    $ ln -s ' + os.path.abspath(__file__) + ' /path/to/your/.ycm_extra_conf.py', file = sys.stderr)
+    print('\nUsage example 2: Create your own .ycm_extra_conf.py '
+        + 'and input (at least) the following lines into it:', file = sys.stderr)
     print('    import os, sys', file = sys.stderr)
     print('    YCM_CONF_DIR = os.path.abspath(os.path.dirname(__file__))', file = sys.stderr)
-    print('    sys.path.append("/path/to/directory/of/ycm_conf_for_linux_driver.py")', file = sys.stderr)
-    print('    from ycm_conf_for_linux_driver import *', file = sys.stderr)
+    print('    sys.path.append("' + os.path.abspath(os.path.dirname(__file__)) + '")', file = sys.stderr)
+    print('    from ' + os.path.splitext(os.path.basename(__file__))[0] + ' import *', file = sys.stderr)
     print('    # flags.extend([ "-I", YCM_CONF_DIR ]) # More directories and macros if needed.', file = sys.stderr)
 
 #
@@ -71,5 +73,9 @@ if __name__ == "__main__":
 #
 # >>> 2023-10-05, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> 2023-10-06, Man Hung-Coeng <udc577@126.com>:
+#   01. Add KBUILD_MODNAME macro option.
+#   02. Improve the usage guide.
 #
 

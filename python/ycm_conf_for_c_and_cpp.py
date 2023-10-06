@@ -5,7 +5,7 @@
 # Configuration script of YouCompleteMe VIM plugin,
 # which defines common rules for C/C++ grammar checking and code completion.
 #
-# Copyright 2022 Man Hung-Coeng <udc577@126.com>
+# Copyright 2022-2023 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -41,9 +41,15 @@ def FlagsForFile(filename, **kwargs):
 if __name__ == "__main__":
     import sys
     print('*** DO NOT run this script directly!', file = sys.stderr)
-    print('Copy it into directory where ".ycm_extra_conf.py" of your project locates in,', file = sys.stderr)
-    print('and at least add a line: from ycm_conf_for_c_and_cpp import *', file = sys.stderr)
-    print('into ".ycm_extra_conf.py".', file = sys.stderr)
+    print('\nUsage example 1: Make a symbolic link:', file = sys.stderr)
+    print('    $ ln -s ' + os.path.abspath(__file__) + ' /path/to/your/directory/.ycm_extra_conf.py', file = sys.stderr)
+    print('\nUsage example 2: Create your own .ycm_extra_conf.py '
+        + 'and input (at least) the following lines into it:', file = sys.stderr)
+    print('    import os, sys', file = sys.stderr)
+    print('    YCM_CONF_DIR = os.path.abspath(os.path.dirname(__file__))', file = sys.stderr)
+    print('    sys.path.append("' + os.path.abspath(os.path.dirname(__file__)) + '")', file = sys.stderr)
+    print('    from ' + os.path.splitext(os.path.basename(__file__))[0] + ' import *', file = sys.stderr)
+    print('    # flags.extend([ "-I", YCM_CONF_DIR ]) # More directories and macros if needed.', file = sys.stderr)
 
 #
 # ================
@@ -55,5 +61,8 @@ if __name__ == "__main__":
 #
 # >>> 2022-03-15, Man Hung-Coeng:
 #   01. Add description and changelog.
+#
+# >>> 2023-10-06, Man Hung-Coeng:
+#   01. Improve the usage guide to make it more descriptive.
 #
 

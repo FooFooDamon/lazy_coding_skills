@@ -19,7 +19,7 @@
 #
 
 if [ -n "${LAZY_CODING_HOME}" ]; then
-    alias diff=colordiff
+    alias diff="diff --color=auto"
     alias dsk="cd ${HOME}/桌面 2> /dev/null || cd ${HOME}/Desktop"
     alias html2pdf=wkhtmltopdf
     alias html2pic=wkhtmltoimage
@@ -49,5 +49,8 @@ fi
 #
 # >>> 2023-09-07, Man Hung-Coeng <udc577@126.com>:
 #   01. Add report_last_op_status*.
+#
+# >>> 2023-10-07, Man Hung-Coeng <udc577@126.com>:
+#   01. Change the alias of diff from "colordiff" to "diff --color=auto".
 #
 

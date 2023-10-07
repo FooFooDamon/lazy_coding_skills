@@ -1,5 +1,5 @@
 #
-# Version number based on VCS(version control system).
+# Version number based on VCS (version control system).
 #
 # Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
 #
@@ -20,21 +20,26 @@ VCS ?= git
 
 ifeq (${VCS}, git)
 
+    # Method 1: It works, but is a little tedious.
     #__DIRTY_FLAG ?= $(shell \
     #    [ -z "$$(git diff 2> /dev/null | head -n 1)" ] \
     #    && echo "" \
     #    || echo "-dirty")
-
+    #
     #VCS_VERSION ?= $(shell \
     #    git log --abbrev-commit --abbrev=12 --pretty=oneline 2> /dev/null \
     #    | head -n 1 \
     #    | awk '{ print $$1 }')${__DIRTY_FLAG}
-	#
-	#VCS_VERSION ?= $(shell git log --abbrev-commit --abbrev=12 --pretty=format:%h -n 1 2> /dev/null)${__DIRTY_FLAG}
+    ## Or:
+    ##VCS_VERSION ?= $(shell git log --abbrev-commit --abbrev=12 --pretty=format:%h -n 1 2> /dev/null)${__DIRTY_FLAG}
 
-    VCS_VERSION ?= $(shell \
-        git describe --abbrev=12 --dirty --always 2> /dev/null \
-        | sed 's/.*\([0-9a-z]\{12,\}\)\(\(-dirty\)*\)/\1\2/')
+    # Method 2: This looks fine, but fails to get the commit hash while the latest commit is tagged.
+    #VCS_VERSION ?= $(shell \
+    #    git describe --abbrev=12 --dirty --always 2> /dev/null \
+    #    | sed 's/.*\([0-9a-z]\{12,\}\)\(\(-dirty\).\?\)/\1\2/')
+
+    # Method 3: The most refined and perfect method!
+    VCS_VERSION ?= $(shell git describe --exclude="*" --abbrev=12 --dirty --always 2> /dev/null)
 
 else ifeq (${VCS}, svn)
 
@@ -87,5 +92,9 @@ endif
 #
 # >>> 2023-07-15, Man Hung-Coeng <udc577@126.com>:
 #   01. Add some negative values that can invalidate EVAL_VERSION_ONCE.
+#
+# >>> 2023-10-07, Man Hung-Coeng <udc577@126.com>:
+#   01. Fix the bug of fetching a Git tag instead of the expected commit hash
+#   	while the latest commit is tagged.
 #
 

@@ -45,6 +45,19 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
         fi
     }
 
+    get_url_by_linux_tag()
+    {
+        [ -n "${FUNCNAME}" ] || FUNCNAME="get_url_by_linux_tag"
+        if [ $# -lt 1 ]; then
+            echo "*** Usage: ${FUNCNAME} <tag name>" >&2
+            echo "*** Example 1: ${FUNCNAME} v6.2.16" >&2
+            echo "*** Example 2: ${FUNCNAME} v6.2-rc1" >&2
+            return 1
+        else
+            echo "https://git.kernel.org/pub/scm/linux/kernel/git/stable/linux.git/tag/?h=$1"
+        fi
+    }
+
     lchelp()
     {
         printf '\nALIASES:\n'
@@ -121,9 +134,10 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
 
     remind_me_if_task_done()
     {
+        [ -n "${FUNCNAME}" ] || FUNCNAME="remind_me_if_task_done"
         if [ $# -lt 1 ]; then
-            echo '*** Usage: remind_me_if_task_done <grep-compatible regular expression>' >&2
-            echo '*** Example: remind_me_if_task_done "firefox"' >&2
+            echo "*** Usage: ${FUNCNAME} <grep-compatible regular expression>" >&2
+            echo "*** Example: ${FUNCNAME} 'firefox'" >&2
             return 1
         else
             echo "[$(date '+%Y-%m-%d %H:%M:%S')] Monitoring task[$1]."
@@ -154,5 +168,8 @@ fi
 #
 # >>> 2023-09-07, Man Hung-Coeng <udc577@126.com>:
 #   01. Add play_*_exit_audio*() and remind_me_if_task_done().
+#
+# >>> 2023-10-10, Man Hung-Coeng <udc577@126.com>:
+#   01. Add get_url_by_linux_tag().
 #
 

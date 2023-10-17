@@ -32,6 +32,9 @@ __pycache__
 _tmp_
 *.tmp
 core.*
+cscope.in.out
+cscope.out
+cscope.po.out
 tags
 /c_and_cpp/native/ini_file_test.ini
 /res/custom

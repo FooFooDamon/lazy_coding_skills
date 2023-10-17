@@ -16,15 +16,43 @@
 " limitations under the License.
 "
 
-let s:THIS_PATH = expand('<sfile>:p')
-let $THIS_DIR = fnamemodify(s:THIS_PATH, ':h')
-let $PRIVATE_SCRIPT = $THIS_DIR . '/private/' . fnamemodify(s:THIS_PATH, ':t')
+function s:load_module_config_if_any(infix)
+    let l:cfg_path = ''
+    let l:cfg_dir = ''
 
-source $THIS_DIR/minimum_settings.vim
-source $THIS_DIR/coding_templates.vim
-if filereadable($PRIVATE_SCRIPT)
-    source $PRIVATE_SCRIPT
+    for l:i in split(fnamemodify(expand('%:p'), ':h'), '/')
+        let l:cfg_dir = l:cfg_dir . '/' . l:i
+
+        if filereadable(l:cfg_dir . '/module-specific.' . a:infix . '.vim')
+            let l:cfg_path = l:cfg_dir . '/module-specific.' . a:infix . '.vim'
+        endif
+    endfor
+
+    if '' != l:cfg_path
+        execute 'source ' . l:cfg_path
+    endif
+endfunction
+
+call s:load_module_config_if_any('pre')
+
+let s:THIS_PATH = expand('<sfile>:p')
+let s:THIS_DIR = fnamemodify(s:THIS_PATH, ':h')
+let s:PRIVATE_SCRIPT = s:THIS_DIR . '/private/' . fnamemodify(s:THIS_PATH, ':t')
+
+if !exists('g:NO_MIN_SETTINGS') || '' == g:NO_MIN_SETTINGS || 0 == match(trim(string(g:NO_MIN_SETTINGS[0]), "'"), '[0nN]')
+    execute 'source ' . s:THIS_DIR . '/minimum_settings.vim'
 endif
+if !exists('g:NO_CODE_TEMPLATES') || '' == g:NO_CODE_TEMPLATES || 0 == match(trim(string(g:NO_CODE_TEMPLATES[0]), "'"), '[0nN]')
+    execute 'source ' . s:THIS_DIR . '/coding_templates.vim'
+endif
+execute 'source ' . s:THIS_DIR . '/ctags.vim'
+execute 'source ' . s:THIS_DIR . '/cscope.vim'
+execute 'source ' . s:THIS_DIR . '/youcompleteme.vim'
+if filereadable(s:PRIVATE_SCRIPT)
+    execute 'source ' . s:PRIVATE_SCRIPT
+endif
+
+call s:load_module_config_if_any('post')
 
 "
 " ================
@@ -36,5 +64,12 @@ endif
 "
 " >>> 2023-04-12, Man Hung-Coeng <udc577@126.com>:
 "   01. Turn all global variables into local ones.
+"
+" >>> 2023-10-17, Man Hung-Coeng <udc577@126.com>:
+"   01. Support external script auto-loading.
+"   02. Introduce NO_MIN_SETTINGS and NO_CODE_TEMPLATES global variables
+"       to control whether to import minimum_settings.vim and
+"       coding_templates.vim respectively.
+"   03. Add ctags, cscope and YouCompleteMe settings.
 "
 

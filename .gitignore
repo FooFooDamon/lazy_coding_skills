@@ -17,6 +17,13 @@
 CMakeCache.txt
 CMakeFiles
 cmake_install.cmake
+.cache/
+compile_commands.json
+cscope.files
+cscope.in.out
+cscope.out
+cscope.po.out
+tags
 .vs
 .vscode
 gccdump.s
@@ -32,10 +39,6 @@ __pycache__
 _tmp_
 *.tmp
 core.*
-cscope.in.out
-cscope.out
-cscope.po.out
-tags
 /c_and_cpp/native/ini_file_test.ini
 /res/custom
 /scripts/private

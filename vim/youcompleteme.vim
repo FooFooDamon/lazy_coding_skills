@@ -62,7 +62,7 @@ function GoToDefinitionIfPossible()
 
     let l:first_line = split(l:msg, '\n')[0]
 
-    if match(first_line, '^RuntimeError') < 0
+    if match(first_line, '^RuntimeError:') < 0
         return
     endif
 
@@ -70,8 +70,35 @@ function GoToDefinitionIfPossible()
         return
     endif
 
-    if exists('*GoToDefinitionViaCscopeOrCtags')
+    if exists('*CscopeConfigIsEnabled') && CscopeConfigIsEnabled()
         call GoToDefinitionViaCscopeOrCtags()
+    endif
+endfunction
+
+function GoToReferencesIfPossible()
+    if !YcmConfigIsEnabled()
+        return
+    endif
+
+    let l:msg = execute('YcmCompleter GoToReferences', '')
+
+    if '' == l:msg
+        return
+    endif
+
+    let l:first_line = split(l:msg, '\n')[0]
+
+    if match(first_line, '^RuntimeError:') < 0
+        return
+    endif
+
+    if match(first_line, 'Still parsing') >= 0
+        return
+    endif
+
+    if exists('*CscopeConfigIsEnabled') && CscopeConfigIsEnabled()
+        execute 'cscope find c ' . expand("<cword>")
+        copen
     endif
 endfunction
 
@@ -137,6 +164,9 @@ let s:OLD_KEY_MAPPINGS = {}
 " before this one.
 if !exists('g:YCM_KEY_MAPPINGS')
     let g:YCM_KEY_MAPPINGS = {
+        \ '<': ':cprevious<CR><CR>',
+        \ '>': ':cnext<CR><CR>',
+        \ '<Leader>c': ':call GoToReferencesIfPossible()<CR>',
         \ '<Leader>d': ':call GoToDefinitionIfPossible()<CR>',
         \ '<Leader>h': ':YcmCompleter GoToInclude<CR>',
     \ }
@@ -165,5 +195,8 @@ call EnableYcmConfig()
 "
 " >>> 2023-10-17, Man Hung-Coeng <udc577@126.com>:
 "   01. Create.
+"
+" >>> 2023-10-22, Man Hung-Coeng <udc577@126.com>:
+"   01. Add GoToReferencesIfPossible() and corresponding key mappings.
 "
 

@@ -241,7 +241,7 @@ endif
 set cscopequickfix=a-,c-,d-,e-,i-,s-,t-
 
 call s:load_cscope_database()
-call EnableCscopeConfig()
+call DisableCscopeConfig()
 
 "
 " ================
@@ -250,5 +250,9 @@ call EnableCscopeConfig()
 "
 " >>> 2023-10-17, Man Hung-Coeng <udc577@126.com>:
 "   01. Create.
+"
+" >>> 2023-10-22, Man Hung-Coeng <udc577@126.com>:
+"   01. Disable cscope configuration by default
+"       since YouCompleteMe is powerful enough now.
 "
 

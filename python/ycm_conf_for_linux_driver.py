@@ -132,8 +132,13 @@ def CreateCommandsJsonIfNone(current_file: str):
 #
 # For the new working mode based on clangd.
 #
+# This mode requires that clangd be installed properly
+# and compile_commands.json be generated correctly!
+#
 def Settings(**kwargs):
 #{#
+    # The user should generate compile_commands.json using another tool
+    # rather than depend on auto-creation by the function below.
     CreateCommandsJsonIfNone(kwargs["filename"])
     return { "flags": flags }
 #}#

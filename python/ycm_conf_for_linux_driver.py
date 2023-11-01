@@ -23,15 +23,15 @@
 import os
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-KERNEL_ROOT = os.path.join("/lib/modules", os.popen("uname -r").read().strip(), "build")
-ARCH = os.popen("uname -m | sed 's/\\(x86\\)[-_]\\(32\\|64\\)/\\1/g'").read().strip()
+KERNEL_ROOT = os.environ.get("KERNEL_ROOT", os.path.join("/lib/modules", os.popen("uname -r").read().strip(), "build"))
+ARCH = os.environ.get("ARCH", os.popen("uname -m | sed 's/\\(x86\\)[-_]\\(32\\|64\\)/\\1/g'").read().strip())
 
 flags = [
     "-Wall"
     , "-std=gnu11"
     , "-x", "c"
     , "-nostdinc"
-    #, "-I", THIS_DIR
+    , "-I", THIS_DIR
     , "-I", os.path.join(THIS_DIR, "..", "c_and_cpp", "native")
     , "-I", os.path.join(KERNEL_ROOT, "arch", ARCH, "include")
     , "-I", os.path.join(KERNEL_ROOT, "arch", ARCH, "include", "generated", "uapi")
@@ -172,5 +172,12 @@ if __name__ == "__main__":
 #
 # >>> 2023-10-22, Man Hung-Coeng <udc577@126.com>:
 #   01. Support the new working mode based on clangd.
+#
+# >>> 2023-11-01, Man Hung-Coeng <udc577@126.com>:
+#   01. Add directory of this script to the list of directories
+#       to be searched for header files.
+#   02. Add a new way for variable KERNEL_ROOT and ARCH
+#       to get their values from environment variables
+#       before taking default values.
 #
 

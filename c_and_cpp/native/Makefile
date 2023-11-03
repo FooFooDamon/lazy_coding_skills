@@ -9,7 +9,7 @@ CXX_DEFINES := -DTEST -D'likely(x)=__builtin_expect(!!(x), 1)' -D'unlikely(x)=__
 
 CXX_LDFLAGS := -lpthread
 
-C_SRCS := $(shell find ./ -name "*.c")
+C_SRCS := $(shell find ./ -name "*.c" | grep -v "chardev_group\.c")
 CXX_SRCS := $(shell find ./ -name "*.cpp")
 
 GOALS := $(addsuffix .elf, $(basename ${C_SRCS} ${CXX_SRCS}))

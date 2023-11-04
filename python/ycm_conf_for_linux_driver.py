@@ -56,7 +56,7 @@ MAX_SRC_FILES = 50000
 #
 # For the old working mode based on libclang.
 #
-def FlagsForFile(filename, **kwargs):
+def FlagsForFile(filename: str, **kwargs):
 #{#
     return { "flags": flags, "do_cache": True }
 #}#
@@ -74,7 +74,7 @@ def FindNearestTargetFromBottomUp(start_dir: str, filename: str):
 def MakeCommandDictItem(dirpath: str, filename: str):
 #{#
     cmd_dict = { "directory": dirpath, "file": filename, "arguments": [ "g++" ] }
-    cmd_dict["arguments"].extend(flags)
+    cmd_dict["arguments"].extend(FlagsForFile(filename)["flags"])
     cmd_dict["arguments"].extend([ "-c", "-o", os.path.splitext(cmd_dict["file"])[0] + ".o" ])
     cmd_dict["arguments"].append(cmd_dict["file"])
 
@@ -140,7 +140,8 @@ def Settings(**kwargs):
     # The user should generate compile_commands.json using another tool
     # rather than depend on auto-creation by the function below.
     CreateCommandsJsonIfNone(kwargs["filename"])
-    return { "flags": flags }
+
+    return FlagsForFile(kwargs["filename"])
 #}#
 
 if __name__ == "__main__":
@@ -179,5 +180,8 @@ if __name__ == "__main__":
 #   02. Add a new way for variable KERNEL_ROOT and ARCH
 #       to get their values from environment variables
 #       before taking default values.
+#
+# >>> 2023-11-04, Man Hung-Coeng <udc577@126.com>:
+#   01. Use FlagsForFile() as the only entry to get compilation flags.
 #
 

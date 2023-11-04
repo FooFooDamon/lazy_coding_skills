@@ -26,6 +26,7 @@ flags = [
     "-Wall"
     , "-std=c++11"
     , "-x", "c++"
+    , "-I", os.path.abspath(os.path.dirname(__file__))
 ]
 
 for inc_dir in os.popen("echo | $(g++ --print-prog-name=cc1plus) -v 2>&1 | grep '/usr/.*include' | grep -v '^ignoring' | sed 's/^[ ]*//g'").read().split("\n"):
@@ -40,7 +41,7 @@ MAX_SRC_FILES = 50000
 #
 # For the old working mode based on libclang.
 #
-def FlagsForFile(filename, **kwargs):
+def FlagsForFile(filename: str, **kwargs):
 #{#
     return { "flags": flags, "do_cache": True }
 #}#
@@ -58,7 +59,7 @@ def FindNearestTargetFromBottomUp(start_dir: str, filename: str):
 def MakeCommandDictItem(dirpath: str, filename: str):
 #{#
     cmd_dict = { "directory": dirpath, "file": filename, "arguments": [ "g++" ] }
-    cmd_dict["arguments"].extend(flags)
+    cmd_dict["arguments"].extend(FlagsForFile(filename)["flags"])
     cmd_dict["arguments"].extend([ "-c", "-o", os.path.splitext(cmd_dict["file"])[0] + ".o" ])
     cmd_dict["arguments"].append(cmd_dict["file"])
 
@@ -124,7 +125,8 @@ def Settings(**kwargs):
     # The user should generate compile_commands.json using another tool
     # rather than depend on auto-creation by the function below.
     CreateCommandsJsonIfNone(kwargs["filename"])
-    return { "flags": flags }
+
+    return FlagsForFile(kwargs["filename"])
 #}#
 
 if __name__ == "__main__":
@@ -158,5 +160,10 @@ if __name__ == "__main__":
 #
 # >>> 2023-10-22, Man Hung-Coeng <udc577@126.com>:
 #   01. Support the new working mode based on clangd.
+#
+# >>> 2023-11-04, Man Hung-Coeng <udc577@126.com>:
+#   01. Add directory of this script to the list of directories
+#       to be searched for header files.
+#   02. Use FlagsForFile() as the only entry to get compilation flags.
 #
 

@@ -156,6 +156,13 @@ ccflags-y += -D__VER__=\"${__VER__}\" # Define the version number in another mak
 ifeq (${NDEBUG},)
     ccflags-y += -O0 -g
 endif
+USE_SRC_RELATIVE_PATH ?= 1
+ifeq ($(strip $(filter n N no NO No 0, ${USE_SRC_RELATIVE_PATH})),)
+    $(foreach i, $(if ${${DRVNAME}-objs},${${DRVNAME}-objs},${obj-m}), \
+        $(eval ${PWD}/${i}: ccflags-y += -D__SRC__=\"${i:.o=.c}\") \
+    )
+endif
+#$(info ^v^v^v^v^v^v^v^v [MAKELEVEL:${MAKELEVEL}]: ${ccflags-y})
 
 endif # ifneq (${KERNELRELEASE},)
 
@@ -243,6 +250,10 @@ endif
 clean-${DRVNAME}.ko:
 	$(if ${Q},@printf '>>> CLEAN[${DRVNAME}.ko]: Begin.\n')
 	${Q}${MAKE} -C ${ROOT} M=`pwd` ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} clean # modname=${DRVNAME}
+	${Q}for i in $(filter ../% /%, $(sort $(dir ${${DRVNAME}-objs}))); \
+	do \
+		rm -f $${i}*.o $${i}.*.o.cmd; \
+	done
 	$(if ${Q},@printf '>>> CLEAN[${DRVNAME}.ko]: Done.\n')
 
 clean: $(if ${APP_NAME}, clean-${APP_NAME}.elf) clean-${DRVNAME}.ko
@@ -251,7 +262,7 @@ $(foreach i, ${ARCH_LIST}, clean-${i}): %:
 	${Q}${MAKE} clean ARCH=${@:clean-%=%}
 
 __VARS__ := ARCH_LIST HOST_ARCH ARCH $(foreach i, ${ARCH_LIST}, CROSS_COMPILE_FOR_${i}) CROSS_COMPILE \
-    CC STRIP RM __STRICT__ NDEBUG \
+    CC STRIP RM __STRICT__ NDEBUG USE_SRC_RELATIVE_PATH \
     HOST_KERNEL_DIR CROSS_KERNEL_DIR DRVNAME ${DRVNAME}-objs obj-m ccflags-y \
     APP_NAME APP_OBJS APP_DEBUG_FLAGS APP_DEFINES APP_INCLUDES OTHER_APP_CFLAGS APP_CFLAGS \
     PARALLEL_OPTION
@@ -305,5 +316,9 @@ endif # ifeq (${KERNELRELEASE},)
 #   01. Make some operations be conditionally executed depending on value of
 #   	KERNELRELEASE, so as to accelerate driver compilation
 #   	and meanwhile avoid some conflicts.
+#
+# >>> 2023-11-07, Man Hung-Coeng <udc577@126.com>:
+#   01. Add macro USE_SRC_RELATIVE_PATH and __SRC__.
+#   02. Support deletion of *.o and .*.o.cmd files outside current directory.
 #
 

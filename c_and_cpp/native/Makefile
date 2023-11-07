@@ -17,7 +17,7 @@ CXX_DEFINES := -DTEST -D'likely(x)=__builtin_expect(!!(x), 1)' -D'unlikely(x)=__
 
 CXX_LDFLAGS := -lpthread
 
-C_SRCS := $(shell find ./ -name "*.c" | grep -v "chardev_group\.c")
+C_SRCS := $(shell find ./ -name "*.c" | grep -v "\(chardev_group\|test_inline_klogging\)\.c")
 CXX_SRCS := $(shell find ./ -name "*.cpp")
 
 GOALS := $(addsuffix .elf, $(basename ${C_SRCS} ${CXX_SRCS}))
@@ -68,7 +68,7 @@ check-apps:
 clean-apps:
 	${Q}${MAKE} T=app clean
 
-MODULES := chardev_group
+MODULES := chardev_group test_inline_klogging
 
 drivers:
 	${Q}for i in ${MODULES}; \

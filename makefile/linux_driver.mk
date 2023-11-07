@@ -156,7 +156,21 @@ ccflags-y += -D__VER__=\"${__VER__}\" # Define the version number in another mak
 ifeq (${NDEBUG},)
     ccflags-y += -O0 -g
 endif
-USE_SRC_RELATIVE_PATH ?= 1
+# NOTE 1: The reason of defining a new macro __SRC__ is that
+# 		re-defining the built-in __FILE__ will cause a compilation warning.
+# 		In most cases, an object file (.o) is generated from a source file,
+# 		not a header file, thus using __SRC__ in an inline function within a header
+# 		file is almost a mistake! One must avoid doing that!
+# 		If it's unavoidable, try fixing things up in your source file like this:
+# 			#undef __SRC__
+# 			#define __SRC__ "relative/path/to/some_inline_functions.h"
+# 			#include "some_inline_functions.h"
+# 			#undef __SRC__
+# 			#define __SRC__ "relative/path/to/this_source_file.c"
+# NOTE 2: Defining __SRC__ as __FILE__ won't cause the problem above.
+# 		However, printing or logging contents with __SRC__ may be a little more
+# 		if __FILE__ is an absolute path.
+USE_SRC_RELATIVE_PATH ?= 0
 ifeq ($(strip $(filter n N no NO No 0, ${USE_SRC_RELATIVE_PATH})),)
     $(foreach i, $(if ${${DRVNAME}-objs},${${DRVNAME}-objs},${obj-m}), \
         $(eval ${PWD}/${i}: ccflags-y += -D__SRC__=\"${i:.o=.c}\") \

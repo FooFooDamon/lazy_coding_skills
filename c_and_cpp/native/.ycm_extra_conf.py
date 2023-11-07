@@ -11,6 +11,7 @@ DRIVER_SRC_BASENAMES = [
     "chardev_group",
     "evol_kernel",
     "klogging",
+    "test_inline_klogging",
 ]
 
 def FlagsForFile(filename: str, **kwargs):

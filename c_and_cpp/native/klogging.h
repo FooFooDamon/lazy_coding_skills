@@ -31,6 +31,10 @@ extern "C" {
 #define __DRVNAME__                                     KBUILD_MODNAME
 #endif
 
+#ifndef __SRC__
+#define __SRC__                                         __FILE__
+#endif
+
 /* "v" is short for "verbose". */
 
 #ifdef pr_fmt
@@ -38,11 +42,11 @@ extern "C" {
 #endif
 #define pr_fmt(format)                                  __DRVNAME__ ": " format
 
-#define __print_logging_v(level, format, ...)	        \
-	pr_##level(__FILE__ ":%d %s(): " format, __LINE__, __func__, ##__VA_ARGS__)
+#define __print_logging_v(level, format, ...)           \
+    pr_##level(__SRC__ ":%d %s(): " format, __LINE__, __func__, ##__VA_ARGS__)
 
-#define __print_logging_ratelimited_v(level, format, ...)	\
-	pr_##level##_ratelimited(__FILE__ ":%d %s(): " format, __LINE__, __func__, ##__VA_ARGS__)
+#define __print_logging_ratelimited_v(level, format, ...)   \
+    pr_##level##_ratelimited(__SRC__ ":%d %s(): " format, __LINE__, __func__, ##__VA_ARGS__)
 
 /* Macros below need <linux/printk.h>. */
 #define pr_emerg_v(format, ...)                         __print_logging_v(emerg, format, ##__VA_ARGS__)
@@ -64,13 +68,13 @@ extern "C" {
 #define pr_devel_ratelimited_v(format, ...)             __print_logging_ratelimited_v(devel, format, ##__VA_ARGS__)
 #define pr_debug_ratelimited_v(format, ...)             __print_logging_ratelimited_v(debug, format, ##__VA_ARGS__)
 
-#define __device_logging_v(prefix, dev, level, format, ...)	    \
-	prefix##_##level(dev, __DRVNAME__ ": " __FILE__ ":%d %s(): " format, \
-		__LINE__, __func__, ##__VA_ARGS__)
+#define __device_logging_v(prefix, dev, level, format, ...)     \
+    prefix##_##level(dev, __DRVNAME__ ": " __SRC__ ":%d %s(): " format, \
+        __LINE__, __func__, ##__VA_ARGS__)
 
-#define __device_logging_ratelimited_v(prefix, dev, level, format, ...)	    \
-	prefix##_##level##_ratelimited(dev, __DRVNAME__ ": " __FILE__ ":%d %s(): " format, \
-		__LINE__, __func__, ##__VA_ARGS__)
+#define __device_logging_ratelimited_v(prefix, dev, level, format, ...)     \
+    prefix##_##level##_ratelimited(dev, __DRVNAME__ ": " __SRC__ ":%d %s(): " format, \
+        __LINE__, __func__, ##__VA_ARGS__)
 
 /* Macros below need <linux/netdevice.h> and <linux/net.h>. */
 #define netdev_emerg_v(dev, format, ...)                __device_logging_v(netdev, dev, emerg, format, ##__VA_ARGS__)
@@ -127,5 +131,8 @@ extern "C" {
  *  02. Add pr_fmt().
  *  03. Remove pr_cont_*().
  *  04. Fix netdev_*_ratelimited_v() definition errors.
+ *
+ * >>> 2023-11-07, Man Hung-Coeng <udc577@126.com>:
+ *  01. Add macro __SRC__ and use it in logging macros.
  */
 

@@ -98,6 +98,7 @@ else ifeq (${T}, driver)
 # export CROSS_KERNEL_DIR := ${HOME}/src/linux
 # export DRVNAME ?= xxx
 # export ${DRVNAME}-objs ?= xxx_main.o xxx_utils.o
+# export USE_SRC_RELATIVE_PATH ?= 1
 # export APP_NAME ?= xxx_app
 # export APP_OBJS ?= xxx_app_main.o xxx_app_utils.o
 # Other settings if needed: APP_DEFINES, APP_INCLUDES, OTHER_APP_CFLAGS, etc.

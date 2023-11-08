@@ -1,7 +1,7 @@
 /*
  * Data serialization, deserialization, etc. for communication purpose.
  *
- * Copyright (c) 2022 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2022-2023 Man Hung-Coeng <udc577@126.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -463,7 +463,7 @@ static void fill_demo_struct(demo_struct_main_t *demo_struct)
             sub1->i16_fixed_array[j] = 16;
         }
         sub1->i32_dynamic_array_len = i;
-        sub1->i32_dynamic_array = malloc(sizeof(int32_t) * sub1->i32_dynamic_array_len);
+        sub1->i32_dynamic_array = (int32_t *)malloc(sizeof(int32_t) * sub1->i32_dynamic_array_len);
         for (j = 0; j < (size_t)sub1->i32_dynamic_array_len; ++j)
         {
             sub1->i32_dynamic_array[j] = 32;
@@ -471,7 +471,7 @@ static void fill_demo_struct(demo_struct_main_t *demo_struct)
     }
 
     demo_struct->sub1_dynamic_array_len = 4;
-    demo_struct->sub1_dynamic_array = malloc(sizeof(demo_struct_sub1_t) * demo_struct->sub1_dynamic_array_len);
+    demo_struct->sub1_dynamic_array = (demo_struct_sub1_t *)malloc(sizeof(demo_struct_sub1_t) * demo_struct->sub1_dynamic_array_len);
     for (i = 0; i < (size_t)demo_struct->sub1_dynamic_array_len; ++i)
     {
         demo_struct_sub1_t *sub1 = &demo_struct->sub1_dynamic_array[i];
@@ -482,7 +482,7 @@ static void fill_demo_struct(demo_struct_main_t *demo_struct)
             sub1->i16_fixed_array[j] = 16;
         }
         sub1->i32_dynamic_array_len = i;
-        sub1->i32_dynamic_array = malloc(sizeof(int32_t) * sub1->i32_dynamic_array_len);
+        sub1->i32_dynamic_array = (int32_t *)malloc(sizeof(int32_t) * sub1->i32_dynamic_array_len);
         for (j = 0; j < (size_t)sub1->i32_dynamic_array_len; ++j)
         {
             sub1->i32_dynamic_array[j] = 32;
@@ -490,10 +490,10 @@ static void fill_demo_struct(demo_struct_main_t *demo_struct)
     }
 
     demo_struct->int_dynamic_array_len = 1;
-    demo_struct->i8_dynamic_array = malloc(sizeof(int8_t) * demo_struct->int_dynamic_array_len);
-    demo_struct->i16_dynamic_array = malloc(sizeof(int16_t) * demo_struct->int_dynamic_array_len);
-    demo_struct->i32_dynamic_array = malloc(sizeof(int32_t) * demo_struct->int_dynamic_array_len);
-    demo_struct->i64_dynamic_array = malloc(sizeof(int64_t) * demo_struct->int_dynamic_array_len);
+    demo_struct->i8_dynamic_array = (int8_t *)malloc(sizeof(int8_t) * demo_struct->int_dynamic_array_len);
+    demo_struct->i16_dynamic_array = (int16_t *)malloc(sizeof(int16_t) * demo_struct->int_dynamic_array_len);
+    demo_struct->i32_dynamic_array = (int32_t *)malloc(sizeof(int32_t) * demo_struct->int_dynamic_array_len);
+    demo_struct->i64_dynamic_array = (int64_t *)malloc(sizeof(int64_t) * demo_struct->int_dynamic_array_len);
     for (i = 0; i < (size_t)demo_struct->int_dynamic_array_len; ++i)
     {
         demo_struct->i8_dynamic_array[i] = 8;
@@ -503,7 +503,7 @@ static void fill_demo_struct(demo_struct_main_t *demo_struct)
     }
 
     demo_struct->f32_dynamic_array_len = 2;
-    demo_struct->f32_dynamic_array = malloc(sizeof(float32_t) * demo_struct->f32_dynamic_array_len);
+    demo_struct->f32_dynamic_array = (float32_t *)malloc(sizeof(float32_t) * demo_struct->f32_dynamic_array_len);
     for (i = 0; i < (size_t)demo_struct->f32_dynamic_array_len; ++i)
     {
         demo_struct->f32_dynamic_array[i] = 32.32;
@@ -521,7 +521,8 @@ static void fill_demo_struct(demo_struct_main_t *demo_struct)
             demo_struct->sub2_fixed_array[i].f32_fixed_array[j] = 32.32;
         }
         demo_struct->sub2_fixed_array[i].f64_dynamic_array_len = i;
-        demo_struct->sub2_fixed_array[i].f64_dynamic_array = malloc(sizeof(float64_t) * demo_struct->sub2_fixed_array[i].f64_dynamic_array_len);
+        demo_struct->sub2_fixed_array[i].f64_dynamic_array = \
+            (float64_t *)malloc(sizeof(float64_t) * demo_struct->sub2_fixed_array[i].f64_dynamic_array_len);
         for (j = 0; j < (size_t)demo_struct->sub2_fixed_array[i].f64_dynamic_array_len; ++j)
         {
             demo_struct->sub2_fixed_array[i].f64_dynamic_array[j] = 64.64;
@@ -1120,5 +1121,9 @@ int main(int argc, char **argv)
  *
  * >>> 2022-06-04, Man Hung-Coeng:
  *  01. Expand arraylen_t to arraylen8_t, arraylen16_t and arraylen32_t.
+ *
+ * >>> 2023-11-08, Man Hung-Coeng:
+ *  01. Do type casting to results of malloc() to eliminate warnings
+ *      reported by YouCompleteMe plugin.
  */
 

@@ -4,7 +4,7 @@
  * e.g., cppcheck[unreadVariable] warning on members of an union-type variable,
  * without any runtime overhead (in non-debug mode).
  *
- * Copyright (c) 2022 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2022-2023 Man Hung-Coeng <udc577@126.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

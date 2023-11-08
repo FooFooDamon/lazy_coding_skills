@@ -1,7 +1,7 @@
 /*
  * Supplements to string operation of ANSI C.
  *
- * Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2021-2023 Man Hung-Coeng <udc577@126.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -203,7 +203,7 @@ int main(int argc, char **argv)
     int splits = 0;
     char **result_pptr = NULL;
     char **pptr = NULL;
-    char buf[BUF_ITEM_COUNT][BUF_ITEM_SIZE] = { 0 };
+    char buf[BUF_ITEM_COUNT][BUF_ITEM_SIZE] = { { 0 } };
     char *buf_ptr[BUF_ITEM_COUNT]; /* TODO: Any easier initialization ?? */
     size_t i = 0;
 
@@ -330,5 +330,9 @@ int main(int argc, char **argv)
  *
  * >>> 2022-09-13, Man Hung-Coeng:
  *  01. Eliminate some warnings from compilers or VIM plugins.
+ *
+ * >>> 2023-11-08, Man Hung-Coeng:
+ *  01. Eliminate the -Wmissing-braces warning caused by initialization of
+ *      a 2-dimension array @buf in main() of test.
  */
 

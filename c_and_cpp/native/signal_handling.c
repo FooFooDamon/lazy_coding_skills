@@ -1,7 +1,7 @@
 /*
  * Signal handling.
  *
- * Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2021-2023 Man Hung-Coeng <udc577@126.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -118,7 +118,7 @@ int sig_global_init(void)
     if (SIG_INFO_READY())
         return 0;
 
-    if (NULL == (s_sig_info_tables = calloc(SIG_NUM_END - SIG_NUM_START + 1, sizeof(sig_info_t))))
+    if (NULL == (s_sig_info_tables = (sig_info_t *)calloc(SIG_NUM_END - SIG_NUM_START + 1, sizeof(sig_info_t))))
         return -SIG_ERR_MEM_ALLOC;
 
     atexit(sig_global_reset);
@@ -222,7 +222,7 @@ int sig_register(int signum, void (*nullable_handler)(int))
     || defined(__linux) || defined(__linux__) || defined(linux) || defined(__gnu_linux__) \
     || defined(__APPLE__) || defined(__MACH__) || defined(macintosh)) \
     && !defined(__STRICT_ANSI__)
-#pragma message("sig_register(): Using new sigaction().")
+/*#pragma message("sig_register(): Using new sigaction().")*/
     act.sa_handler = sig_set_happen_flag_and_call_handler;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
@@ -429,5 +429,10 @@ int main(int argc, char **argv)
  * >>> 2022-01-08, Man Hung-Coeng:
  *  01. Fix the out-of-bounds error in sig_error().
  *  02. Improve code style according to suggestions from cppcheck.
+ *
+ * >>> 2023-11-08, Man Hung-Coeng:
+ *  01. Do type casting to result of calloc() to eliminate the warning
+ *      reported by YouCompleteMe plugin.
+ *  02. Comment out the pragma message of using new sigaction().
  */
 

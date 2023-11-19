@@ -100,7 +100,7 @@ endef
 # Global settings.
 #=======================
 
-ARCH_LIST ?= arm avr32 host mips powerpc x86
+ARCH_LIST ?= aarch64 arm avr32 host mips powerpc x86
 export HOST_ARCH ?= $(shell uname -m | sed 's/\(.*\)[-_]\(32\|64\)\?$$/\1/')
 # NOTE: The "host" is the architecture of host computer CPU, which is usually x86.
 ARCH ?= host
@@ -217,6 +217,7 @@ all: ${PREREQUISITES} ${ARCH}-release
 ${DRVNAME}.ko: $(if $(wildcard ${obj-m:.o=.c}), ${obj-m:.o=.c}) ${${DRVNAME}-objs:.o=.c}
 	${Q}# Also includes the generation of .o files.
 	${Q}${MAKE} -C ${ROOT} M=`pwd` ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} modules
+	${Q}-${RM} -r .tmp_[0-9]* # FIXME: When the project is on a NFS filesystem, temporary directories will exist. Why?!
 	${Q}[ -f $@ ] || mv $$(ls *.ko | head -n 1) $@
 	${Q}[ -z "${NDEBUG}" ] || $(if ${Q}, printf 'STRIP\t$@\n', :)
 	${Q}[ -z "${NDEBUG}" ] || ${STRIP} -d $(if ${Q},,-v) $@
@@ -264,9 +265,10 @@ endif
 clean-${DRVNAME}.ko:
 	$(if ${Q},@printf '>>> CLEAN[${DRVNAME}.ko]: Begin.\n')
 	${Q}${MAKE} -C ${ROOT} M=`pwd` ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} clean # modname=${DRVNAME}
+	${Q}-${RM} -r .tmp_[0-9]* # FIXME: When the project is on a NFS filesystem, temporary directories will exist. Why?!
 	${Q}for i in $(filter ../% /%, $(sort $(dir ${${DRVNAME}-objs}))); \
 	do \
-		rm -f $${i}*.o $${i}.*.o.cmd; \
+		${RM} $${i}*.o $${i}.*.o.cmd; \
 	done
 	$(if ${Q},@printf '>>> CLEAN[${DRVNAME}.ko]: Done.\n')
 
@@ -334,5 +336,10 @@ endif # ifeq (${KERNELRELEASE},)
 # >>> 2023-11-07, Man Hung-Coeng <udc577@126.com>:
 #   01. Add macro USE_SRC_RELATIVE_PATH and __SRC__.
 #   02. Support deletion of *.o and .*.o.cmd files outside current directory.
+#
+# >>> 2023-11-19, Man Hung-Coeng <udc577@126.com>:
+#   01. Support aarch64 architecture.
+#   02. Delete temporary directories generated during compilation
+#   	when the project is on a NFS filesystem.
 #
 

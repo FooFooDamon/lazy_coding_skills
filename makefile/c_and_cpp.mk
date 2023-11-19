@@ -131,7 +131,7 @@ ifneq ($(strip ${D_FILES}),)
     $(foreach i, ${D_FILES}, $(eval -include ${i}))
 endif
 
-ARCH_LIST ?= arm avr host mips powerpc x86
+ARCH_LIST ?= aarch64 arm avr host mips powerpc x86
 # NOTE: The "host" is the architecture of host computer CPU, which is usually x86.
 ARCH ?= host
 CROSS_COMPILE_FOR_arm ?= arm-linux-gnueabihf-
@@ -300,5 +300,8 @@ endif
 #       and eliminate check.d which is accidentally generated on "make check".
 #   02. Fix the bug of an unexpected target "_" showing up due to deduction of
 #       C_SRCS and CXX_SRCS during parallel compilation.
+#
+# >>> 2023-11-19, Man Hung-Coeng <udc577@126.com>:
+#   01. Support aarch64 architecture.
 #
 

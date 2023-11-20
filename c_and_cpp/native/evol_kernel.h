@@ -46,15 +46,18 @@ typedef struct timer_list * timer_cb_arg_t;
 #define evol_netif_trans_update(dev)                        netif_trans_update(dev)
 #endif
 
-/* <linux/can/skb.h> */
 /* FIXME: Not so sure about the accurate KERNEL_VERSION. */
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 1, 15)
+/* <linux/can/dev.h> (older) or <linux/can/skb.h> (newer) */
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
 #define evol_can_get_echo_skb(dev, idx, frame_len_ptr)      can_get_echo_skb(dev, idx)
 #define evol_can_put_echo_skb(skb, dev, idx, frame_len)     can_put_echo_skb(skb, dev, idx)
-#define evol_can_free_echo_skb(dev, idx, frame_len_ptr)     can_free_echo_skb(dev, idx)
 #else
 #define evol_can_get_echo_skb(dev, idx, frame_len_ptr)      can_get_echo_skb(dev, idx, frame_len_ptr)
 #define evol_can_put_echo_skb(skb, dev, idx, frame_len)     can_put_echo_skb(skb, dev, idx, frame_len)
+#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
+#define evol_can_free_echo_skb(dev, idx, frame_len_ptr)     can_free_echo_skb(dev, idx)
+#else
 #define evol_can_free_echo_skb(dev, idx, frame_len_ptr)     can_free_echo_skb(dev, idx, frame_len_ptr)
 #endif
 
@@ -71,5 +74,9 @@ typedef struct timer_list * timer_cb_arg_t;
  *
  * >>> 2023-10-10, Man Hung-Coeng <udc577@126.com>:
  *  01. Create.
+ *
+ * >>> 2023-11-20, Man Hung-Coeng <udc577@126.com>:
+ *  01. Make the value of dividing version of evol_can_*_echo_skb() more precise
+ *      by changing it from 4.1.15 to 5.{11,12}.0.
  */
 

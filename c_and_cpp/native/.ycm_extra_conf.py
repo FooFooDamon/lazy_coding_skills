@@ -18,10 +18,10 @@ if os.path.exists(os.path.join(YCM_CONF_DIR, ".paths")):
     ])
 #}#
 
-ycm_conf_for_c_and_cpp.flags.extend([ "-D", "COMMPROTO_LITTLE_ENDIAN", "-D", "TEST" ])
+ycm_conf_for_c_and_cpp.flags.extend([ "-DCOMMPROTO_LITTLE_ENDIAN", "-DTEST" ])
 ycm_conf_for_c_and_cpp.flags.extend(extra_inc_dirs)
 
-driver_flags.extend([ "-D", "TEST" ])
+driver_flags.extend([ "-DTEST" ])
 driver_flags.extend(extra_inc_dirs)
 
 DRIVER_SRC_BASENAMES = [

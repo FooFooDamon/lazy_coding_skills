@@ -26,13 +26,17 @@ flags = [
     "-Wall"
     , "-std=c++11"
     , "-x", "c++"
-    , "-I", os.path.abspath(os.path.dirname(__file__))
+    , "-I" + os.path.abspath(os.path.dirname(__file__))
+    , "-I" + os.path.join(os.path.abspath(os.path.dirname(__file__)), "..", "c_and_cpp", "native")
 ]
 
 for inc_dir in os.popen("echo | $(g++ --print-prog-name=cc1plus) -v 2>&1 | grep '/usr/.*include' | grep -v '^ignoring' | sed 's/^[ ]*//g'").read().split("\n"):
+#{#
     if "" != inc_dir:
-        flags.append("-I")
-        flags.append(inc_dir)
+    #{#
+        flags.append("-I" + inc_dir)
+    #}#
+#}#
 
 SOURCE_EXTENSIONS = [ ".c", ".C", ".cc", ".cpp", ".cxx", ".c++" ]
 
@@ -58,7 +62,7 @@ def FindNearestTargetFromBottomUp(start_dir: str, filename: str):
 
 def MakeCommandDictItem(dirpath: str, filename: str):
 #{#
-    cmd_dict = { "directory": dirpath, "file": filename, "arguments": [ "g++" ] }
+    cmd_dict = { "directory": dirpath, "file": filename, "arguments": [ os.environ.get("CXX", "g++") ] }
     cmd_dict["arguments"].extend(FlagsForFile(filename)["flags"])
     cmd_dict["arguments"].extend([ "-c", "-o", os.path.splitext(cmd_dict["file"])[0] + ".o" ])
     cmd_dict["arguments"].append(cmd_dict["file"])
@@ -103,7 +107,7 @@ def CreateCommandsJsonIfNone(current_file: str):
     #}# for os.walk(json_dir)
 
     with open(json_file, "w") as fp:
-        fp.write(json.dumps(cmd_json, indent = 4, ensure_ascii = False))
+        fp.write(json.dumps(cmd_json, indent = 2, ensure_ascii = False))
         print("Created: " + json_file)
 
     if src_count >= MAX_SRC_FILES:
@@ -141,7 +145,7 @@ if __name__ == "__main__":
     print('    YCM_CONF_DIR = os.path.abspath(os.path.dirname(__file__))', file = sys.stderr)
     print('    sys.path.append("' + os.path.abspath(os.path.dirname(__file__)) + '")', file = sys.stderr)
     print('    from ' + os.path.splitext(os.path.basename(__file__))[0] + ' import *', file = sys.stderr)
-    print('    # flags.extend([ "-I", YCM_CONF_DIR ]) # More directories and macros if needed.', file = sys.stderr)
+    print('    # flags.extend([ "-I" + YCM_CONF_DIR ]) # More directories and macros if needed.', file = sys.stderr)
 #}#
 
 #
@@ -165,5 +169,11 @@ if __name__ == "__main__":
 #   01. Add directory of this script to the list of directories
 #       to be searched for header files.
 #   02. Use FlagsForFile() as the only entry to get compilation flags.
+#
+# >>> 2023-12-01, Man Hung-Coeng <udc577@126.com>:
+#   01. Support the customization of compiler through environment variable CXX.
+#   02. Merge each pair of "-I" and its value to one element of flags list,
+#       and reduce the indent level of JSON serialization from 4 to 2,
+#       so that the generated compile_commands.json is more compact and smaller.
 #
 

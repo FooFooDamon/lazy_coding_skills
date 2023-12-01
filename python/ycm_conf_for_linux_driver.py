@@ -31,15 +31,15 @@ flags = [
     , "-std=gnu11"
     , "-x", "c"
     , "-nostdinc"
-    , "-I", THIS_DIR
-    , "-I", os.path.join(THIS_DIR, "..", "c_and_cpp", "native")
-    , "-I", os.path.join(KERNEL_ROOT, "arch", ARCH, "include")
-    , "-I", os.path.join(KERNEL_ROOT, "arch", ARCH, "include", "generated", "uapi")
-    , "-I", os.path.join(KERNEL_ROOT, "arch", ARCH, "include", "generated")
-    , "-I", os.path.join(KERNEL_ROOT, "include")
-    , "-I", os.path.join(KERNEL_ROOT, "arch", ARCH, "include", "uapi")
-    , "-I", os.path.join(KERNEL_ROOT, "include", "uapi")
-    , "-I", os.path.join(KERNEL_ROOT, "include", "generated", "uapi")
+    , "-I" + THIS_DIR
+    , "-I" + os.path.join(THIS_DIR, "..", "c_and_cpp", "native")
+    , "-I" + os.path.join(KERNEL_ROOT, "arch", ARCH, "include")
+    , "-I" + os.path.join(KERNEL_ROOT, "arch", ARCH, "include", "generated", "uapi")
+    , "-I" + os.path.join(KERNEL_ROOT, "arch", ARCH, "include", "generated")
+    , "-I" + os.path.join(KERNEL_ROOT, "include")
+    , "-I" + os.path.join(KERNEL_ROOT, "arch", ARCH, "include", "uapi")
+    , "-I" + os.path.join(KERNEL_ROOT, "include", "uapi")
+    , "-I" + os.path.join(KERNEL_ROOT, "include", "generated", "uapi")
     , "-include", os.path.join(KERNEL_ROOT, "include", "linux", "kconfig.h")
     #, "-include", os.path.join(KERNEL_ROOT, "include", "linux", "compiler_types.h")
     , "-D__KERNEL__"
@@ -73,7 +73,7 @@ def FindNearestTargetFromBottomUp(start_dir: str, filename: str):
 
 def MakeCommandDictItem(dirpath: str, filename: str):
 #{#
-    cmd_dict = { "directory": dirpath, "file": filename, "arguments": [ "g++" ] }
+    cmd_dict = { "directory": dirpath, "file": filename, "arguments": [ os.environ.get("CC", "gcc") ] }
     cmd_dict["arguments"].extend(FlagsForFile(filename)["flags"])
     cmd_dict["arguments"].extend([ "-c", "-o", os.path.splitext(cmd_dict["file"])[0] + ".o" ])
     cmd_dict["arguments"].append(cmd_dict["file"])
@@ -118,7 +118,7 @@ def CreateCommandsJsonIfNone(current_file: str):
     #}# for os.walk(json_dir)
 
     with open(json_file, "w") as fp:
-        fp.write(json.dumps(cmd_json, indent = 4, ensure_ascii = False))
+        fp.write(json.dumps(cmd_json, indent = 2, ensure_ascii = False))
         print("Created: " + json_file)
 
     if src_count >= MAX_SRC_FILES:
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     print('    YCM_CONF_DIR = os.path.abspath(os.path.dirname(__file__))', file = sys.stderr)
     print('    sys.path.append("' + os.path.abspath(os.path.dirname(__file__)) + '")', file = sys.stderr)
     print('    from ' + os.path.splitext(os.path.basename(__file__))[0] + ' import *', file = sys.stderr)
-    print('    # flags.extend([ "-I", YCM_CONF_DIR ]) # More directories and macros if needed.', file = sys.stderr)
+    print('    # flags.extend([ "-I" + YCM_CONF_DIR ]) # More directories and macros if needed.', file = sys.stderr)
 #}#
 
 #
@@ -183,5 +183,11 @@ if __name__ == "__main__":
 #
 # >>> 2023-11-04, Man Hung-Coeng <udc577@126.com>:
 #   01. Use FlagsForFile() as the only entry to get compilation flags.
+#
+# >>> 2023-12-01, Man Hung-Coeng <udc577@126.com>:
+#   01. Support the customization of compiler through environment variable CC.
+#   02. Merge each pair of "-I" and its value to one element of flags list,
+#       and reduce the indent level of JSON serialization from 4 to 2,
+#       so that the generated compile_commands.json is more compact and smaller.
 #
 

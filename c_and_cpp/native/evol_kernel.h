@@ -61,6 +61,13 @@ typedef struct timer_list * timer_cb_arg_t;
 #define evol_can_free_echo_skb(dev, idx, frame_len_ptr)     can_free_echo_skb(dev, idx, frame_len_ptr)
 #endif
 
+/* <linux/uaccess.h> or <asm/uaccess.h> */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(5, 0, 0)
+#define evol_access_ok(addr, size)                          access_ok(addr, size)
+#else
+#define evol_access_ok(addr, size)                          access_ok(0, addr, size)
+#endif
+
 #ifdef __cplusplus
 }
 #endif
@@ -78,5 +85,8 @@ typedef struct timer_list * timer_cb_arg_t;
  * >>> 2023-11-20, Man Hung-Coeng <udc577@126.com>:
  *  01. Make the value of dividing version of evol_can_*_echo_skb() more precise
  *      by changing it from 4.1.15 to 5.{11,12}.0.
+ *
+ * >>> 2023-12-06, Man Hung-Coeng <udc577@126.com>:
+ *  01. Add evol_access_ok().
  */
 

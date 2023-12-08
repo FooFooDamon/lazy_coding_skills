@@ -30,11 +30,14 @@ usage()
     printf "  3. $(basename $0) 'http://www.xxx.com/index.m3u8'\n"
     printf "  4. $(basename $0) 'http://www.xxx.com/index.m3u8' 'test video 2'.mkv\n"
     printf "  5. LCS_HTTP_USER_AGENT='Mozilla/5.0 (X11; Linux x86_64)' $(basename $0) 'http://www.xxx.com/index.m3u8'\n"
+    printf "  6. LCS_CHKSUM_NAMED_FRAGMENT=1 'http://www.xxx.com/index.m3u8'\n"
     printf "\nNOTES:\n"
     printf "  1. This script supports breakpoint-resuming.\n"
     printf "     So, feel free to abort and restart at any time.\n"
     printf "  2. Sometimes you need to specify the HTTP user agent.\n"
     printf "     See example 5.\n"
+    printf "  3. Use checksum values to rename downloaded fragments with the same name.\n"
+    printf "     See example 6, which is seldomly used.\n"
     printf "\n"
 }
 
@@ -100,7 +103,7 @@ precheck()
 {
     local _pass=1
 
-    for i in ffmpeg parallel wget
+    for i in dos2unix ffmpeg file md5sum parallel sha1sum wget
     do
         if [ -z "$(which ${i})" ]; then
             _pass=0
@@ -153,6 +156,7 @@ else
     [ $(wc -l ${REMOTE_PLAYLIST} | awk '{ print $1 }') -gt 0 ] || WGET "${url}" -O ${REMOTE_PLAYLIST} || exit 1
     export url_prefix="$(dirname "${url}")"
 fi
+[ $(file ${REMOTE_PLAYLIST} | grep -c CRLF) -eq 0 ] || dos2unix ${REMOTE_PLAYLIST}
 if [ $(grep -c "\.m3u" ${REMOTE_PLAYLIST}) -gt 0 ]; then
     echo "[W] Secondary playlist/index:" >&2
     cat ${REMOTE_PLAYLIST}
@@ -160,6 +164,7 @@ if [ $(grep -c "\.m3u" ${REMOTE_PLAYLIST}) -gt 0 ]; then
         && url="${url_prefix}/$(grep "\.m3u" ${REMOTE_PLAYLIST} | tail -n 1)" \
         || url="$(grep "\.m3u" ${REMOTE_PLAYLIST} | tail -n 1)"
     WGET "${url}" -O ${REMOTE_PLAYLIST} || exit 1
+    [ $(file ${REMOTE_PLAYLIST} | grep -c CRLF) -eq 0 ] || dos2unix ${REMOTE_PLAYLIST}
     export url_prefix="$(dirname "${url}")"
 fi
 
@@ -174,9 +179,13 @@ make_url()
 
 dumping_task()
 {
-    set -x
+    if [ -n "${LCS_CHKSUM_NAMED_FRAGMENT}" ]; then
+        local _fragment="$(printf "$1" | sha1sum | awk '{ print $1 }')"
+    else
+        local _fragment="$(basename "$1")"
+    fi
 
-    local _fragment="$(basename "$1")"
+    set -x
 
     if [ $(grep -c "$(echo "${_fragment}" | sed "s/\./\\\./g")" ${RESULT_FILE}) -eq 0 ]; then
         WGET -c "$(make_url "$1")" -O "${_fragment}" || exit 1
@@ -205,8 +214,21 @@ set -x
 grep -v "^#" ${REMOTE_PLAYLIST} | parallel -j $(grep -c "processor" /proc/cpuinfo) dumping_task "{}" || exit 1
 #set +x
 
+#
 # Transform to local playlist.
-sed -e "/^[^#]/s/.*\/\(.*\)/\1/g" -e "s/\(EXT-X-KEY:.*,URI=\)[^,]*\([,]*.*\)/\1\"key.key\"\2/g" ${REMOTE_PLAYLIST} > ${LOCAL_PLAYLIST}
+#
+if [ -n "${LCS_CHKSUM_NAMED_FRAGMENT}" ]; then
+    awk '{
+        if ($1 ~ /^#/) {
+            print
+        } else {
+            "printf \047" $1 "\047 | sha1sum" | getline $0
+            print $1
+        }
+    }' ${REMOTE_PLAYLIST} | sed "s/\(EXT-X-KEY:.*,URI=\)[^,]*\([,]*.*\)/\1\"key.key\"\2/g" > ${LOCAL_PLAYLIST}
+else
+    sed -e "/^[^#]/s/.*\/\(.*\)/\1/g" -e "s/\(EXT-X-KEY:.*,URI=\)[^,]*\([,]*.*\)/\1\"key.key\"\2/g" ${REMOTE_PLAYLIST} > ${LOCAL_PLAYLIST}
+fi
 
 # Splice fragments together into a video.
 ffmpeg -allowed_extensions ALL -protocol_whitelist "file,http,https,crypto,tcp,tls" \
@@ -225,5 +247,9 @@ ffmpeg -allowed_extensions ALL -protocol_whitelist "file,http,https,crypto,tcp,t
 #
 # >>> V1.0.2|2023-03-05, Man Hung-Coeng <udc577@126.com>:
 #   01. Change "lz" to "lc", "lz_video_stream" to "lc-m3u8".
+#
+# >>> V1.0.3|2023-12-08, Man Hung-Coeng <udc577@126.com>:
+#   01. Fix the bug of not supporting playlists with CRLF line terminators.
+#   02. Support downloading fragments with the same basename.
 #
 

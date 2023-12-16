@@ -34,6 +34,35 @@ struct chardev_group** __chardev_group_default_pptr(void)
     return &s_chardev_group;
 }
 
+static const char *S_PROPERTIES[] = {
+    "items:struct device **",
+    "class:struct class *",
+    "cdev:struct cdev *",
+    NULL /* sentinel */
+};
+
+const char** chardev_group_available_properties(void)
+{
+    return S_PROPERTIES;
+}
+
+void* chardev_group_get_property(const char *prop_name, struct chardev_group* group)
+{
+    if (unlikely(NULL == group || NULL == prop_name))
+        return ERR_PTR(-EFAULT);
+
+    if (0 == strcmp(prop_name, "items"))
+        return group->items;
+
+    if (0 == strcmp(prop_name, "class"))
+        return group->class;
+
+    if (0 == strcmp(prop_name, "cdev"))
+        return &group->cdev;
+
+    return ERR_PTR(-EINVAL);
+}
+
 struct chardev_group* chardev_group_create(const char *name, unsigned int baseminor, unsigned int max_items,
     const struct file_operations *fops)
 {
@@ -462,5 +491,8 @@ MODULE_AUTHOR("Man Hung-Coeng <udc577@126.com>");
  *  02. Add free_privdata callback pointer to parameter list of
  *      chardev_group_destroy() and chardev_group_unmake_item().
  *  03. Add usage demo.
+ *
+ * >>> 2023-12-16, Man Hung-Coeng <udc577@126.com>:
+ *  01. Add property accessor functions.
  */
 

@@ -20,6 +20,16 @@ struct chardev_group** __chardev_group_default_pptr(void);
 /* THIS_CHRDEV_GRP is the default group, just like THIS_MODULE as the default module. */
 #define THIS_CHRDEV_GRP                                 (*__chardev_group_default_pptr())
 
+/*
+ * Return a string array with element format as "<name>:<type>" (e.g., "class:struct class *").
+ * NOTE: The final element is NULL (sentinel).
+ */
+const char** chardev_group_available_properties(void);
+
+/* Usage example: struct class *cls = (struct class *)chardev_group_get_property("class", group); */
+void* chardev_group_get_property(const char *prop_name, struct chardev_group* group);
+#define CHRDEV_GRP_GET_PROPERTY(name)                   chardev_group_get_property(name, THIS_CHRDEV_GRP)
+
 /* Used in xxx_init() once. */
 struct chardev_group* chardev_group_create(const char *name, unsigned int baseminor, unsigned int max_items,
     const struct file_operations *fops);
@@ -66,5 +76,8 @@ void* chardev_group_find_item_private_data(dev_t dev_id, const struct chardev_gr
  *  02. Add free_privdata callback pointer to parameter list of
  *      chardev_group_destroy() and chardev_group_unmake_item().
  *  03. Add usage hint comments.
+ *
+ * >>> 2023-12-16, Man Hung-Coeng <udc577@126.com>:
+ *  01. Add property accessor functions.
  */
 

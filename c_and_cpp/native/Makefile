@@ -3,6 +3,8 @@ EVAL_VERSION_ONCE := $(if $(filter driver, ${T}), Y, N)
 
 include ${PWD}/../../makefile/__ver__.mk
 
+MODULES := chardev_group devclass_supplements test_inline_klogging
+
 #=======================
 # Applications Only
 #=======================
@@ -17,7 +19,9 @@ CXX_DEFINES := -DTEST -D'likely(x)=__builtin_expect(!!(x), 1)' -D'unlikely(x)=__
 
 CXX_LDFLAGS := -lpthread
 
-C_SRCS := $(shell find ./ -name "*.c" | grep -v "\(chardev_group\|test_inline_klogging\)\.c")
+NULL :=
+SPACE := ${NULL} ${NULL}
+C_SRCS := $(shell find ./ -name "*.c" | grep -v "\($(subst ${SPACE},\|,${MODULES})\)\.c")
 CXX_SRCS := $(shell find ./ -name "*.cpp")
 
 GOALS := $(addsuffix .elf, $(basename ${C_SRCS} ${CXX_SRCS}))
@@ -67,8 +71,6 @@ check-apps:
 
 clean-apps:
 	${Q}${MAKE} T=app clean
-
-MODULES := chardev_group test_inline_klogging
 
 drivers:
 	${Q}for i in ${MODULES}; \

@@ -26,6 +26,7 @@ driver_flags.extend(extra_inc_dirs)
 
 DRIVER_SRC_BASENAMES = [
     "chardev_group",
+    "devclass_supplements",
     "evol_kernel",
     "klogging",
     "test_inline_klogging",

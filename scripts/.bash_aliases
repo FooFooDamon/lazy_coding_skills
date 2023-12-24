@@ -33,7 +33,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     alias startx="printf '\\e[0;33mstartx should not be used when you have entered a graphic desktop\\e[0m\n'"
     alias tailf="tail --follow=name"
     alias tl="[ -e ${HOME}/logs ] || mkdir ${HOME}/logs; script -f ${HOME}/logs/terminal_log_\`date +%Y-%m-%d_%H_%M_%S\`.txt"
-    alias valgrind="valgrind --tool=memcheck --leak-check=full --track-origins=yes --show-reachable=yes --log-file=valgrind_report.log"
+    alias valgrind="valgrind --tool=memcheck --leak-check=full --track-origins=yes --show-reachable=yes --log-file=valgrind.log"
 fi
 
 #

@@ -80,7 +80,7 @@ const char* sig_error(int error_code)
 #define SIG_INVALID_NUM             -1
 #endif
 
-typedef struct sig_info_t
+typedef struct sig_info
 {
     int num;
     char name[SIG_NAME_LEN_MAX + 1];
@@ -216,6 +216,10 @@ int sig_register(int signum, void (*nullable_handler)(int))
     if (signum < SIG_NUM_START || signum > SIG_NUM_END || SIG_INVALID_NUM == SIG_INFO_AT(signum).num)
         return -SIG_ERR_INVALID_SIGNAL_NUM;
 
+    /* Use signal(SIGxxx, SIG_DFL) or signal(SIGxxx, SIG_IGN) instead. */
+    if (SIG_DFL == nullable_handler || SIG_IGN == nullable_handler)
+        return -SIG_ERR_NOT_IMPLEMENTED;
+
     SIG_INFO_AT(signum).handler = nullable_handler;
 
 #if (defined(__unix) || defined(__unix__) || defined(unix) \
@@ -277,6 +281,23 @@ int sig_clear_happen_flag(int signum)
     return 0;
 }
 
+void sig_handler_nop(int signum)
+{
+    /* No OPerations. */
+}
+
+static volatile bool s_critical_flag = false;
+
+void sig_handler_set_critical_flag(int signum)
+{
+    s_critical_flag = true;
+}
+
+bool sig_check_critical_flag(void)
+{
+    return s_critical_flag;
+}
+
 const char* sig_number_to_name(int signum)
 {
     if (!SIG_INFO_READY())
@@ -310,6 +331,41 @@ int sig_name_to_number(const char *signame, size_t name_len)
     return -SIG_ERR_INVALID_SIGNAL_NAME;
 }
 
+int sig_simple_register(void)
+{
+    size_t i;
+    const int CRITICAL_SIGNALS[] = {
+        SIGINT, SIGABRT, SIGTERM
+    };
+    int err = sig_global_init();
+
+    if (err < 0)
+        return err;
+
+    for (i = 0; i < sizeof(CRITICAL_SIGNALS) / sizeof(CRITICAL_SIGNALS[0]); ++i)
+    {
+        if ((err = sig_register(CRITICAL_SIGNALS[i], sig_handler_set_critical_flag)) < 0)
+            break;
+    }
+
+    if (err < 0)
+    {
+        for (i = 0; i < sizeof(CRITICAL_SIGNALS) / sizeof(CRITICAL_SIGNALS[0]); ++i)
+        {
+            signal(CRITICAL_SIGNALS[i], SIG_DFL);
+        }
+    }
+#if !defined(WIN32) && !defined(_WIN32)
+    else
+    {
+        signal(SIGPIPE, SIG_IGN);
+        signal(SIGCHLD, SIG_IGN);
+    }
+#endif
+
+    return err;
+}
+
 #ifdef TEST
 
 #if defined(WIN32) || defined(_WIN32)
@@ -341,7 +397,7 @@ int main(int argc, char **argv)
     {
         fprintf(stderr, "sig_global_init() failed: %s\n", sig_error(err));
 
-        return err;
+        return EXIT_FAILURE;
     }
 
     for (i = SIG_NUM_START - 1; i <= SIG_NUM_END + 1; ++i)
@@ -349,7 +405,7 @@ int main(int argc, char **argv)
         const char *signame = sig_number_to_name(i);
         int signum = (NULL == signame) ? SIG_INVALID_NUM : sig_name_to_number(signame, strlen(signame));
 
-        err = sig_register(i, (SIGINT == signum) ? set_exit_flag : NULL);
+        err = sig_register(i, (SIGINT == signum) ? set_exit_flag : sig_handler_nop);
 
         fprintf((err < 0) ? stderr : stdout, "sig_register() for [%d -> %s -> %d]: %s\n",
             i, ((NULL == signame) ? "<UNKNOWN>" : signame), signum, sig_error(err));
@@ -399,7 +455,7 @@ int main(int argc, char **argv)
             i, signame, sig_error(err));
     }
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 #endif /* #ifdef TEST */
@@ -434,5 +490,8 @@ int main(int argc, char **argv)
  *  01. Do type casting to result of calloc() to eliminate the warning
  *      reported by YouCompleteMe plugin.
  *  02. Comment out the pragma message of using new sigaction().
+ *
+ * >>> 2023-12-24, Man Hung-Coeng:
+ *  01. Add several functions for simple application usage.
  */
 

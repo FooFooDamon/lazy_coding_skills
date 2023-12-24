@@ -1,7 +1,7 @@
 /*
  * Signal handling.
  *
- * Copyright (c) 2021 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2021-2023 Man Hung-Coeng <udc577@126.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,9 +40,40 @@ bool sig_has_happened(int signum);
 
 int sig_clear_happen_flag(int signum);
 
+void sig_handler_nop(int signum); /* No OPerations. */
+
+void sig_handler_set_critical_flag(int signum);
+
+bool sig_check_critical_flag(void); /* Works only if the handler above is used. */
+
 const char* sig_number_to_name(int signum);
 
 int sig_name_to_number(const char *signame, size_t name_len);
+
+/*
+ * Simple applications can use the function below. For example:
+ *
+ * int err = sig_simple_register();
+ *
+ * if (err < 0)
+ * {
+ *      fprintf(stderr, "sig_simple_register() failed: %s\n", sig_error(err));
+ *      return EXIT_FAILURE;
+ * }
+ *
+ * while (1)
+ * {
+ *      if (sig_check_critical_flag())
+ *          break;
+ *
+ *      // some operations ...
+ *
+ *      sleep(1); // Should be needed if there're no blocking or waiting operations above.
+ * }
+ *
+ * return EXIT_SUCCESS;
+ */
+int sig_simple_register(void);
 
 #ifdef __cplusplus
 }
@@ -61,6 +92,9 @@ int sig_name_to_number(const char *signame, size_t name_len);
  * >>> 2022-01-03, Man Hung-Coeng:
  *  01. Add a function pointer to the parameter list of sig_register()
  *      to support user-defined operations.
+ *
+ * >>> 2023-12-24, Man Hung-Coeng:
+ *  01. Add several functions for simple application usage.
  */
 
 

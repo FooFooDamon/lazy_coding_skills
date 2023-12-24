@@ -172,8 +172,8 @@ check:
 	$(if ${Q},@printf '>>> CHECK: Patience ...\n')
 	${Q}if [ -n "$(word 1, ${C_SRCS})" ]; then \
 		cppcheck --quiet --enable=all --language=c --std=${C_STD} ${PARALLEL_OPTION} \
-			${C_DEFINES} ${C_INCLUDES} ${C_SRCS}; \
-		clang --analyze ${CFLAGS} ${C_SRCS}; \
+			${C_DEFINES} ${C_INCLUDES} $(filter-out %.mod.c, ${C_SRCS}); \
+		clang --analyze ${CFLAGS} $(filter-out %.mod.c, ${C_SRCS}); \
 	fi
 	${Q}if [ -n "$(word 1, ${CXX_SRCS})" ]; then \
 		cppcheck --quiet --enable=all --language=c++ --std=${CXX_STD} ${PARALLEL_OPTION} \
@@ -303,5 +303,8 @@ endif
 #
 # >>> 2023-11-19, Man Hung-Coeng <udc577@126.com>:
 #   01. Support aarch64 architecture.
+#
+# >>> 2023-12-24, Man Hung-Coeng <udc577@126.com>:
+#   01. Filter out *.mod.c from C_SRCS in rules of target "check".
 #
 

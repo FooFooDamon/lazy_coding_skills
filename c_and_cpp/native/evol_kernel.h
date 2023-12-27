@@ -37,25 +37,26 @@ typedef struct timer_list * timer_cb_arg_t;
 #endif
 
 /* <linux/netdevice.h> */
-/* FIXME: Not so sure about the accurate KERNEL_VERSION. */
-#if LINUX_VERSION_CODE <= KERNEL_VERSION(4, 1, 15)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0)
 #define evol_netdev_open(dev, ext_ack)                      dev_open(dev)
-#define evol_netif_trans_update(dev)                        (dev)->trans_start = jiffies
 #else
 #define evol_netdev_open(dev, ext_ack)                      dev_open(dev, ext_ack)
+#endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(4, 7, 0)
+#define evol_netif_trans_update(dev)                        (dev)->trans_start = jiffies
+#else
 #define evol_netif_trans_update(dev)                        netif_trans_update(dev)
 #endif
 
-/* FIXME: Not so sure about the accurate KERNEL_VERSION. */
 /* <linux/can/dev.h> (older) or <linux/can/skb.h> (newer) */
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 11, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
 #define evol_can_get_echo_skb(dev, idx, frame_len_ptr)      can_get_echo_skb(dev, idx)
 #define evol_can_put_echo_skb(skb, dev, idx, frame_len)     can_put_echo_skb(skb, dev, idx)
 #else
 #define evol_can_get_echo_skb(dev, idx, frame_len_ptr)      can_get_echo_skb(dev, idx, frame_len_ptr)
 #define evol_can_put_echo_skb(skb, dev, idx, frame_len)     can_put_echo_skb(skb, dev, idx, frame_len)
 #endif
-#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 12, 0)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 13, 0)
 #define evol_can_free_echo_skb(dev, idx, frame_len_ptr)     can_free_echo_skb(dev, idx)
 #else
 #define evol_can_free_echo_skb(dev, idx, frame_len_ptr)     can_free_echo_skb(dev, idx, frame_len_ptr)
@@ -66,6 +67,13 @@ typedef struct timer_list * timer_cb_arg_t;
 #define evol_access_ok(addr, size)                          access_ok(addr, size)
 #else
 #define evol_access_ok(addr, size)                          access_ok(0, addr, size)
+#endif
+
+/* <linux/time.h> */
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 8, 0)
+#define evol_time_to_tm                                     time64_to_tm
+#else
+#define evol_time_to_tm                                     time_to_tm
 #endif
 
 #ifdef __cplusplus
@@ -88,5 +96,10 @@ typedef struct timer_list * timer_cb_arg_t;
  *
  * >>> 2023-12-06, Man Hung-Coeng <udc577@126.com>:
  *  01. Add evol_access_ok().
+ *
+ * >>> 2023-12-27, Man Hung-Coeng <udc577@126.com>:
+ *  01. Amend boundary versions for dev_open(), netif_trans_update()
+ *      and can_*_echo_skb().
+ *  02. Add evol_time_to_tm().
  */
 

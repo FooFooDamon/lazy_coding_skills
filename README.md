@@ -57,12 +57,11 @@ reducing repetitions, refining code quantity and improving code quality.
 
 ## 测试 | Test
 
-* `C/C++`：在`c_and_cpp/native`子目录，执行`make check`（需安装clang和cppcheck）可进行代码静态检查，
-执行`make test-execs`（需安装g++）或`make <模块名>`（例如`make signal_handling`），
-再运行相应的可执行文件即可进行功能性测试。
-    > `C/C++`: In `c_and_cpp/native`sub-directory, execute `make check` (clang and cppcheck required)
-    to do code static checking, execute `make test-execs` (g++ required) or `make <module>` (e.g., `make signal_handling`),
-    and run the executable of a certain module to do functional test.
+* `C/C++`：在`c_and_cpp/native`子目录，执行`make check`（需安装`clang`和`cppcheck`）可进行代码静态检查；
+执行`make`（需安装`g++`），再运行相应的可执行文件即可进行功能性测试。
+    > `C/C++`: In `c_and_cpp/native`sub-directory, execute `make check` (`clang` and `cppcheck` required)
+    to do code static checking; execute `make` (`g++` required), and run the executable of a certain module
+    to do functional test.
 
 * `Python`：正在完善，敬请期待……
     > `Python`: Under construction, please wait and see...

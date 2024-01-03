@@ -3,7 +3,7 @@
 #
 # Necessary variables.
 #
-# Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@
 #
 
 if [ -n "${LAZY_CODING_HOME}" ]; then
-    if [ -f $HOME/etc/hostname.conf ]; then
-        export PS1="\[\e]0;\u@`cat $HOME/etc/hostname.conf`: \W\a\]${debian_chroot:+($debian_chroot)}[\u@`cat $HOME/etc/hostname.conf` \W]\$ "
-    else
-        export PS1="\[\e]0;\u@\h: \W\a\]${debian_chroot:+($debian_chroot)}[\u@\h \W]\$ "
-    fi
+    [ -f $HOME/etc/hostname.conf ] && _host="$(cat $HOME/etc/hostname.conf)" || _host='\h'
+    [ "$(id -u)" -eq 0 ] && _prompt='# ' || _prompt='$ '
+    [ -z "$(echo $TERM | grep 'xterm\|rxvt')" ] && _ps1_prefix='' || _ps1_prefix="\[\e]0;\u@${_host}: \W\a\]"
+    export PS1="${_ps1_prefix}${debian_chroot:+($debian_chroot)}[\u@${_host} \W]${_prompt}"
+    unset _host _prompt _ps1_prefix
     export SHELL="`which bash`"
 fi
 
@@ -34,5 +34,8 @@ fi
 #
 # >>> V1.0.0|2023-02-12, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> V1.0.1|2024-01-03, Man Hung-Coeng <udc577@126.com>:
+#   01. Update the value of PS1 adapt to more terminal emulators.
 #
 

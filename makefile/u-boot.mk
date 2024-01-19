@@ -22,12 +22,14 @@ MAKE_ARGS := ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} $(if ${__VER__},EXTRAVE
 CP ?= cp --no-dereference --preserve=links,timestamps --update
 DIFF ?= diff --color
 TOUCH ?= touch
+UNCOMPRESS ?= tar -zxvf
 SRC_PKG_FILE ?= ./uboot-imx-rel_imx_4.1.15_2.1.0_ga.tar.gz
 SRC_PKG_URL ?= https://github.com/nxp-imx/uboot-imx/archive/refs/tags/rel_imx_4.1.15_2.1.0_ga.tar.gz
+SRC_PKG_DOWNLOAD ?= wget -c '$(strip ${SRC_PKG_URL})' -O ${SRC_PKG_FILE}
 SRC_PARENT_DIR ?= ./_tmp_
 SRC_ROOT_DIR ?= $(shell \
-    [ -f ./u*boot-*.tar.gz -o -d ${SRC_PARENT_DIR}/u*boot-* ] || ${MAKE} download > /dev/null; \
-    [ -d ${SRC_PARENT_DIR}/u*boot-* ] || (mkdir -p ${SRC_PARENT_DIR}; tar -zxvf u*boot-*.tar.gz -C ${SRC_PARENT_DIR}) > /dev/null; \
+    [ -f ${SRC_PKG_FILE} -o -d ${SRC_PARENT_DIR}/u*boot-* ] || ${SRC_PKG_DOWNLOAD} > /dev/null; \
+    [ -d ${SRC_PARENT_DIR}/u*boot-* ] || (mkdir -p ${SRC_PARENT_DIR}; ${UNCOMPRESS} ${SRC_PKG_FILE} -C ${SRC_PARENT_DIR}) > /dev/null; \
     ls -d ${SRC_PARENT_DIR}/u*boot-* \
 )
 DEFCONFIG ?= configs/mx6ull_14x14_evk_nand_defconfig
@@ -36,6 +38,8 @@ CUSTOM_FILES ?= ${DEFCONFIG} \
     include/configs/mx6ullevk.h \
     board/freescale/mx6ullevk/mx6ullevk.c \
     drivers/net/phy/ti.c
+
+$(foreach i, DEFCONFIG EXTRA_TARGETS, $(eval ${i} := $(strip ${${i}})))
 
 .PHONY: all menuconfig $(if ${DEFCONFIG},defconfig) download clean distclean ${EXTRA_TARGETS}
 
@@ -57,7 +61,7 @@ defconfig: ${SRC_ROOT_DIR}/${DEFCONFIG}
 endif
 
 download:
-	wget -c '${SRC_PKG_URL}' -O ${SRC_PKG_FILE}
+	[ -f ${SRC_PKG_FILE} ] || ${SRC_PKG_DOWNLOAD}
 
 clean distclean ${EXTRA_TARGETS}: %:
 	${MAKE} $@ -C ${SRC_ROOT_DIR} ${MAKE_ARGS}
@@ -96,7 +100,7 @@ endef
 #$(eval $(foreach i, ${CUSTOM_FILES}, $(shell printf "${SRC_ROOT_DIR}/${i}: ${i}\n\t${DIFF} $@ $< && ${TOUCH} $@ || ${CP} $< $@\n")))
 
 help:
-	@echo "Core commands:"
+	@echo "Core directives:"
 	@echo "  1. make download   - Download the source package"
 	@echo "  2. make distclean  - Clean all generated files and directories including .config"
 	@echo "  3. make defconfig  - Rough configuration; Only needed at the first time, or after distclean"
@@ -104,11 +108,11 @@ help:
 	@echo "  5. make clean      - Clean most generated files and directories"
 	@echo "  6. make            - Build U-Boot in a default way"
 	@echo ""
-	@printf "Extra command(s): "
-ifeq ($(strip ${EXTRA_TARGETS}),)
+	@printf "Extra directive(s): "
+ifeq (${EXTRA_TARGETS},)
 	@echo "None"
 else
-	@echo "make $(if $(findstring ${SPACE},$(strip ${EXTRA_TARGETS})),{$(subst ${SPACE},|,$(strip ${EXTRA_TARGETS}))},${EXTRA_TARGETS})"
+	@echo "make $(if $(findstring ${SPACE},${EXTRA_TARGETS}),{$(subst ${SPACE},|,${EXTRA_TARGETS})},${EXTRA_TARGETS})"
 	@echo "  Run \"make help\" in directory[${SRC_ROOT_DIR}]"
 	@echo "  to see detailed descriptions."
 endif
@@ -120,5 +124,12 @@ endif
 #
 # >>> 2024-01-18, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> 2024-01-19, Man Hung-Coeng <udc577@126.com>:
+#   01. Fix the bug of infinite recursion (due to the invocation of
+#       "make download" within the SRC_ROOT_DIR definition block) in absence of
+#       ${SRC_PKG_FILE} and ${SRC_PARENT_DIR}/u*boot-*.
+#   02. Strip heading and trailing blanks of several variables
+#       for the sake of robustness and conciseness.
 #
 

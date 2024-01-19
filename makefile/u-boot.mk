@@ -47,10 +47,12 @@ all: $(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i})
 	${MAKE} -C ${SRC_ROOT_DIR} ${MAKE_ARGS} -j $$(grep -c processor /proc/cpuinfo)
 
 menuconfig: $(if ${DEFCONFIG},defconfig)
-	${MAKE} menuconfig -C ${SRC_ROOT_DIR} ${MAKE_ARGS} EXTRAVERSION=""
-	if [ -f ${SRC_ROOT_DIR}/.config -a -n "${DEFCONFIG}" -a -f ${DEFCONFIG} ]; then \
+	[ -z "${DEFCONFIG}" ] && conf_file=.config || conf_file=${DEFCONFIG}; \
+	[ "$${conf_file}" == ".config" -a -f $${conf_file} ] && ${CP} $${conf_file} ${SRC_ROOT_DIR}/.config || : ; \
+	${MAKE} menuconfig -C ${SRC_ROOT_DIR} ${MAKE_ARGS} EXTRAVERSION=""; \
+	if [ -f ${SRC_ROOT_DIR}/.config ]; then \
 		set -x; \
-		${DIFF} ${SRC_ROOT_DIR}/.config ${DEFCONFIG} && : || ${CP} ${SRC_ROOT_DIR}/.config ${DEFCONFIG}; \
+		[ -f $${conf_file} ] && ${DIFF} ${SRC_ROOT_DIR}/.config $${conf_file} || ${CP} ${SRC_ROOT_DIR}/.config $${conf_file}; \
 	fi
 
 ifneq (${DEFCONFIG},)
@@ -101,9 +103,9 @@ endef
 
 help:
 	@echo "Core directives:"
-	@echo "  1. make download   - Download the source package"
+	@echo "  1. make download   - Download the source package manually; Usually unnecessary"
 	@echo "  2. make distclean  - Clean all generated files and directories including .config"
-	@echo "  3. make defconfig  - Rough configuration; Only needed at the first time, or after distclean"
+	@echo "  3. make defconfig  - Rough configuration; Invoked by \"make menuconfig\" automatically"
 	@echo "  4. make menuconfig - Detailed configuration (automatically saved if changed)"
 	@echo "  5. make clean      - Clean most generated files and directories"
 	@echo "  6. make            - Build U-Boot in a default way"
@@ -131,5 +133,6 @@ endif
 #       ${SRC_PKG_FILE} and ${SRC_PARENT_DIR}/u*boot-*.
 #   02. Strip heading and trailing blanks of several variables
 #       for the sake of robustness and conciseness.
+#   03. Deduce the resulting file of "make menuconfig" intelligently.
 #
 

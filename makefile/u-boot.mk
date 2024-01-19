@@ -28,9 +28,9 @@ SRC_PKG_URL ?= https://github.com/nxp-imx/uboot-imx/archive/refs/tags/rel_imx_4.
 SRC_PKG_DOWNLOAD ?= wget -c '$(strip ${SRC_PKG_URL})' -O ${SRC_PKG_FILE}
 SRC_PARENT_DIR ?= ./_tmp_
 SRC_ROOT_DIR ?= $(shell \
-    [ -f ${SRC_PKG_FILE} -o -d ${SRC_PARENT_DIR}/u*boot-* ] || ${SRC_PKG_DOWNLOAD} > /dev/null; \
-    [ -d ${SRC_PARENT_DIR}/u*boot-* ] || (mkdir -p ${SRC_PARENT_DIR}; ${UNCOMPRESS} ${SRC_PKG_FILE} -C ${SRC_PARENT_DIR}) > /dev/null; \
-    ls -d ${SRC_PARENT_DIR}/u*boot-* \
+    [ -f ${SRC_PKG_FILE} -o -d ${SRC_PARENT_DIR}/$(notdir ${SRC_PKG_FILE:.tar.gz=}) ] || ${SRC_PKG_DOWNLOAD} > /dev/null; \
+    [ -d ${SRC_PARENT_DIR}/$(notdir ${SRC_PKG_FILE:.tar.gz=}) ] || (mkdir -p ${SRC_PARENT_DIR}; ${UNCOMPRESS} ${SRC_PKG_FILE} -C ${SRC_PARENT_DIR}) > /dev/null; \
+    ls -d ${SRC_PARENT_DIR}/$(notdir ${SRC_PKG_FILE:.tar.gz=}) \
 )
 DEFCONFIG ?= configs/mx6ull_14x14_evk_nand_defconfig
 EXTRA_TARGETS ?= dtbs
@@ -134,5 +134,6 @@ endif
 #   02. Strip heading and trailing blanks of several variables
 #       for the sake of robustness and conciseness.
 #   03. Deduce the resulting file of "make menuconfig" intelligently.
+#   04. Support multiple source directories with different versions.
 #
 

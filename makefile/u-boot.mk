@@ -19,7 +19,7 @@
 ARCH ?= arm
 CROSS_COMPILE ?= arm-linux-gnueabihf-
 MAKE_ARGS := ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} $(if ${__VER__},EXTRAVERSION=-${__VER__})
-CP ?= cp --no-dereference --preserve=links,timestamps --update
+CP ?= cp -R --no-dereference --preserve=links,timestamps --update
 DIFF ?= diff --color
 TOUCH ?= touch
 UNCOMPRESS ?= tar -zxvf
@@ -32,6 +32,9 @@ SRC_ROOT_DIR ?= $(shell \
     [ -d ${SRC_PARENT_DIR}/$(notdir ${SRC_PKG_FILE:.tar.gz=}) ] || (mkdir -p ${SRC_PARENT_DIR}; ${UNCOMPRESS} ${SRC_PKG_FILE} -C ${SRC_PARENT_DIR}) > /dev/null; \
     ls -d ${SRC_PARENT_DIR}/$(notdir ${SRC_PKG_FILE:.tar.gz=}) \
 )
+INSTALL_DIR ?= ${PWD}
+INSTALL_CMD ?= ${CP} ${SRC_ROOT_DIR}/u-boot* ${INSTALL_DIR}/
+UNINSTALL_CMD ?= ls ${INSTALL_DIR}/u-boot* | grep -v u-boot.mk | xargs -I {} rm {}
 DEFCONFIG ?= configs/mx6ull_14x14_evk_nand_defconfig
 EXTRA_TARGETS ?= dtbs
 CUSTOM_FILES ?= ${DEFCONFIG} \
@@ -41,7 +44,7 @@ CUSTOM_FILES ?= ${DEFCONFIG} \
 
 $(foreach i, DEFCONFIG EXTRA_TARGETS, $(eval ${i} := $(strip ${${i}})))
 
-.PHONY: all menuconfig $(if ${DEFCONFIG},defconfig) download clean distclean ${EXTRA_TARGETS}
+.PHONY: all menuconfig $(if ${DEFCONFIG},defconfig) download clean distclean install uninstall ${EXTRA_TARGETS}
 
 all: $(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i})
 	${MAKE} -C ${SRC_ROOT_DIR} ${MAKE_ARGS} -j $$(grep -c processor /proc/cpuinfo)
@@ -64,6 +67,12 @@ endif
 
 download:
 	[ -f ${SRC_PKG_FILE} ] || ${SRC_PKG_DOWNLOAD}
+
+install:
+	${INSTALL_CMD}
+
+uninstall:
+	${UNINSTALL_CMD}
 
 clean distclean ${EXTRA_TARGETS}: %:
 	${MAKE} $@ -C ${SRC_ROOT_DIR} ${MAKE_ARGS}
@@ -135,5 +144,8 @@ endif
 #       for the sake of robustness and conciseness.
 #   03. Deduce the resulting file of "make menuconfig" intelligently.
 #   04. Support multiple source directories with different versions.
+#
+# >>> 2024-02-02, Man Hung-Coeng <udc577@126.com>:
+#   01. Add "install" and "uninstall" targets.
 #
 

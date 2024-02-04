@@ -31,8 +31,8 @@ SRC_ROOT_DIR ?= $(shell \
     [ -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) ] || (mkdir -p ${SRC_PARENT_DIR}; ${UNCOMPRESS} ${PKG_FILE} -C ${SRC_PARENT_DIR}) > /dev/null; \
     ls -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) \
 )
-INSTALL_DIR ?= ${PWD}
-INSTALL_CMD ?= ${CP} ${SRC_ROOT_DIR}/output/images/rootfs.* ${INSTALL_DIR}/
+INSTALL_DIR ?= ${HOME}/tftpd
+INSTALL_CMD ?= [ -d ${INSTALL_DIR} ] || mkdir -p ${INSTALL_DIR}; ${CP} ${SRC_ROOT_DIR}/output/images/rootfs.* ${INSTALL_DIR}/
 UNINSTALL_CMD ?= rm -f ${INSTALL_DIR}/rootfs.*
 EXTRA_TARGETS ?= source
 BUSYBOX_CONFIG := package/busybox/busybox.config

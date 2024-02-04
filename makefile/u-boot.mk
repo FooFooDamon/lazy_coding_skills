@@ -19,7 +19,7 @@
 ARCH ?= arm
 CROSS_COMPILE ?= arm-linux-gnueabihf-
 MAKE_ARGS := ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} $(if ${__VER__},EXTRAVERSION=-${__VER__})
-CP ?= cp -R --no-dereference --preserve=links,timestamps --update
+CP ?= cp -R -P
 DIFF ?= diff --color
 TOUCH ?= touch
 UNCOMPRESS ?= tar -zxvf
@@ -113,11 +113,13 @@ endef
 help:
 	@echo "Core directives:"
 	@echo "  1. make download   - Download the source package manually; Usually unnecessary"
-	@echo "  2. make distclean  - Clean all generated files and directories including .config"
-	@echo "  3. make defconfig  - Rough configuration; Invoked by \"make menuconfig\" automatically"
-	@echo "  4. make menuconfig - Detailed configuration (automatically saved if changed)"
+	@echo "  2. make defconfig  - Rough configuration; Invoked by \"make menuconfig\" automatically"
+	@echo "  3. make menuconfig - Detailed configuration (automatically saved if changed)"
+	@echo "  4. make            - Build U-Boot in a default way"
 	@echo "  5. make clean      - Clean most generated files and directories"
-	@echo "  6. make            - Build U-Boot in a default way"
+	@echo "  6. make distclean  - Clean all generated files and directories (including .config)"
+	@echo "  7. make install    - Copy the generated u-boot* files to the directory specified by INSTALL_DIR"
+	@echo "  8. make uninstall  - Delete u-boot* files in the directory specified by INSTALL_DIR"
 	@echo ""
 	@printf "Extra directive(s): "
 ifeq (${EXTRA_TARGETS},)
@@ -147,5 +149,10 @@ endif
 #
 # >>> 2024-02-02, Man Hung-Coeng <udc577@126.com>:
 #   01. Add "install" and "uninstall" targets.
+#
+# >>> 2024-02-04, Man Hung-Coeng <udc577@126.com>:
+#   01. Remove --preserve and --update options of CP definition
+#       to avoid old timestamps and unexpected skipping.
+#   02. Update the help info.
 #
 

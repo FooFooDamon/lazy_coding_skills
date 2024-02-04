@@ -32,8 +32,8 @@ SRC_ROOT_DIR ?= $(shell \
     [ -d ${SRC_PARENT_DIR}/$(notdir ${SRC_PKG_FILE:.tar.gz=}) ] || (mkdir -p ${SRC_PARENT_DIR}; ${UNCOMPRESS} ${SRC_PKG_FILE} -C ${SRC_PARENT_DIR}) > /dev/null; \
     ls -d ${SRC_PARENT_DIR}/$(notdir ${SRC_PKG_FILE:.tar.gz=}) \
 )
-INSTALL_DIR ?= ${PWD}
-INSTALL_CMD ?= ${CP} ${SRC_ROOT_DIR}/u-boot* ${INSTALL_DIR}/
+INSTALL_DIR ?= ${HOME}/tftpd
+INSTALL_CMD ?= [ -d ${INSTALL_DIR} ] || mkdir -p ${INSTALL_DIR}; ${CP} ${SRC_ROOT_DIR}/u-boot* ${INSTALL_DIR}/
 UNINSTALL_CMD ?= ls ${INSTALL_DIR}/u-boot* | grep -v u-boot.mk | xargs -I {} rm {}
 DEFCONFIG ?= configs/mx6ull_14x14_evk_nand_defconfig
 EXTRA_TARGETS ?= dtbs
@@ -154,5 +154,6 @@ endif
 #   01. Remove --preserve and --update options of CP definition
 #       to avoid old timestamps and unexpected skipping.
 #   02. Update the help info.
+#   03. Change the default value of INSTALL_DIR from ${PWD} to ${HOME}/tftpd.
 #
 

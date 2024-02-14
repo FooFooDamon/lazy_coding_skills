@@ -74,6 +74,8 @@ install:
 uninstall:
 	${UNINSTALL_CMD}
 
+${EXTRA_TARGETS}: $(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i})
+
 clean distclean ${EXTRA_TARGETS}: %:
 	${MAKE} $@ -C ${SRC_ROOT_DIR} ${MAKE_ARGS}
 
@@ -164,5 +166,6 @@ endif
 #       SRC_ROOT_DIR definition from /dev/null to stderr.
 #   02. Beautify the display of extra directive(s) of "make help".
 #   03. Rename variable SRC_PKG_* to PKG_*.
+#   04. Make EXTRA_TARGETS depend on CUSTOM_FILES.
 #
 

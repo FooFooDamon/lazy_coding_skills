@@ -27,8 +27,8 @@ TOUCH ?= touch
 UNCOMPRESS ?= tar -zxvf
 SRC_PARENT_DIR ?= ${HOME}/src
 SRC_ROOT_DIR ?= $(shell \
-    [ -f ${PKG_FILE} -o -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) ] || ${PKG_DOWNLOAD} > /dev/null; \
-    [ -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) ] || (mkdir -p ${SRC_PARENT_DIR}; ${UNCOMPRESS} ${PKG_FILE} -C ${SRC_PARENT_DIR}) > /dev/null; \
+    [ -f ${PKG_FILE} -o -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) ] || ${PKG_DOWNLOAD} >&2; \
+    [ -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) ] || (mkdir -p ${SRC_PARENT_DIR}; ${UNCOMPRESS} ${PKG_FILE} -C ${SRC_PARENT_DIR}) >&2; \
     ls -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) \
 )
 INSTALL_DIR ?= ${HOME}/tftpd
@@ -95,9 +95,6 @@ endef
 
 $(foreach i, ${CUSTOM_FILES}, $(eval $(call custom_file_rule,${i})))
 
-NULL :=
-SPACE := ${NULL} ${NULL}
-
 help:
 	@echo "Core directives:"
 	@echo "  1. make download   - Download the source package manually; Usually unnecessary"
@@ -114,9 +111,14 @@ help:
 ifeq (${EXTRA_TARGETS},)
 	@echo "None"
 else
-	@echo "make $(if $(findstring ${SPACE},${EXTRA_TARGETS}),{$(subst ${SPACE},|,${EXTRA_TARGETS})},${EXTRA_TARGETS})"
-	@echo "  Run \"make help\" in directory[${SRC_ROOT_DIR}]"
-	@echo "  to see detailed descriptions."
+	@for i in ${EXTRA_TARGETS}; \
+	do \
+		printf "\n  * make $${i}"; \
+	done
+	@printf "\n  --"
+	@printf "\n  Run \"make help\" in directory[${SRC_ROOT_DIR}]"
+	@printf "\n  to see detailed descriptions."
+	@printf "\n"
 endif
 
 #
@@ -126,5 +128,10 @@ endif
 #
 # >>> 2024-02-04, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> 2024-02-14, Man Hung-Coeng <udc577@126.com>:
+#   01. Change the non-error output redirection of Shell commands of
+#       SRC_ROOT_DIR definition from /dev/null to stderr.
+#   02. Beautify the display of extra directive(s) of "make help".
 #
 

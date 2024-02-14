@@ -23,14 +23,14 @@ CP ?= cp -R -P
 DIFF ?= diff --color
 TOUCH ?= touch
 UNCOMPRESS ?= tar -zxvf
-SRC_PKG_FILE ?= ./uboot-imx-rel_imx_4.1.15_2.1.0_ga.tar.gz
-SRC_PKG_URL ?= https://github.com/nxp-imx/uboot-imx/archive/refs/tags/rel_imx_4.1.15_2.1.0_ga.tar.gz
-SRC_PKG_DOWNLOAD ?= wget -c '$(strip ${SRC_PKG_URL})' -O ${SRC_PKG_FILE}
+PKG_FILE ?= ./uboot-imx-rel_imx_4.1.15_2.1.0_ga.tar.gz
+PKG_URL ?= https://github.com/nxp-imx/uboot-imx/archive/refs/tags/rel_imx_4.1.15_2.1.0_ga.tar.gz
+PKG_DOWNLOAD ?= wget -c '$(strip ${PKG_URL})' -O ${PKG_FILE}
 SRC_PARENT_DIR ?= ./_tmp_
 SRC_ROOT_DIR ?= $(shell \
-    [ -f ${SRC_PKG_FILE} -o -d ${SRC_PARENT_DIR}/$(notdir ${SRC_PKG_FILE:.tar.gz=}) ] || ${SRC_PKG_DOWNLOAD} > /dev/null; \
-    [ -d ${SRC_PARENT_DIR}/$(notdir ${SRC_PKG_FILE:.tar.gz=}) ] || (mkdir -p ${SRC_PARENT_DIR}; ${UNCOMPRESS} ${SRC_PKG_FILE} -C ${SRC_PARENT_DIR}) > /dev/null; \
-    ls -d ${SRC_PARENT_DIR}/$(notdir ${SRC_PKG_FILE:.tar.gz=}) \
+    [ -f ${PKG_FILE} -o -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) ] || ${PKG_DOWNLOAD} >&2; \
+    [ -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) ] || (mkdir -p ${SRC_PARENT_DIR}; ${UNCOMPRESS} ${PKG_FILE} -C ${SRC_PARENT_DIR}) >&2; \
+    ls -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) \
 )
 INSTALL_DIR ?= ${HOME}/tftpd
 INSTALL_CMD ?= [ -d ${INSTALL_DIR} ] || mkdir -p ${INSTALL_DIR}; ${CP} ${SRC_ROOT_DIR}/u-boot* ${INSTALL_DIR}/
@@ -66,7 +66,7 @@ defconfig: ${SRC_ROOT_DIR}/${DEFCONFIG}
 endif
 
 download:
-	[ -f ${SRC_PKG_FILE} ] || ${SRC_PKG_DOWNLOAD}
+	[ -f ${PKG_FILE} ] || ${PKG_DOWNLOAD}
 
 install:
 	${INSTALL_CMD}
@@ -97,7 +97,6 @@ $(foreach i, ${CUSTOM_FILES}, $(eval $(call custom_file_rule,${i})))
 #	${DIFF} $@ ${@:${SRC_ROOT_DIR}/%=%} && ${TOUCH} $@ || ${CP} ${@:${SRC_ROOT_DIR}/%=%} $@ # Shared by (3) and (4)
 
 NULL :=
-SPACE := ${NULL} ${NULL}
 # It make no difference whether \t and \n are defined or not.
 \t := ${NULL}	${NULL}
 define \n
@@ -113,21 +112,25 @@ endef
 help:
 	@echo "Core directives:"
 	@echo "  1. make download   - Download the source package manually; Usually unnecessary"
-	@echo "  2. make defconfig  - Rough configuration; Invoked by \"make menuconfig\" automatically"
-	@echo "  3. make menuconfig - Detailed configuration (automatically saved if changed)"
-	@echo "  4. make            - Build U-Boot in a default way"
-	@echo "  5. make clean      - Clean most generated files and directories"
-	@echo "  6. make distclean  - Clean all generated files and directories (including .config)"
-	@echo "  7. make install    - Copy the generated u-boot* files to the directory specified by INSTALL_DIR"
-	@echo "  8. make uninstall  - Delete u-boot* files in the directory specified by INSTALL_DIR"
+	@echo "  2. make menuconfig - Interactive configuration (automatically saved if changed)"
+	@echo "  3. make            - Build U-Boot in a default way"
+	@echo "  4. make clean      - Clean most generated files and directories"
+	@echo "  5. make distclean  - Clean all generated files and directories (including .config)"
+	@echo "  6. make install    - Copy the generated u-boot* files to the directory specified by INSTALL_DIR"
+	@echo "  7. make uninstall  - Delete u-boot* files in the directory specified by INSTALL_DIR"
 	@echo ""
 	@printf "Extra directive(s): "
 ifeq (${EXTRA_TARGETS},)
 	@echo "None"
 else
-	@echo "make $(if $(findstring ${SPACE},${EXTRA_TARGETS}),{$(subst ${SPACE},|,${EXTRA_TARGETS})},${EXTRA_TARGETS})"
-	@echo "  Run \"make help\" in directory[${SRC_ROOT_DIR}]"
-	@echo "  to see detailed descriptions."
+	@for i in ${EXTRA_TARGETS}; \
+	do \
+		printf "\n  * make $${i}"; \
+	done
+	@printf "\n  --"
+	@printf "\n  Run \"make help\" in directory[${SRC_ROOT_DIR}]"
+	@printf "\n  to see detailed descriptions."
+	@printf "\n"
 endif
 
 #
@@ -155,5 +158,11 @@ endif
 #       to avoid old timestamps and unexpected skipping.
 #   02. Update the help info.
 #   03. Change the default value of INSTALL_DIR from ${PWD} to ${HOME}/tftpd.
+#
+# >>> 2024-02-14, Man Hung-Coeng <udc577@126.com>:
+#   01. Change the non-error output redirection of Shell commands of
+#       SRC_ROOT_DIR definition from /dev/null to stderr.
+#   02. Beautify the display of extra directive(s) of "make help".
+#   03. Rename variable SRC_PKG_* to PKG_*.
 #
 

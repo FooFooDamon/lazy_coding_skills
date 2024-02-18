@@ -41,15 +41,16 @@ CUSTOM_FILES ?= ${DEFCONFIG} \
     include/configs/mx6ullevk.h \
     board/freescale/mx6ullevk/mx6ullevk.c \
     drivers/net/phy/ti.c
+__CUSTOMIZED_DEPENDENCIES := $(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i})
 
 $(foreach i, DEFCONFIG EXTRA_TARGETS, $(eval ${i} := $(strip ${${i}})))
 
 .PHONY: all menuconfig $(if ${DEFCONFIG},defconfig) download clean distclean install uninstall ${EXTRA_TARGETS}
 
-all: $(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i})
+all: ${__CUSTOMIZED_DEPENDENCIES}
 	${MAKE} -C ${SRC_ROOT_DIR} ${MAKE_ARGS} -j $$(grep -c processor /proc/cpuinfo)
 
-menuconfig: $(if ${DEFCONFIG},defconfig)
+menuconfig: $(if ${DEFCONFIG},defconfig) ${__CUSTOMIZED_DEPENDENCIES}
 	[ -z "${DEFCONFIG}" ] && conf_file=.config || conf_file=${DEFCONFIG}; \
 	[ "$${conf_file}" == ".config" -a -f $${conf_file} ] && ${CP} $${conf_file} ${SRC_ROOT_DIR}/.config || : ; \
 	${MAKE} menuconfig -C ${SRC_ROOT_DIR} ${MAKE_ARGS} EXTRAVERSION=""; \
@@ -74,10 +75,12 @@ install:
 uninstall:
 	${UNINSTALL_CMD}
 
-${EXTRA_TARGETS}: $(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i})
+${EXTRA_TARGETS}: ${__CUSTOMIZED_DEPENDENCIES}
 
 clean distclean ${EXTRA_TARGETS}: %:
 	${MAKE} $@ -C ${SRC_ROOT_DIR} ${MAKE_ARGS}
+
+ifeq (1,1)
 
 define custom_file_rule
 ${SRC_ROOT_DIR}/${1}: ${1}
@@ -86,30 +89,35 @@ endef
 
 $(foreach i, ${CUSTOM_FILES}, $(eval $(call custom_file_rule,${i})))
 
-# Failure case (1): target 'xxx' doesn't match the target pattern
-#${CUSTOM_FILES}: ${SRC_ROOT_DIR}/%: %
-# Failure case (2): substitution failure which leads to circular dependency
-#$(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i}): %: $(subst ${SRC_ROOT_DIR}/,,%)
-#	${DIFF} $@ $< && ${TOUCH} $@ || ${CP} $< $@ # Shared by (1) and (2)
-
-# Failure case (3): never triggered
-#$(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i}): %:
-# Failure case (4): almost a success except for the thundering herd problem
-#$(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i}): %: ${CUSTOM_FILES}
-#	${DIFF} $@ ${@:${SRC_ROOT_DIR}/%=%} && ${TOUCH} $@ || ${CP} ${@:${SRC_ROOT_DIR}/%=%} $@ # Shared by (3) and (4)
+else # This works as well, but it's more complecated for writing.
 
 NULL :=
-# It make no difference whether \t and \n are defined or not.
 \t := ${NULL}	${NULL}
 define \n
 
 
 endef
 
-# Failure case (5), (6), (7): unable to parse Tab and Newline correctly
-#$(foreach i, ${CUSTOM_FILES}, $(eval ${SRC_ROOT_DIR}/${i}: ${i}\n\t${DIFF} $@ $< && ${TOUCH} $@ || ${CP} $< $@))
-#$(foreach i, ${CUSTOM_FILES}, $(eval $(shell printf "${SRC_ROOT_DIR}/${i}: ${i}\n\t${DIFF} $@ $< && ${TOUCH} $@ || ${CP} $< $@\n")))
-#$(eval $(foreach i, ${CUSTOM_FILES}, $(shell printf "${SRC_ROOT_DIR}/${i}: ${i}\n\t${DIFF} $@ $< && ${TOUCH} $@ || ${CP} $< $@\n")))
+$(foreach i, ${CUSTOM_FILES}, \
+    $(eval \
+        ${SRC_ROOT_DIR}/${i}: ${i} \
+            ${\n}${\t}${DIFF} ${SRC_ROOT_DIR}/${i} ${i} && ${TOUCH} ${SRC_ROOT_DIR}/${i} || ${CP} ${i} ${SRC_ROOT_DIR}/${i} \
+    ) \
+)
+
+endif
+
+# Failure case (1): target 'xxx' doesn't match the target pattern
+#${CUSTOM_FILES}: ${SRC_ROOT_DIR}/%: %
+# Failure case (2): substitution failure which leads to circular dependency
+#${__CUSTOMIZED_DEPENDENCIES}: %: $(subst ${SRC_ROOT_DIR}/,,%)
+#	${DIFF} $@ $< && ${TOUCH} $@ || ${CP} $< $@ # Shared by (1) and (2)
+
+# Failure case (3): never triggered
+#${__CUSTOMIZED_DEPENDENCIES}: %:
+# Failure case (4): almost a success except for the thundering herd problem
+#${__CUSTOMIZED_DEPENDENCIES}: %: ${CUSTOM_FILES}
+#	${DIFF} $@ ${@:${SRC_ROOT_DIR}/%=%} && ${TOUCH} $@ || ${CP} ${@:${SRC_ROOT_DIR}/%=%} $@ # Shared by (3) and (4)
 
 help:
 	@echo "Core directives:"
@@ -167,5 +175,8 @@ endif
 #   02. Beautify the display of extra directive(s) of "make help".
 #   03. Rename variable SRC_PKG_* to PKG_*.
 #   04. Make EXTRA_TARGETS depend on CUSTOM_FILES.
+#
+# >>> 2024-02-18, Man Hung-Coeng <udc577@126.com>:
+#   01. Make target "menuconfig" depend on CUSTOM_FILES.
 #
 

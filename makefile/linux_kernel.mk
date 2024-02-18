@@ -45,15 +45,16 @@ DEFCONFIG ?= arch/arm/configs/imx_v7_defconfig
 EXTRA_TARGETS ?= dtbs drivers/net/can/usb/peak_usb/peak_usb.ko
 CUSTOM_FILES ?= ${DEFCONFIG} \
     ${DTS_PATH}
+__CUSTOMIZED_DEPENDENCIES := $(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i})
 
-$(foreach i, DEFCONFIG EXTRA_TARGETS ${CUSTOM_FILES}, $(eval ${i} := $(strip ${${i}})))
+$(foreach i, DEFCONFIG EXTRA_TARGETS, $(eval ${i} := $(strip ${${i}})))
 
 .PHONY: ${KERNEL_IMAGE} all menuconfig $(if ${DEFCONFIG},defconfig) download clean distclean install uninstall ${EXTRA_TARGETS}
 
-${KERNEL_IMAGE} all: $(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i})
+${KERNEL_IMAGE} all: ${__CUSTOMIZED_DEPENDENCIES}
 	${MAKE} $@ -C ${SRC_ROOT_DIR} ${MAKE_ARGS} -j $$(grep -c processor /proc/cpuinfo)
 
-menuconfig: $(if ${DEFCONFIG},defconfig)
+menuconfig: $(if ${DEFCONFIG},defconfig) ${__CUSTOMIZED_DEPENDENCIES}
 	[ -z "${DEFCONFIG}" ] && conf_file=.config || conf_file=${DEFCONFIG}; \
 	[ "$${conf_file}" == ".config" -a -f $${conf_file} ] && ${CP} $${conf_file} ${SRC_ROOT_DIR}/.config || : ; \
 	${MAKE} menuconfig -C ${SRC_ROOT_DIR} ${MAKE_ARGS}; \
@@ -78,7 +79,7 @@ install:
 uninstall:
 	${UNINSTALL_CMD}
 
-${EXTRA_TARGETS}: $(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i})
+${EXTRA_TARGETS}: ${__CUSTOMIZED_DEPENDENCIES}
 
 clean distclean ${EXTRA_TARGETS}: %:
 	${MAKE} $@ -C ${SRC_ROOT_DIR} ${MAKE_ARGS}
@@ -127,6 +128,9 @@ endif
 #   01. Change the non-error output redirection of Shell commands of
 #       SRC_ROOT_DIR definition from /dev/null to stderr.
 #   02. Beautify the display of extra directive(s) of "make help".
-#   03. Make EXTRA_TARGETS depend on CUSTOM_FILES.
+#   03. Make target EXTRA_TARGETS depend on CUSTOM_FILES.
+#
+# >>> 2024-02-18, Man Hung-Coeng <udc577@126.com>:
+#   01. Make target "menuconfig" depend on CUSTOM_FILES.
 #
 

@@ -3,7 +3,7 @@
 #
 # Useful aliases.
 #
-# Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     alias html2pdf=wkhtmltopdf
     alias html2pic=wkhtmltoimage
     alias lc_reload=". ${LAZY_CODING_HOME}/scripts/__import__.sh"
+    alias less='less -N'
     alias L="cd ${LAZY_CODING_HOME}"
     alias make="time make"
     alias pst="ps -eLo uid,pid,ppid,lwp,psr,c,stime,tname,time,args" # Means displaying [t]hread info while executing ps.
@@ -52,5 +53,8 @@ fi
 #
 # >>> 2023-10-07, Man Hung-Coeng <udc577@126.com>:
 #   01. Change the alias of diff from "colordiff" to "diff --color=auto".
+#
+# >>> 2024-02-21, Man Hung-Coeng <udc577@126.com>:
+#   01. Add "less".
 #
 

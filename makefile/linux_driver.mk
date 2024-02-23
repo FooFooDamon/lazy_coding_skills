@@ -1,7 +1,7 @@
 #
 # Makefile template for Linux driver.
 #
-# Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -207,7 +207,7 @@ APP_CFLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC -Wall -Wextra \
 # Targets and Rules.
 #=======================
 
-export PARALLEL_OPTION ?= -j $(shell grep -c "processor" /proc/cpuinfo)
+export NTHREADS ?= $(shell grep -c "processor" /proc/cpuinfo)
 
 .PHONY: all $(foreach i, ${ARCH_LIST}, ${i}-release ${i}-debug clean-${i}) \
     clean $(if ${APP_NAME}, clean-${APP_NAME}.elf) clean-${DRVNAME}.ko
@@ -233,10 +233,10 @@ ${APP_NAME}.elf: ${APP_OBJS}
 endif
 
 $(foreach i, ${ARCH_LIST}, ${i}-release): %:
-	${Q}${MAKE} ${DRVNAME}.ko $(if ${APP_NAME}, ${APP_NAME}.elf) ${PARALLEL_OPTION} ARCH=${@:-release=}
+	${Q}${MAKE} ${DRVNAME}.ko $(if ${APP_NAME}, ${APP_NAME}.elf) -j ${NTHREADS} ARCH=${@:-release=}
 
 $(foreach i, ${ARCH_LIST}, ${i}-debug): %:
-	${Q}${MAKE} ${DRVNAME}.ko $(if ${APP_NAME}, ${APP_NAME}.elf) ${PARALLEL_OPTION} ARCH=${@:-debug=} NDEBUG=0
+	${Q}${MAKE} ${DRVNAME}.ko $(if ${APP_NAME}, ${APP_NAME}.elf) -j ${NTHREADS} ARCH=${@:-debug=} NDEBUG=0
 
 D_FILES := $(foreach i, ${APP_OBJS}, ${i:.o=.d})
 CMD_FILES := $(shell find . -name ".*.o.cmd" | grep -v "\.mod\.o\.cmd")
@@ -281,7 +281,7 @@ __VARS__ := ARCH_LIST HOST_ARCH ARCH $(foreach i, ${ARCH_LIST}, CROSS_COMPILE_FO
     CC STRIP RM __STRICT__ NDEBUG USE_SRC_RELATIVE_PATH \
     HOST_KERNEL_DIR CROSS_KERNEL_DIR DRVNAME ${DRVNAME}-objs obj-m ccflags-y \
     APP_NAME APP_OBJS APP_DEBUG_FLAGS APP_DEFINES APP_INCLUDES OTHER_APP_CFLAGS APP_CFLAGS \
-    PARALLEL_OPTION
+    NTHREADS
 
 ifeq (${Q},)
     $(info -)
@@ -341,5 +341,8 @@ endif # ifeq (${KERNELRELEASE},)
 #   01. Support aarch64 architecture.
 #   02. Delete temporary directories generated during compilation
 #   	when the project is on a NFS filesystem.
+#
+# >>> 2024-02-23, Man Hung-Coeng <udc577@126.com>:
+#   01. Modify PARALLEL_OPTION to NTHREADS.
 #
 

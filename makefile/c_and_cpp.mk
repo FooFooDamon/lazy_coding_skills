@@ -1,7 +1,7 @@
 #
-# Basic rules for C/C++ compilation.
+# Basic rules for C/C++ app compilation.
 #
-# Copyright (c) 2021-2023 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2021-2024 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -138,7 +138,7 @@ CROSS_COMPILE_FOR_arm ?= arm-linux-gnueabihf-
 CROSS_COMPILE_FOR_avr ?= avr-
 CROSS_COMPILE_FOR_mips ?= mips-linux-gnu-
 CROSS_COMPILE_FOR_powerpc ?= powerpc-linux-gnu-
-PARALLEL_OPTION ?= -j $(shell grep -c "processor" /proc/cpuinfo)
+NTHREADS ?= $(shell grep -c "processor" /proc/cpuinfo)
 __cplusplus ?= 201103L
 
 .PHONY: all $(foreach i, ${ARCH_LIST}, ${i}-release ${i}-debug) check clean
@@ -160,23 +160,23 @@ ${GOAL} ${GOALS}: %:
 	fi
 
 $(foreach i, ${ARCH_LIST}, ${i}-release): %:
-	${Q}${MAKE} ${GOAL} ${GOALS} ${PARALLEL_OPTION} \
+	${Q}${MAKE} ${GOAL} ${GOALS} -j ${NTHREADS} \
 		ARCH=${@:-release=} CROSS_COMPILE=${CROSS_COMPILE_FOR_${@:-release=}}
 
 $(foreach i, ${ARCH_LIST}, ${i}-debug): %:
-	${Q}${MAKE} ${GOAL} ${GOALS} ${PARALLEL_OPTION} \
+	${Q}${MAKE} ${GOAL} ${GOALS} -j ${NTHREADS} \
 		ARCH=${@:-debug=} CROSS_COMPILE=${CROSS_COMPILE_FOR_${@:-debug=}} NDEBUG=0
 
 check:
 	$(if ${Q},@printf '>>> CHECK: Begin.\n')
 	$(if ${Q},@printf '>>> CHECK: Patience ...\n')
 	${Q}if [ -n "$(word 1, ${C_SRCS})" ]; then \
-		cppcheck --quiet --enable=all --language=c --std=${C_STD} ${PARALLEL_OPTION} \
+		cppcheck --quiet --enable=all --language=c --std=${C_STD} -j ${NTHREADS} \
 			${C_DEFINES} ${C_INCLUDES} $(filter-out %.mod.c, ${C_SRCS}); \
 		clang --analyze ${CFLAGS} $(filter-out %.mod.c, ${C_SRCS}); \
 	fi
 	${Q}if [ -n "$(word 1, ${CXX_SRCS})" ]; then \
-		cppcheck --quiet --enable=all --language=c++ --std=${CXX_STD} ${PARALLEL_OPTION} \
+		cppcheck --quiet --enable=all --language=c++ --std=${CXX_STD} -j ${NTHREADS} \
 			-D__cplusplus=${__cplusplus} ${CXX_DEFINES} ${CXX_INCLUDES} ${CXX_SRCS}; \
 		clang --analyze ${CXXFLAGS} ${CXX_SRCS}; \
 	fi
@@ -196,7 +196,7 @@ __VARS__ := CROSS_COMPILE CC CXX AR STRIP RM __STRICT__ C_STD CXX_STD __cplusplu
     CFLAGS CXXFLAGS C_COMPILE CXX_COMPILE ALLOW_REORDER_ON_LINKING C_LINK CXX_LINK STRIP_SYMBOLS \
 	MAKE_STATIC_LIB MAKE_SHARED_LIB GOAL GOALS C_SRCS CXX_SRCS \
     ARCH_LIST ARCH $(foreach i, ${ARCH_LIST}, CROSS_COMPILE_FOR_${i}) \
-    PARALLEL_OPTION
+    NTHREADS
 
 ifeq (${Q},)
     $(info -)
@@ -306,5 +306,8 @@ endif
 #
 # >>> 2023-12-24, Man Hung-Coeng <udc577@126.com>:
 #   01. Filter out *.mod.c from C_SRCS in rules of target "check".
+#
+# >>> 2024-02-23, Man Hung-Coeng <udc577@126.com>:
+#   01. Modify PARALLEL_OPTION to NTHREADS.
 #
 

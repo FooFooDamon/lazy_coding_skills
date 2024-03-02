@@ -16,39 +16,40 @@
 # limitations under the License.
 #
 
+__VER__ ?= 123456789abc
 PKG_VERSION ?= 2023.02
 PKG_FILE ?= ./buildroot-${PKG_VERSION}.tar.gz
 PKG_URL ?= https://buildroot.org/downloads/buildroot-${PKG_VERSION}.tar.gz
 PKG_DOWNLOAD ?= wget -c '$(strip ${PKG_URL})' -O ${PKG_FILE}
-MAKE_ARGS := $(if ${__VER__},BR2_VERSION=${PKG_VERSION}-${__VER__})
+MAKE_ARGS ?= $(if ${__VER__},BR2_VERSION=${PKG_VERSION}-${__VER__})
 CP ?= cp -R -P
 DIFF ?= diff --color
 TOUCH ?= touch
 UNCOMPRESS ?= tar -zxvf
 SRC_PARENT_DIR ?= ${HOME}/src
 SRC_ROOT_DIR ?= $(shell \
-    [ -f ${PKG_FILE} -o -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) ] || ${PKG_DOWNLOAD} >&2; \
+    [ -f ${PKG_FILE} -o -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) ] || (${PKG_DOWNLOAD}) >&2; \
     [ -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) ] || (mkdir -p ${SRC_PARENT_DIR}; ${UNCOMPRESS} ${PKG_FILE} -C ${SRC_PARENT_DIR}) >&2; \
     ls -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) \
 )
 INSTALL_DIR ?= ${HOME}/tftpd
 INSTALL_CMD ?= [ -d ${INSTALL_DIR} ] || mkdir -p ${INSTALL_DIR}; ${CP} ${SRC_ROOT_DIR}/output/images/rootfs.* ${INSTALL_DIR}/
 UNINSTALL_CMD ?= rm -f ${INSTALL_DIR}/rootfs.*
-EXTRA_TARGETS ?= source
-BUSYBOX_CONFIG := package/busybox/busybox.config
-CUSTOM_DIR ?= custom
-CUSTOM_FILES ?= ${BUSYBOX_CONFIG} \
-    package/busybox/0005-libbb-printable_string2.patch \
-    package/busybox/0006-libbb-unicode_conv_to_printable2.patch
+EXT_TARGETS += source
+BUSYBOX_CONFIG ?= package/busybox/busybox.config
+OVERLAY_DIR ?= overlay
+CUSTOM_FILES += ${BUSYBOX_CONFIG}
 
-$(foreach i, EXTRA_TARGETS, $(eval ${i} := $(strip ${${i}})))
+$(foreach i, EXT_TARGETS, $(eval ${i} := $(strip ${${i}})))
+$(foreach i, EXT_TARGETS CUSTOM_FILES, $(eval ${i} := $(sort ${${i}}))) # To filter out repeated items
 
-.PHONY: all menuconfig busybox-menuconfig custom_dir download clean distclean install uninstall ${EXTRA_TARGETS}
+.PHONY: all menuconfig busybox-menuconfig overlay_dir \
+    download clean distclean install uninstall ${EXT_TARGETS} help showvars
 
-all: custom_dir $(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i})
+all: overlay_dir $(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i})
 	${MAKE} -C ${SRC_ROOT_DIR} ${MAKE_ARGS}
 
-menuconfig: custom_dir
+menuconfig: overlay_dir
 	[ -f .config ] && ${CP} .config ${SRC_ROOT_DIR}/ || :
 	${MAKE} menuconfig -C ${SRC_ROOT_DIR} ${MAKE_ARGS}
 	if [ -f ${SRC_ROOT_DIR}/.config ]; then \
@@ -63,12 +64,12 @@ busybox-menuconfig: ${SRC_ROOT_DIR}/${BUSYBOX_CONFIG}
 	set -x; \
 	[ -f ${BUSYBOX_CONFIG} ] && ${DIFF} $< ${BUSYBOX_CONFIG} || ${CP} $< ${BUSYBOX_CONFIG}
 
-custom_dir:
-	[ -d ${CUSTOM_DIR} ] || mkdir ${CUSTOM_DIR}
-	[ -d ${SRC_ROOT_DIR}/${CUSTOM_DIR} ] || ln -snf $$(realpath ${CUSTOM_DIR}) ${SRC_ROOT_DIR}/${CUSTOM_DIR}
+overlay_dir:
+	[ -d ${OVERLAY_DIR} ] || mkdir ${OVERLAY_DIR}
+	[ -d ${SRC_ROOT_DIR}/${OVERLAY_DIR} ] || ln -snf $$(realpath ${OVERLAY_DIR}) ${SRC_ROOT_DIR}/${OVERLAY_DIR}
 
 download:
-	[ -f ${PKG_FILE} ] || ${PKG_DOWNLOAD}
+	[ -f ${PKG_FILE} ] || (${PKG_DOWNLOAD})
 
 install:
 	${INSTALL_CMD}
@@ -76,15 +77,15 @@ install:
 uninstall:
 	${UNINSTALL_CMD}
 
-clean distclean ${EXTRA_TARGETS}: %:
+clean distclean ${EXT_TARGETS}: %:
 	${MAKE} $@ -C ${SRC_ROOT_DIR} ${MAKE_ARGS}
 	@if [ $@ = clean -o $@ = distclean ]; then \
 		printf '\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'; \
 		printf '\n!!!!!!!!!! ATTENTION: !!!!!!!!!!'; \
 		printf '\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!'; \
 		printf '\n'; \
-		printf '\nNext time before you execute "make",'; \
-		printf '\nexecute $(if $(filter distclean, $@),"make menuconfig" and )"make busybox-menuconfig" first!'; \
+		printf '\nNext time before you execute "${MAKE}",'; \
+		printf '\nexecute $(if $(filter distclean, $@),"${MAKE} menuconfig" and )"${MAKE} busybox-menuconfig" first!'; \
 		printf '\n\n'; \
 	fi
 
@@ -97,29 +98,42 @@ $(foreach i, ${CUSTOM_FILES}, $(eval $(call custom_file_rule,${i})))
 
 help:
 	@echo "Core directives:"
-	@echo "  1. make download   - Download the source package manually; Usually unnecessary"
-	@echo "  2. make menuconfig - Interactive configuration (automatically saved if changed)"
-	@echo "  3. make busybox-menuconfig"
+	@echo "  1. ${MAKE} download   - Download the source package manually; Usually unnecessary"
+	@echo "  2. ${MAKE} showvars   - Display customized variables and their values"
+	@echo "  3. ${MAKE} menuconfig - Interactive configuration (automatically saved if changed)"
+	@echo "  4. ${MAKE} busybox-menuconfig"
 	@echo "                     - Interactive configuration for BusyBox (automatically saved if changed)"
-	@echo "  4. make            - Build in a default way"
-	@echo "  5. make clean      - Clean most generated files and directories"
-	@echo "  6. make distclean  - Clean all generated files and directories (including .config and downloaded packages)"
-	@echo "  7. make install    - Copy the generated rootfs.* files to the directory specified by INSTALL_DIR"
-	@echo "  8. make uninstall  - Delete rootfs.* files in the directory specified by INSTALL_DIR"
+	@echo "  5. ${MAKE}            - Build in a default way"
+	@echo "  6. ${MAKE} clean      - Clean most generated files and directories"
+	@echo "  7. ${MAKE} distclean  - Clean all generated files and directories (including .config and downloaded packages)"
+	@echo "  8. ${MAKE} install    - Copy the generated rootfs.* files to the directory specified by INSTALL_DIR"
+	@echo "  9. ${MAKE} uninstall  - Delete rootfs.* files in the directory specified by INSTALL_DIR"
 	@echo ""
-	@printf "Extra directive(s): "
-ifeq (${EXTRA_TARGETS},)
+	@printf "Extended directive(s): "
+ifeq (${EXT_TARGETS},)
 	@echo "None"
 else
-	@for i in ${EXTRA_TARGETS}; \
+	@for i in ${EXT_TARGETS}; \
 	do \
-		printf "\n  * make $${i}"; \
+		printf "\n  * ${MAKE} $${i}"; \
 	done
 	@printf "\n  --"
-	@printf "\n  Run \"make help\" in directory[${SRC_ROOT_DIR}]"
+	@printf "\n  Run \"${MAKE} help -C ${PWD}/${SRC_ROOT_DIR}\""
 	@printf "\n  to see detailed descriptions."
 	@printf "\n"
 endif
+	$(if $(strip ${USER_HELP_PRINTS}),@printf "\nUser help info:\n"; (${USER_HELP_PRINTS}))
+
+__VARS__ := CP DIFF TOUCH UNCOMPRESS \
+    __VER__ PKG_VERSION MAKE_ARGS  \
+    PKG_FILE PKG_URL PKG_DOWNLOAD SRC_PARENT_DIR SRC_ROOT_DIR \
+    INSTALL_DIR INSTALL_CMD UNINSTALL_CMD \
+    BUSYBOX_CONFIG OVERLAY_DIR EXT_TARGETS CUSTOM_FILES USER_HELP_PRINTS
+
+showvars:
+	$(info )
+	$(foreach i, ${__VARS__}, $(info ${i} = ${$i}) $(info ))
+	@:
 
 #
 # ================
@@ -133,5 +147,12 @@ endif
 #   01. Change the non-error output redirection of Shell commands of
 #       SRC_ROOT_DIR definition from /dev/null to stderr.
 #   02. Beautify the display of extra directive(s) of "make help".
+#
+# >>> 2024-03-02, Man Hung-Coeng <udc577@126.com>:
+#   01. Rename CUSTOM_DIR to OVERLAY_DIR, custom_dir to overlay_dir.
+#   02. Change the assignment operator of EXTRA_TARGETS (new name: EXT_TARGETS)
+#       and CUSTOM_FILES to addition assignment operator (+=).
+#   03. Add a new target "showvars".
+#   04. Enhance "make help" by allowing to define extra printing commands.
 #
 

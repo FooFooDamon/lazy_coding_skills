@@ -51,7 +51,7 @@ all: overlay_dir $(foreach i, ${CUSTOM_FILES}, ${SRC_ROOT_DIR}/${i})
 
 menuconfig: overlay_dir
 	[ -f .config ] && ${CP} .config ${SRC_ROOT_DIR}/ || :
-	${MAKE} menuconfig -C ${SRC_ROOT_DIR} ${MAKE_ARGS}
+	${MAKE} menuconfig -C ${SRC_ROOT_DIR} ${MAKE_ARGS} BR2_VERSION=${PKG_VERSION}
 	if [ -f ${SRC_ROOT_DIR}/.config ]; then \
 		set -x; \
 		[ -f .config ] && ${DIFF} ${SRC_ROOT_DIR}/.config .config || ${CP} ${SRC_ROOT_DIR}/.config ./; \
@@ -154,5 +154,7 @@ showvars:
 #       and CUSTOM_FILES to addition assignment operator (+=).
 #   03. Add a new target "showvars".
 #   04. Enhance "make help" by allowing to define extra printing commands.
+#   05. Remove the redundant VCS version suffix from BR2_VERSION
+#       in "make menuconfig".
 #
 

@@ -23,7 +23,13 @@ DIFF ?= diff --color
 TOUCH ?= touch
 UNCOMPRESS ?= tar -zxvf
 PKG_FILE ?= ./linux-imx-rel_imx_4.1.15_2.1.0_ga.tar.gz
-# Rule of URL: https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives
+# -- Rule of URL --
+# URL prefix: https://github.com/<user>/<repo>
+# Package suffix: tar.gz | zip
+# Download by tag or release: <prefix>/archive/refs/tags/<tag>.<suffix>
+# Download by branch: <prefix>/archive/refs/heads/<branch>.<suffix>
+# Download by commit: <prefix>/archive/<full-commit-hash>.<suffix>
+# See also: https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives
 PKG_URL ?= https://github.com/nxp-imx/linux-imx/archive/refs/tags/rel_imx_4.1.15_2.1.0_ga.tar.gz
 PKG_DOWNLOAD ?= wget -c '$(strip ${PKG_URL})' -O ${PKG_FILE}
 SRC_PARENT_DIR ?= ./_tmp_
@@ -69,7 +75,7 @@ ifneq (${__DTB_PATH},)
 dtb: ${__CUSTOMIZED_DEPENDENCIES}
 	${MAKE} $(notdir ${__DTB_PATH}) -C ${SRC_ROOT_DIR} ${MAKE_ARGS} || ( \
 		printf "\n*** Run: ${MAKE} dtbs%s\n*** If the error is: No rule to make target '${__DTB_PATH}'\n\n" \
-			"$(if $(filter dtbs, ${EXT_TARGETS}),, -C ${PWD}/${SRC_ROOT_DIR})" >&2 ; \
+			"$(if $(filter dtbs, ${EXT_TARGETS}),, -C $(realpath ${SRC_ROOT_DIR}))" >&2 ; \
 		false \
 	)
 
@@ -123,11 +129,11 @@ ifneq (${__PARTIAL_MODULES},)
 
 .PHONY: mods ${__PARTIAL_MODULES:%.ko=%.ko-install}
 
-${__PARTIAL_MODULES}: %: # ${PWD}/${SRC_ROOT_DIR}/%
+${__PARTIAL_MODULES}: %: # $(realpath ${SRC_ROOT_DIR})/%
 	${MAKE} modules modules='$@' -C ${SRC_ROOT_DIR} ${MAKE_ARGS} -j ${NTHREADS}
 
-${__PARTIAL_MODULES:%.ko=%.ko-install}: %.ko-install: ${PWD}/${SRC_ROOT_DIR}/%.ko
-	${MAKE} modules_install modules='$(subst ${PWD}/${SRC_ROOT_DIR}/,,$<)' -C ${SRC_ROOT_DIR} ${MAKE_ARGS}
+${__PARTIAL_MODULES:%.ko=%.ko-install}: %.ko-install: $(realpath ${SRC_ROOT_DIR})/%.ko
+	${MAKE} modules_install modules='$(subst $(realpath ${SRC_ROOT_DIR})/,,$<)' -C ${SRC_ROOT_DIR} ${MAKE_ARGS}
 
 mods:
 	${MAKE} modules modules='${__PARTIAL_MODULES}' -C ${SRC_ROOT_DIR} ${MAKE_ARGS} -j ${NTHREADS}
@@ -196,7 +202,7 @@ else
 		[ "$${i}" = "modules_install" ] && printf " [modules='relative/path/to/mod1.ko relative/path/to/mod2.ko ...']" || :; \
 	done
 	@printf "\n  --"
-	@printf "\n  Run \"${MAKE} help -C ${PWD}/${SRC_ROOT_DIR}\""
+	@printf "\n  Run \"${MAKE} help -C $(realpath ${SRC_ROOT_DIR})\""
 	@printf "\n  to see detailed descriptions (except for mods_install and *.ko-install)."
 	@printf "\n"
 endif

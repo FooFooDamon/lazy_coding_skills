@@ -26,7 +26,13 @@ DIFF ?= diff --color
 TOUCH ?= touch
 UNCOMPRESS ?= tar -zxvf
 PKG_FILE ?= ./uboot-imx-rel_imx_4.1.15_2.1.0_ga.tar.gz
-# Rule of URL: https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives
+# -- Rule of URL --
+# URL prefix: https://github.com/<user>/<repo>
+# Package suffix: tar.gz | zip
+# Download by tag or release: <prefix>/archive/refs/tags/<tag>.<suffix>
+# Download by branch: <prefix>/archive/refs/heads/<branch>.<suffix>
+# Download by commit: <prefix>/archive/<full-commit-hash>.<suffix>
+# See also: https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives
 PKG_URL ?= https://github.com/nxp-imx/uboot-imx/archive/refs/tags/rel_imx_4.1.15_2.1.0_ga.tar.gz
 PKG_DOWNLOAD ?= wget -c '$(strip ${PKG_URL})' -O ${PKG_FILE}
 SRC_PARENT_DIR ?= ./_tmp_
@@ -126,7 +132,7 @@ help:
 	@echo "  1. ${MAKE} download   - Download the source package manually; Usually unnecessary"
 	@echo "  2. ${MAKE} showvars   - Display customized variables and their values"
 	@echo "  3. ${MAKE} menuconfig - Interactive configuration (automatically saved if changed)"
-	@echo "  4. ${MAKE}            - Build U-Boot in a default way"
+	@echo "  4. ${MAKE}            - Build U-Boot in default way"
 	@echo "  5. ${MAKE} clean      - Clean most generated files and directories"
 	@echo "  6. ${MAKE} distclean  - Clean all generated files and directories (including .config)"
 	@echo "  7. ${MAKE} install    - Copy the generated u-boot* files to the directory specified by INSTALL_DIR"
@@ -141,7 +147,7 @@ else
 		printf "\n  * ${MAKE} $${i}"; \
 	done
 	@printf "\n  --"
-	@printf "\n  Run \"${MAKE} help -C ${PWD}/${SRC_ROOT_DIR}\""
+	@printf "\n  Run \"${MAKE} help -C $(realpath ${SRC_ROOT_DIR})\""
 	@printf "\n  to see detailed descriptions."
 	@printf "\n"
 endif

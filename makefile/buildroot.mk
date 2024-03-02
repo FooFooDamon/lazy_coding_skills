@@ -103,7 +103,7 @@ help:
 	@echo "  3. ${MAKE} menuconfig - Interactive configuration (automatically saved if changed)"
 	@echo "  4. ${MAKE} busybox-menuconfig"
 	@echo "                     - Interactive configuration for BusyBox (automatically saved if changed)"
-	@echo "  5. ${MAKE}            - Build in a default way"
+	@echo "  5. ${MAKE}            - Build in default way"
 	@echo "  6. ${MAKE} clean      - Clean most generated files and directories"
 	@echo "  7. ${MAKE} distclean  - Clean all generated files and directories (including .config and downloaded packages)"
 	@echo "  8. ${MAKE} install    - Copy the generated rootfs.* files to the directory specified by INSTALL_DIR"
@@ -118,7 +118,7 @@ else
 		printf "\n  * ${MAKE} $${i}"; \
 	done
 	@printf "\n  --"
-	@printf "\n  Run \"${MAKE} help -C ${PWD}/${SRC_ROOT_DIR}\""
+	@printf "\n  Run \"${MAKE} help -C $(realpath ${SRC_ROOT_DIR})\""
 	@printf "\n  to see detailed descriptions."
 	@printf "\n"
 endif

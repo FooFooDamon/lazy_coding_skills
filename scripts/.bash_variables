@@ -25,6 +25,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     export PS1="${_ps1_prefix}${debian_chroot:+($debian_chroot)}[\u@${_host} \W]${_prompt}"
     unset _host _prompt _ps1_prefix
     export SHELL="`which bash`"
+    [ "$(id -u)" -eq 0 -o "${USER}" = "root" ] && export SUDO="" || export SUDO="sudo"
 fi
 
 #
@@ -32,10 +33,13 @@ fi
 #   CHANGE LOG
 # ================
 #
-# >>> V1.0.0|2023-02-12, Man Hung-Coeng <udc577@126.com>:
+# >>> 2023-02-12, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
 #
-# >>> V1.0.1|2024-01-03, Man Hung-Coeng <udc577@126.com>:
+# >>> 2024-01-03, Man Hung-Coeng <udc577@126.com>:
 #   01. Update the value of PS1 adapt to more terminal emulators.
+#
+# >>> 2024-03-26, Man Hung-Coeng <udc577@126.com>:
+#   01. Add SUDO.
 #
 

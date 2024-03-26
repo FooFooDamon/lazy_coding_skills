@@ -19,14 +19,18 @@
 #
 
 if [ -n "${LAZY_CODING_HOME}" ]; then
+    alias cp="time cp"
     alias diff="diff --color=auto"
     alias dsk="cd ${HOME}/桌面 2> /dev/null || cd ${HOME}/Desktop"
+    alias find="time find -L"
     alias html2pdf=wkhtmltopdf
     alias html2pic=wkhtmltoimage
     alias lc_reload=". ${LAZY_CODING_HOME}/scripts/__import__.sh"
     alias less='less -N'
     alias L="cd ${LAZY_CODING_HOME}"
     alias make="time make"
+    alias mv="time mv"
+    alias nfsmount='${SUDO} mount -t nfs -o nolock,soft'
     alias pst="ps -eLo uid,pid,ppid,lwp,psr,c,stime,tname,time,args" # Means displaying [t]hread info while executing ps.
     alias report_last_op_status='[ $? -eq 0 ] && play_normal_exit_audio -T || play_abnormal_exit_audio -T'
     alias report_last_op_status_once='[ $? -eq 0 ] && play_normal_exit_audio_once -T || play_abnormal_exit_audio_once -T'
@@ -56,5 +60,8 @@ fi
 #
 # >>> 2024-02-21, Man Hung-Coeng <udc577@126.com>:
 #   01. Add "less".
+#
+# >>> 2024-03-26, Man Hung-Coeng <udc577@126.com>:
+#   01. Add cp, find, mv and nfsmount.
 #
 

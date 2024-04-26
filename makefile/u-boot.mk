@@ -27,6 +27,7 @@ TOUCH ?= touch
 UNCOMPRESS ?= tar -zxvf
 PKG_FILE ?= ./uboot-imx-rel_imx_4.1.15_2.1.0_ga.tar.gz
 # -- Rule of URL --
+# Example: GitHub
 # URL prefix: https://github.com/<user>/<repo>
 # Package suffix: tar.gz | zip
 # Download by tag or release: <prefix>/archive/refs/tags/<tag>.<suffix>
@@ -35,7 +36,7 @@ PKG_FILE ?= ./uboot-imx-rel_imx_4.1.15_2.1.0_ga.tar.gz
 # See also: https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives
 PKG_URL ?= https://github.com/nxp-imx/uboot-imx/archive/refs/tags/rel_imx_4.1.15_2.1.0_ga.tar.gz
 PKG_DOWNLOAD ?= wget -c '$(strip ${PKG_URL})' -O ${PKG_FILE}
-SRC_PARENT_DIR ?= ./_tmp_
+SRC_PARENT_DIR ?= $(if $(wildcard .srctree_parent_dir),$(shell grep '^[-_+@,./0-9a-zA-Z]\+$$' .srctree_parent_dir | tail -n 1),./_tmp_)
 SRC_ROOT_DIR ?= $(shell \
     [ -f ${PKG_FILE} -o -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) ] || (${PKG_DOWNLOAD}) >&2; \
     [ -d ${SRC_PARENT_DIR}/$(notdir ${PKG_FILE:.tar.gz=}) ] || (mkdir -p ${SRC_PARENT_DIR}; ${UNCOMPRESS} ${PKG_FILE} -C ${SRC_PARENT_DIR}) >&2; \
@@ -209,5 +210,8 @@ showvars:
 #       and CUSTOM_FILES to addition assignment operator (+=).
 #   04. Add a new target "showvars".
 #   05. Enhance "make help" by allowing to define extra printing commands.
+#
+# >>> 2024-04-26, Man Hung-Coeng <udc577@126.com>:
+#   01. Support reading the value of SRC_PARENT_DIR from file.
 #
 

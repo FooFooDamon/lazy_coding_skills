@@ -132,7 +132,7 @@ fi
 #
 # >>> V1.0.1|2024-04-27, Man Hung-Coeng <udc577@126.com>:
 #   01. Enhance network privacy.
-#   02. Add sys_admin capability so that some applications can be executed with
-#       non-root user and in sandbox.
+#   02. Add sys_admin capability so that some applications can be executed by
+#       non-root user in sandbox.
 #
 

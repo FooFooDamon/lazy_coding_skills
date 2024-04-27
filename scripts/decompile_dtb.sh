@@ -218,9 +218,9 @@ TIME_STAT ${DTC} --sort --in-format=dtb --out-format=dts --out "${coarse_file}" 
 [ ${verbose} -eq 0 ] || set +x
 [ ${verbose} -eq 0 ] || printf "\n<<< Finished decompiling DTB file. Result: ${coarse_file}\n"
 
-FIELD_NAME_CHARSET="[-_@+,.0-9a-zA-Z]"
+NODE_NAME_CHARSET="[-_@+,.0-9a-zA-Z]"
 PHANDLE_ASSIGNMENT_REGEX="^[[:blank:]]*\(linux,\)*phandle = <"
-phandle_stack=()
+node_name_stack=()
 declare -A phandle_map
 
 [ ${verbose} -eq 0 ] || printf "\n>>> Started mapping phandle names and values (may take a while).\n\nBe patient ...\n"
@@ -228,16 +228,13 @@ TIME_STAT while read i
 do
     if [ $(echo "${i}" | grep -c "${PHANDLE_ASSIGNMENT_REGEX}") -gt 0 ]; then
         phandle=$(echo "${i}" | sed 's/.*<\(0x[0-9a-z]\+\)>.*/\1/')
-        index=$((${#phandle_stack[*]} - 1))
-
-        phandle_map["${phandle}"]="${phandle_stack[${index}]}"
-
-        unset phandle_stack[${index}]
+        phandle_map["${phandle}"]="${node_name_stack[-1]}"
+        unset node_name_stack[-1]
     else
-        #phandle_stack[${#phandle_stack[*]}]=$(echo "${i}" | awk '{ print $1 }')
-        phandle_stack+=($(echo "${i}" | awk '{ print $1 }'))
+        #node_name_stack[${#node_name_stack[*]}]=$(echo "${i}" | awk '{ print $1 }')
+        node_name_stack+=($(echo "${i}" | awk '{ print $1 }'))
     fi
-done <<< $(grep "${PHANDLE_ASSIGNMENT_REGEX}\|^[[:blank:]]*${FIELD_NAME_CHARSET}\+ {$" "${coarse_file}")
+done <<< $(grep "${PHANDLE_ASSIGNMENT_REGEX}\|^[[:blank:]]*${NODE_NAME_CHARSET}\+ {$" "${coarse_file}")
 # Or:
 #shopt -s lastpipe
 #grep "..." "${coarse_file}" | while read i
@@ -258,12 +255,12 @@ done | sort -V  >> "${tmp_file}"
 echo "};" >> "${tmp_file}"
 
 printf "\n&__possible_targets_to_fix_up__ {\n" >> "${tmp_file}"
-grep "^[[:blank:]]*${FIELD_NAME_CHARSET}\+ = <" "${coarse_file}" | grep -v "${PHANDLE_ASSIGNMENT_REGEX}" \
+grep "^[[:blank:]]*${NODE_NAME_CHARSET}\+ = <" "${coarse_file}" | grep -v "${PHANDLE_ASSIGNMENT_REGEX}" \
     | awk '{ print "\t"$1";" }' | sort -V | uniq >> "${tmp_file}"
 echo "};" >> "${tmp_file}"
 
 [ ${verbose} -eq 0 ] || printf "\n>>> Started restoring phandle references (may take a while).\nBe patient ...\n"
-TIME_STAT grep -n "^[[:blank:]]*${FIELD_NAME_CHARSET}\+ = <" "${tmp_file}" | while read i
+TIME_STAT grep -n "^[[:blank:]]*${NODE_NAME_CHARSET}\+ = <" "${tmp_file}" | while read i
 do
     line_target_phandle=($(echo "${i}" | awk '{ print $1, $2, $4 }'))
     phandle_value=${line_target_phandle[2]:1} # NOTE: May contain a trailing ">" character.
@@ -318,5 +315,8 @@ mv "${tmp_file}" "${fixup_file}"
 #
 # >>> V1.0.1|2024-04-27, Man Hung-Coeng <udc577@126.com>:
 #   01. Fix a typo: DTC=$(which {dtcc -> dtc}).
+#   02. Rename FIELD_NAME_CHARSET to NODE_NAME_CHARSET,
+#       phandle_stack to node_name_stack, and remove the "index" variable
+#       while popping node_name_stack.
 #
 

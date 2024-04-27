@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -104,7 +104,7 @@ else
 
     ${SUDO} openvt -- docker run --name=${BAT_CONTAINER} -ti \
         --ulimit core=-1 \
-        --network=host \
+        --cap-add=CAP_SYS_ADMIN \
         -v /etc/localtime:/etc/localtime:ro \
         -v /etc/timezone:/etc/timezone:ro \
         -v $(realpath ${SHARED_DIR}):$(realpath ${SHARED_DIR}) \
@@ -129,5 +129,10 @@ fi
 #
 # >>> V1.0.0|2023-11-24, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> V1.0.1|2024-04-27, Man Hung-Coeng <udc577@126.com>:
+#   01. Enhance network privacy.
+#   02. Add sys_admin capability so that some applications can be executed with
+#       non-root user and in sandbox.
 #
 

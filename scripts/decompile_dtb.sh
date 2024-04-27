@@ -179,7 +179,7 @@ coarse_file="${dtb_file%.*}.decompiled.dts"
 fixup_file="${dtb_file%.*}.fixup.dts"
 tmp_file=/tmp/"$(basename "${fixup_file}")" # Use tmpfs (memory filesystem) to reduce disk I/O operations.
 
-[ -n "${DTC}" ] || DTC=$(which dtcc)
+[ -n "${DTC}" ] || DTC=$(which dtc)
 [ -n "${DTC}" ] || eexit "*** Missing dtc program!\nInstall it, or specify it through environment variable DTC."
 [ -e "${DTC}" ] || eexit "*** File does not exist: ${DTC}"
 [ ${verbose} -eq 0 ] || printf "\nDTC: ${DTC}\n"
@@ -315,5 +315,8 @@ mv "${tmp_file}" "${fixup_file}"
 #
 # >>> V1.0.0|2024-04-18, Man Hung-Coeng <udc577@126.com>:
 #   01. Create.
+#
+# >>> V1.0.1|2024-04-27, Man Hung-Coeng <udc577@126.com>:
+#   01. Fix a typo: DTC=$(which {dtcc -> dtc}).
 #
 

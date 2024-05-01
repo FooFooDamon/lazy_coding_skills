@@ -178,6 +178,7 @@ fi
 coarse_file="${dtb_file%.*}.decompiled.dts"
 fixup_file="${dtb_file%.*}.fixup.dts"
 tmp_file=/tmp/"$(basename "${fixup_file}")" # Use tmpfs (memory filesystem) to reduce disk I/O operations.
+symbols_file=/tmp/"${dtb_file%.*}.__symbols__"
 
 [ -n "${DTC}" ] || DTC=$(which dtc)
 [ -n "${DTC}" ] || eexit "*** Missing dtc program!\nInstall it, or specify it through environment variable DTC."
@@ -214,93 +215,120 @@ done
 
 [ ${verbose} -eq 0 ] || printf "\n>>> Started decompiling DTB file.\n\n"
 [ ${verbose} -eq 0 ] || set -x
-TIME_STAT ${DTC} --sort --in-format=dtb --out-format=dts --out "${coarse_file}" "${dtb_file}"
+TIME_STAT ${DTC} --sort --in-format=dtb --out-format=dts --out "${coarse_file}" "${dtb_file}" || exit $?
 [ ${verbose} -eq 0 ] || set +x
 [ ${verbose} -eq 0 ] || printf "\n<<< Finished decompiling DTB file. Result: ${coarse_file}\n"
+
+sed -n "/\t__symbols__/,/\t};/p" "${coarse_file}" > "${symbols_file}"
+sed "/\t__symbols__/,/^$/d" "${coarse_file}" > "${tmp_file}"
 
 NODE_NAME_CHARSET="[-_@+,.0-9a-zA-Z]"
 PHANDLE_ASSIGNMENT_REGEX="^[[:blank:]]*\(linux,\)*phandle = <"
 node_name_stack=()
+linenum_stack=()
 declare -A phandle_map
 
-[ ${verbose} -eq 0 ] || printf "\n>>> Started mapping phandle names and values (may take a while).\n\nBe patient ...\n"
+[ ${verbose} -eq 0 ] || printf "\n>>> Started mapping phandles and labels (may take a while).\n\nBe patient ...\n"
 TIME_STAT while read i
 do
-    if [ $(echo "${i}" | grep -c "${PHANDLE_ASSIGNMENT_REGEX}") -gt 0 ]; then
-        phandle=$(echo "${i}" | sed 's/.*<\(0x[0-9a-z]\+\)>.*/\1/')
-        phandle_map["${phandle}"]="${node_name_stack[-1]}"
+    if [ "${i:$((${#i} - 2)):2}" = "};" ]; then
         unset node_name_stack[-1]
+        unset linenum_stack[-1]
+    elif [ "${i:$((${#i} - 2)):2}" = ">;" ]; then
+        #path="/$(echo ${node_name_stack[*]} | sed 's/ /\//g')" # It's time-consuming.
+        path="/${node_name_stack[*]}"
+        path="${path// /\/}"
+        labels=($(grep "\"${path}\"" "${symbols_file}" | awk '{ print $1 }'))
+        [ ${#labels[*]} -gt 0 ] || continue
+        [ ${#labels[*]} -eq 1 ] || printW "*** Found ${#labels[*]} label(s) for [${path}]: ${labels[*]}"
+        #phandle=$(echo "${i}" | sed 's/.*<\(0x[0-9a-z]\+\)>.*/\1/') # It's time-consuming.
+        phandle="${i##*<}"
+        phandle="${phandle%%>*}"
+        phandle_map["${phandle}"]=${labels[0]}
+        sed -i "${linenum_stack[-1]}s/^\([[:blank:]]\+\)\(${node_name_stack[-1]} {\)/\1${labels[0]}: \2/" "${tmp_file}"
     else
-        #node_name_stack[${#node_name_stack[*]}]=$(echo "${i}" | awk '{ print $1 }')
-        node_name_stack+=($(echo "${i}" | awk '{ print $1 }'))
+        #node_name_stack+=($(echo "${i#*:}" | awk '{ print $1 }')) # It's time-consuming.
+        node_name="${i#*:}"
+        node_name="${node_name% \{}"
+        node_name_stack+=(${node_name})
+        #linenum_stack[${#linenum_stack[*]}]=${i%%:*}
+        linenum_stack+=(${i%%:*})
     fi
-done <<< $(grep "${PHANDLE_ASSIGNMENT_REGEX}\|^[[:blank:]]*${NODE_NAME_CHARSET}\+ {$" "${coarse_file}")
+done <<< $(grep -n "^[[:blank:]]\+${NODE_NAME_CHARSET}\+ {\|${PHANDLE_ASSIGNMENT_REGEX}\|[[:blank:]]\+};" "${tmp_file}")
 # Or:
 #shopt -s lastpipe
-#grep "..." "${coarse_file}" | while read i
+#grep "..." "${tmp_file}" | while read i
 #do
 #    ...
 #done
-[ ${verbose} -eq 0 ] || printf "\n<<< Finished mapping phandle names and values.\n"
+[ ${verbose} -eq 0 ] || printf "\n<<< Finished mapping phandles and labels.\n"
 
-sed "/${PHANDLE_ASSIGNMENT_REGEX}/d" "${coarse_file}" > "${tmp_file}"
+rm "${symbols_file}"
 
-sed -i "\$s/\(};\)/\n\t__phandles__ { };\n\n\t__possible_targets_to_fix_up__ { };\n\1/" "${tmp_file}"
+sed -i "/${PHANDLE_ASSIGNMENT_REGEX}/d" "${tmp_file}"
 
-printf "\n&__phandles__ {\n" >> "${tmp_file}"
-for i in ${!phandle_map[*]}
-do
-    printf "\tphandle_%d_${i} = \"${phandle_map[${i}]}\";\n" ${i}
-done | sort -V  >> "${tmp_file}"
-echo "};" >> "${tmp_file}"
-
-printf "\n&__possible_targets_to_fix_up__ {\n" >> "${tmp_file}"
-grep "^[[:blank:]]*${NODE_NAME_CHARSET}\+ = <" "${coarse_file}" | grep -v "${PHANDLE_ASSIGNMENT_REGEX}" \
-    | awk '{ print "\t"$1";" }' | sort -V | uniq >> "${tmp_file}"
-echo "};" >> "${tmp_file}"
-
-[ ${verbose} -eq 0 ] || printf "\n>>> Started restoring phandle references (may take a while).\nBe patient ...\n"
-TIME_STAT grep -n "^[[:blank:]]*${NODE_NAME_CHARSET}\+ = <" "${tmp_file}" | while read i
+[ ${verbose} -eq 0 ] || printf "\n>>> Started restoring label references (may take a while).\n\nBe patient ...\n"
+TIME_STAT grep -n "^[[:blank:]]\+${NODE_NAME_CHARSET}\+ = <" "${tmp_file}" | while read i
 do
     line_target_phandle=($(echo "${i}" | awk '{ print $1, $2, $4 }'))
-    phandle_value=${line_target_phandle[2]:1} # NOTE: May contain a trailing ">" character.
+    phandle=${line_target_phandle[2]:1} # NOTE: May contain a trailing ">" character.
     target_name=${line_target_phandle[1]}
     target_type=${PHANDLE_CONF_MAP["${target_name}"]}
 
     [ -n "${target_type}" ] && linenum=${line_target_phandle%%:*} || continue
 
     if [ "${target_type}" = "single" ]; then
-        phandle_value=${phandle_value%%>*} # NOTE: Remove the trailing ">" character if any.
-        phandle_name=${phandle_map[${phandle_value}]}
+        phandle=${phandle%%>*} # NOTE: Remove the trailing ">" character if any.
+        label=${phandle_map[${phandle}]}
 
-        if [ -n "${phandle_name}" ]; then
-            sed -i "${linenum}s/^\([ \t]*${target_name} = <\)${phandle_value}\([^>]*>;\)/\1\&${phandle_name}\2/" "${tmp_file}"
+        if [ -n "${label}" ]; then
+            sed -i "${linenum}s/^\([ \t]\+${target_name} = <\)${phandle}\([^>]*>;\)/\1\&${label}\2/" "${tmp_file}"
         else
-            printW "*** ${i} /* Invalid phandle：${phandle_value} */"
+            printW "*** ${i} /* No label for this phandle：${phandle} */" # This case should never happen!
         fi
     else
         [ "${target_type}" = "multiple" ] && group_size=0 || group_size=${GROUP_SIZE_MAP["${target_name}"]}
         [ ${group_size} -eq 0 ] && position_array=() || position_array=(${GROUP_POSITIONS_MAP["${target_name}"]})
-        phandle_array=()
+        label_array=()
+        phandles="${i##*<}"
+        phandles="${phandles%%>*}"
         index=0
 
-        for j in $(echo "${i}" | sed "s/^${linenum}:[ \t]*${target_name} = <\([^>]\+\)>;/\1/")
+        #for j in $(echo "${i}" | sed "s/^${linenum}:[ \t]*${target_name} = <\([^>]\+\)>;/\1/") # It's time-consuming.
+        for j in ${phandles}
         do
             if [ ${group_size} -eq 0 ]; then
-                phandle_name=${phandle_map[${j}]}
+                label=${phandle_map[${j}]}
             else
-                [ $(echo "${position_array[*]}" | grep -c "\<$((${index} % ${group_size} + 1))\>") -eq 0 ] \
-                    && phandle_name="" || phandle_name=${phandle_map[${j}]}
+                #[ $(echo "${position_array[*]}" | grep -c "\<$((${index} % ${group_size} + 1))\>") -gt 0 ] \
+                #    && label=${phandle_map[${j}]} || label="" # It's time-consuming.
+                [[ " ${position_array[*]} " =~ " $((${index} % ${group_size} + 1)) " ]] \
+                    && label=${phandle_map[${j}]} || label=""
                 index=$((index + 1))
             fi
 
-            [ -z "${phandle_name}" ] && phandle_array+=("${j}") || phandle_array+=("\&${phandle_name}")
+            [ -z "${label}" ] && label_array+=("${j}") || label_array+=("\&${label}")
         done
 
-        sed -i "${linenum}s/^\([ \t]*${target_name} = <\)[^>]\+\(>;\)/\1${phandle_array[*]}\2/g" "${tmp_file}"
+        sed -i "${linenum}s/^\([ \t]*${target_name} = <\)[^>]\+\(>;\)/\1${label_array[*]}\2/g" "${tmp_file}"
     fi
 done
-[ ${verbose} -eq 0 ] || printf "\n<<< Finished restoring phandle references.\n"
+[ ${verbose} -eq 0 ] || printf "\n<<< Finished restoring label references.\n"
+
+#sed -i "\$s/\(};\)/\n\t__phandles__ { };\n\n\t__possible_targets_to_fix_up__ { };\n\1/" "${tmp_file}"
+sed -i "\$s/\(};\)/\n\t__possible_targets_to_fix_up__ { };\n\1/" "${tmp_file}"
+
+#printf "\n&__phandles__ {\n" >> "${tmp_file}"
+#for i in ${!phandle_map[*]}
+#do
+#    printf "\tphandle_%d_${i} = \"${phandle_map[${i}]}\";\n" ${i}
+#done | sort -V  >> "${tmp_file}"
+#echo "};" >> "${tmp_file}"
+
+printf "\n&__possible_targets_to_fix_up__ {\n" >> "${tmp_file}"
+grep "^[[:blank:]]\+${NODE_NAME_CHARSET}\+ = <" "${coarse_file}" | grep -v "${PHANDLE_ASSIGNMENT_REGEX}" \
+    | awk '{ print "\t"$1";" }' | sort -V | uniq >> "${tmp_file}"
+echo "};" >> "${tmp_file}"
 
 mv "${tmp_file}" "${fixup_file}"
 [ ${verbose} -eq 0 ] || printf "\nResult: ${fixup_file}\n"
@@ -318,5 +346,9 @@ mv "${tmp_file}" "${fixup_file}"
 #   02. Rename FIELD_NAME_CHARSET to NODE_NAME_CHARSET,
 #       phandle_stack to node_name_stack, and remove the "index" variable
 #       while popping node_name_stack.
+#
+# >>> V1.0.2|2024-05-01, Man Hung-Coeng <udc577@126.com>:
+#   01. Convert all referenced phandles to labels instead of node names.
+#   02. Optimize performance.
 #
 

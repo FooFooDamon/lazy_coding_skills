@@ -37,6 +37,7 @@
 *.pb.h
 *.pdb
 *.plist
+*.priv.*
 *.pyc
 *.so
 *.so.*

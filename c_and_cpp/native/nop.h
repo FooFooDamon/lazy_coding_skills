@@ -4,7 +4,7 @@
  * e.g., cppcheck[unreadVariable] warning on members of an union-type variable,
  * without any runtime overhead (in non-debug mode).
  *
- * Copyright (c) 2022-2023 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2022-2024 Man Hung-Coeng <udc577@126.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ inline void nop(const char *format, ...){}
 #elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
 static inline void nop(const char *format, ...){}
 #else
-#define nop()   {}
+#define nop(format, ...)    do {} while (0)
 #endif
 
 #ifdef __cplusplus
@@ -50,5 +50,8 @@ static inline void nop(const char *format, ...){}
  *
  * >>> 2023-02-19, Man Hung-Coeng:
  *  01. Let nop() be a macro in C89.
+ *
+ * >>> 2024-05-10, Man Hung-Coeng:
+ *  01. Change the parameter list and definition of nop() macro.
  */
 

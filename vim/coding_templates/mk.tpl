@@ -36,6 +36,7 @@ export THIRD_PARTY_DIR ?= ${HOME}/src
 # FIXME: Choose the right type for your project.
 T := app
 EVAL_VERSION_ONCE := $(if $(filter driver, ${T}), Y, N)
+export NO_PRIV_STUFF := $(strip $(filter-out n N no NO No 0, ${NO_PRIV_STUFF}))
 
 -include ${THIRD_PARTY_DIR}/${LCS_ALIAS}/makefile/__ver__.mk
 
@@ -53,14 +54,18 @@ ifeq (${T}, app)
 # 2) CXX_SRCS contains all C++ source files and
 # 3) Source files in other directories must be included as well.
 #
-C_SRCS := $(shell find ./ -name "*.c")
-C_SRCS := $(foreach i, $(filter-out %.priv.c, ${C_SRCS}), \
-    $(if $(wildcard $(basename ${i}).priv.c), $(basename ${i}).priv.c, ${i}) \
-)
-CXX_SRCS := $(shell find ./ -name "*.cpp" -o -name "*.cc" -o -name "*.cxx")
-CXX_SRCS := $(foreach i, $(filter-out $(addprefix %.priv, $(suffix ${CXX_SRCS})), ${CXX_SRCS}), \
-    $(if $(wildcard $(basename ${i}).priv$(suffix ${i})), $(basename ${i}).priv$(suffix ${i}), ${i}) \
-)
+C_SRCS := $(shell find ./ -name "*.c" | grep -v '\.priv\.c$$')
+ifeq (${NO_PRIV_STUFF},)
+    C_SRCS := $(foreach i, $(filter-out %.priv.c, ${C_SRCS}), \
+        $(if $(wildcard $(basename ${i}).priv.c), $(basename ${i}).priv.c, ${i}) \
+    )
+endif
+CXX_SRCS := $(shell find ./ -name "*.cpp" -o -name "*.cc" -o -name "*.cxx" | grep -v '\.priv\.[^.]\+$$')
+ifeq (${NO_PRIV_STUFF},)
+    CXX_SRCS := $(foreach i, $(filter-out $(addprefix %.priv, $(suffix ${CXX_SRCS})), ${CXX_SRCS}), \
+        $(if $(wildcard $(basename ${i}).priv$(suffix ${i})), $(basename ${i}).priv$(suffix ${i}), ${i}) \
+    )
+endif
 
 # GOAL is a mandatory target.
 # XXX is whatever name you like.

@@ -106,7 +106,7 @@ typedef struct cmd_args
     // FIXME: Add more fields according to your need, and delete this comment line.
 } cmd_args_t;
 
-static cmd_args_t parse_cmdline(int argc, char **argv)
+cmd_args_t parse_cmdline(int argc, char **argv)
 {
     const struct
     {
@@ -162,7 +162,7 @@ static cmd_args_t parse_cmdline(int argc, char **argv)
         },
         // FIXME: Add more items according to your need, and delete this comment line.
     };
-    std::vector<struct option> long_options;
+    struct option long_options[sizeof(OPTION_RULES) / sizeof(OPTION_RULES[0]) + 1];
     std::map<std::string, char> abbr_map;
     std::string short_options;
     cmd_args_t result = {};
@@ -174,7 +174,7 @@ static cmd_args_t parse_cmdline(int argc, char **argv)
     {
         const struct option &opt = OPTION_RULES[i].content;
 
-        long_options.push_back(opt);
+        long_options[i] = opt;
 
         abbr_map[opt.name] = opt.val;
 
@@ -189,7 +189,7 @@ static cmd_args_t parse_cmdline(int argc, char **argv)
         else
             short_options += "::";
     }
-    long_options.push_back({});// sentinel
+    long_options[sizeof(long_options) / sizeof(long_options[0]) - 1] = {}; // sentinel
 
     /*
      * Set some default option values here.
@@ -207,7 +207,7 @@ static cmd_args_t parse_cmdline(int argc, char **argv)
     while (true)
     {
         int option_index = 0;
-        int c = getopt_long(argc, argv, short_options.c_str(), &long_options[0], &option_index);
+        int c = getopt_long(argc, argv, short_options.c_str(), long_options, &option_index);
 
         if (-1 == c) // all parsed
             break;
@@ -237,6 +237,9 @@ static cmd_args_t parse_cmdline(int argc, char **argv)
                 result.log_file = optarg;
             else if (0 == strcmp(long_opt, "loglevel"))
                 result.log_level = optarg;
+#else
+            else if (0 == strcmp(long_opt, "debug"))
+                result.debug = true;
 #endif
             // FIXME: Add more branches according to your need, and delete this comment line.
             else
@@ -276,8 +279,6 @@ static cmd_args_t parse_cmdline(int argc, char **argv)
 #ifndef HAS_LOGGER
         else if (abbr_map["verbose"] == c)
             result.verbose = true;
-        else if (abbr_map["debug"] == c)
-            result.debug = true;
 #endif
         else if ('?' == c || ':' == c)
             exit(EINVAL); // getopt_long() will print the reason.
@@ -295,7 +296,7 @@ static cmd_args_t parse_cmdline(int argc, char **argv)
     // FIXME: Decide how to use orphan_args, and delete this comment line.
 
     return result;
-} // static cmd_args_t parse_cmdline(int argc, char **argv)
+} // cmd_args_t parse_cmdline(int argc, char **argv)
 
 #undef CSTR
 
@@ -310,7 +311,7 @@ static void assert_comparable_arg(const char *name, const T &val, const T &min, 
     }
 }
 
-static void assert_parsed_args(const cmd_args_t &args)
+void assert_parsed_args(const cmd_args_t &args)
 {
     const struct
     {
@@ -362,7 +363,7 @@ static void assert_parsed_args(const cmd_args_t &args)
     }
 
     // FIXME: Add more validations according to your need, and delete this comment line.
-} // static void assert_parsed_args(const cmd_args_t &args)
+} // void assert_parsed_args(const cmd_args_t &args)
 
 #define todo()                          fprintf(stderr, __FILE__ ":%d %s(): todo ...\n", __LINE__, __func__)
 
@@ -374,7 +375,7 @@ typedef struct conf_file
 #endif
 } conf_file_t;
 
-static int load_config_file(const char *path, conf_file_t &result)
+int load_config_file(const char *path, conf_file_t &result)
 {
 #ifdef HAS_CONFIG_FILE
     todo();
@@ -382,7 +383,7 @@ static int load_config_file(const char *path, conf_file_t &result)
     return 0;
 }
 
-static void unload_config_file(conf_file_t &result)
+void unload_config_file(conf_file_t &result)
 {
 #ifdef HAS_CONFIG_FILE
     todo();
@@ -444,6 +445,12 @@ int main(int argc, char **argv)
 
     assert_parsed_args(parsed_args);
 
+    if (nullptr == (biz_func = biz_handlers[parsed_args.biz]))
+    {
+        fprintf(stderr, "*** Biz[%s] is not supported yet!\n", parsed_args.biz.c_str());
+        return ENOTSUP;
+    }
+
     if ((ret = load_config_file(parsed_args.config_file.c_str(), conf)) < 0)
         return -ret;
 
@@ -453,15 +460,7 @@ int main(int argc, char **argv)
     if ((ret = register_signals(parsed_args, conf)) < 0)
         goto lbl_finalize_log;
 
-    if (nullptr == (biz_func = biz_handlers[parsed_args.biz]))
-    {
-        ret = -ENOTSUP;
-        fprintf(stderr, "*** Biz[%s] is not supported yet!\n", parsed_args.biz.c_str());
-    }
-    else
-    {
-        ret = biz_func(argc, argv, parsed_args, conf);
-    }
+    ret = biz_func(argc, argv, parsed_args, conf);
 
 lbl_finalize_log:
     logger_finalize();

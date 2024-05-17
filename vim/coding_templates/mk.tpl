@@ -203,9 +203,9 @@ seeds:
 		echo "export CHKOUT_TAIL_PARAMS :=" >> $${MKFILE}; \
 		if [ "$${CHKOUT_ALIAS}" = "${LCS_ALIAS}" ]; then \
 			echo "export CHKOUT_PARTIAL_ITEMS := main/makefile/__ver__.mk \\" >> $${MKFILE}; \
-			echo "    adfce11edd4fa36f324f0e1ac6d4396341cc5266/makefile/c_and_cpp.mk \\" >> $${MKFILE}; \
-			echo "    main/makefile/linux_driver.mk \\" >> $${MKFILE}; \
-			echo "    main/makefile/stm32_cube_ide.mk \\" >> $${MKFILE}; \
+			echo "    ac3698898d984427981cef75c4c5cd0aa09b3c16/makefile/c_and_cpp.mk \\" >> $${MKFILE}; \
+			echo "    3ccd956a98d5bcc03ddd74c096e389c8330cd33e/makefile/linux_driver.mk \\" >> $${MKFILE}; \
+			echo "    c616383068c11cef79e8ab6328d2327c98bac0cb/makefile/stm32_cube_ide.mk \\" >> $${MKFILE}; \
 		else \
 			echo "export CHKOUT_PARTIAL_ITEMS := \\" >> $${MKFILE}; \
 		fi; \

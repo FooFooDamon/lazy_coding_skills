@@ -22,7 +22,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     [ -f $HOME/etc/hostname.conf ] && _host="$(cat $HOME/etc/hostname.conf)" || _host='\h'
     [ "$(id -u)" -eq 0 ] && _prompt='# ' || _prompt='$ '
     [ -z "$(echo $TERM | grep 'xterm\|rxvt')" ] && _ps1_prefix='' || _ps1_prefix="\[\e]0;\u@${_host}: \W\a\]"
-    export PS1="${_ps1_prefix}${debian_chroot:+($debian_chroot)}[\u@${_host} \W]${_prompt}"
+    export PS1="[\T]${_ps1_prefix}${debian_chroot:+($debian_chroot)}[\u@${_host}:\W][\$?]${_prompt}"
     unset _host _prompt _ps1_prefix
     export SHELL="`which bash`"
     [ "$(id -u)" -eq 0 -o "${USER}" = "root" ] && export SUDO="" || export SUDO="sudo"
@@ -41,5 +41,8 @@ fi
 #
 # >>> 2024-03-26, Man Hung-Coeng <udc577@126.com>:
 #   01. Add SUDO.
+#
+# >>> 2024-05-17, Man Hung-Coeng <udc577@126.com>:
+#   01. Show current time and exit status of last command in bash prompt.
 #
 

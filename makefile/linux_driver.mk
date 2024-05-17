@@ -152,7 +152,7 @@ obj-m := ${DRVNAME}.o
 
 # CFLAGS is not permitted here, otherwise an error will be triggered with a message below:
 # *** CFLAGS was changed in "...". Fix it to use ccflags-y.
-ccflags-y += -D__VER__=\"${__VER__}\" # Define the version number in another makefile, or just ignore it.
+ccflags-y += -D__VER__=\"${__VER__}\" # Define the version number in another makefile, or just ignore it if not needed.
 ifeq (${NDEBUG},)
     ccflags-y += -O0 -g
 endif
@@ -279,19 +279,13 @@ $(foreach i, ${ARCH_LIST}, clean-${i}): %:
 
 __VARS__ := ARCH_LIST HOST_ARCH ARCH $(foreach i, ${ARCH_LIST}, CROSS_COMPILE_FOR_${i}) CROSS_COMPILE \
     CC STRIP RM __STRICT__ NDEBUG USE_SRC_RELATIVE_PATH \
-    HOST_KERNEL_DIR CROSS_KERNEL_DIR DRVNAME ${DRVNAME}-objs obj-m ccflags-y \
-    APP_NAME APP_OBJS APP_DEBUG_FLAGS APP_DEFINES APP_INCLUDES OTHER_APP_CFLAGS APP_CFLAGS \
+    SRCS HOST_KERNEL_DIR CROSS_KERNEL_DIR DRVNAME ${DRVNAME}-objs obj-m ccflags-y \
+    APP_NAME APP_OBJS APP_DEBUG_FLAGS APP_DEFINES APP_INCLUDES OTHER_APP_CFLAGS APP_CFLAGS APP_LDFLAGS \
     NTHREADS
 
 ifeq (${Q},)
     $(info -)
-    $(foreach i, ${__VARS__}, \
-        $(eval \
-            $(info \
-                - ${i}: ${$i} \
-            ) \
-        ) \
-    )
+    $(foreach i, ${__VARS__}, $(eval $(info - ${i}: ${$i})))
     $(info -)
     $(info You can override most of variables above to meet your need.)
     $(info -)
@@ -344,5 +338,8 @@ endif # ifeq (${KERNELRELEASE},)
 #
 # >>> 2024-02-23, Man Hung-Coeng <udc577@126.com>:
 #   01. Modify PARALLEL_OPTION to NTHREADS.
+#
+# >>> 2024-05-17, Man Hung-Coeng <udc577@126.com>:
+#   01. Update some printings of verbose mode.
 #
 

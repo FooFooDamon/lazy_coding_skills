@@ -1,7 +1,7 @@
 "
 " Settings of YouCompleteMe plugin.
 "
-" Copyright 2023 Man Hung-Coeng <udc577@126.com>
+" Copyright 2023-2024 Man Hung-Coeng <udc577@126.com>
 "
 " Licensed under the Apache License, Version 2.0 (the "License");
 " you may not use this file except in compliance with the License.
@@ -183,6 +183,7 @@ if !exists('g:YCM_VARIABLES')
         \ 'g:ycm_key_detailed_diagnostics': [ '"<Leader>d"', '"<Leader>v"' ],
         \ 'g:ycm_max_diagnostics_to_display': [ 30, 0 ],
         \ 'g:ycm_complete_in_comments': [ 0, 1 ],
+        \ 'g:ycm_clangd_args': [ '[]', '[ "--header-insertion=never" ]' ],
     \ }
 endif
 
@@ -198,5 +199,8 @@ call EnableYcmConfig()
 "
 " >>> 2023-10-22, Man Hung-Coeng <udc577@126.com>:
 "   01. Add GoToReferencesIfPossible() and corresponding key mappings.
+"
+" >>> 2024-05-21, Man Hung-Coeng <udc577@126.com>:
+"   01. Customize g:ycm_clangd_args to disable auto insertion of header files.
 "
 

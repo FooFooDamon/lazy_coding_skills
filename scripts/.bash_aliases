@@ -30,7 +30,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     alias L="cd ${LAZY_CODING_HOME}"
     alias make="time make"
     alias mv="time mv"
-    alias nfsmount='${SUDO} mount -t nfs -o nolock,soft'
+    alias nfsmount='${SUDO} mount -t nfs -o nolock,soft'$([ -n "$(echo $NFS_RO | grep -i -v '0\|false\|no\|n')" ] && echo ",ro" || echo "")
     alias pst="ps -eLo uid,pid,ppid,lwp,psr,c,stime,tname,time,args" # Means displaying [t]hread info while executing ps.
     alias report_last_op_status='[ $? -eq 0 ] && play_normal_exit_audio -T || play_abnormal_exit_audio -T'
     alias report_last_op_status_once='[ $? -eq 0 ] && play_normal_exit_audio_once -T || play_abnormal_exit_audio_once -T'
@@ -63,5 +63,8 @@ fi
 #
 # >>> 2024-03-26, Man Hung-Coeng <udc577@126.com>:
 #   01. Add cp, find, mv and nfsmount.
+#
+# >>> 2024-05-25, Man Hung-Coeng <udc577@126.com>:
+#   01. Add read-only support for nfsmount.
 #
 

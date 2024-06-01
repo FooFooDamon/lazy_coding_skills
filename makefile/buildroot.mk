@@ -96,6 +96,10 @@ endef
 
 $(foreach i, ${CUSTOM_FILES}, $(eval $(call custom_file_rule,${i})))
 
+inverse_sync:
+	@set -x; \
+	$(foreach i, ${CUSTOM_FILES}, ${DIFF} ${i} ${SRC_ROOT_DIR}/${i} || ${CP} ${SRC_ROOT_DIR}/${i} ${i};)
+
 help:
 	@echo "Core directives:"
 	@echo "  1. ${MAKE} download   - Download the source package manually; Usually unnecessary"
@@ -156,5 +160,8 @@ showvars:
 #   04. Enhance "make help" by allowing to define extra printing commands.
 #   05. Remove the redundant VCS version suffix from BR2_VERSION
 #       in "make menuconfig".
+#
+# >>> 2024-06-01, Man Hung-Coeng <udc577@126.com>:
+#   01. Add target "inverse_sync".
 #
 

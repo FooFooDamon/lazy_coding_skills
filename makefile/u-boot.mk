@@ -128,6 +128,10 @@ endif
 #${__CUSTOMIZED_DEPENDENCIES}: %: ${CUSTOM_FILES}
 #	${DIFF} $@ ${@:${SRC_ROOT_DIR}/%=%} && ${TOUCH} $@ || ${CP} ${@:${SRC_ROOT_DIR}/%=%} $@ # Shared by (3) and (4)
 
+inverse_sync:
+	@set -x; \
+	$(foreach i, ${CUSTOM_FILES}, ${DIFF} ${i} ${SRC_ROOT_DIR}/${i} || ${CP} ${SRC_ROOT_DIR}/${i} ${i};)
+
 help:
 	@echo "Core directives:"
 	@echo "  1. ${MAKE} download   - Download the source package manually; Usually unnecessary"
@@ -213,5 +217,8 @@ showvars:
 #
 # >>> 2024-04-26, Man Hung-Coeng <udc577@126.com>:
 #   01. Support reading the value of SRC_PARENT_DIR from file.
+#
+# >>> 2024-06-01, Man Hung-Coeng <udc577@126.com>:
+#   01. Add target "inverse_sync".
 #
 

@@ -174,6 +174,10 @@ endef
 
 $(foreach i, ${CUSTOM_FILES}, $(eval $(call custom_file_rule,${i})))
 
+inverse_sync:
+	@set -x; \
+	$(foreach i, ${CUSTOM_FILES}, ${DIFF} ${i} ${SRC_ROOT_DIR}/${i} || ${CP} ${SRC_ROOT_DIR}/${i} ${i};)
+
 help: precheck
 	@echo "Core directives:"
 	@echo "   1. ${MAKE} download   - Download the source package manually; Usually unnecessary"
@@ -279,5 +283,8 @@ showvars:
 #   02. Remove precheck dependency from EXT_TARGETS
 #   	except for *-pkg targets. (Failed)
 #   03. Refine the rule of *.ko-install.
+#
+# >>> 2024-06-01, Man Hung-Coeng <udc577@126.com>:
+#   01. Add target "inverse_sync".
 #
 

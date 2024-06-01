@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -28,16 +28,18 @@ time if [ -n "${LAZY_CODING_HOME}" ]; then
     done
     unset i
 
-    echo "-- Welcome to use Lazy-Coding-Skills (懒编程秘笈). --"
-    echo " * Author: Man Hung-Coeng"
-    echo " * E-Mail: udc577@126.com"
-    echo " * GitHub: FooFooDamon"
-    echo " * Tip-01: To get help, run: lchelp"
-    echo " * Tip-02: To do terminal logging, run: tl"
-    echo "-- Less code, better world!  Please try and enjoy! --"
+    if [ "$1" != "-q" -a "$1" != "--quiet" ]; then
+        echo "-- Welcome to use Lazy-Coding-Skills (懒编程秘笈). --"
+        echo " * Author: Man Hung-Coeng"
+        echo " * E-Mail: udc577@126.com"
+        echo " * GitHub: FooFooDamon"
+        echo " * Tip-01: To get help, run: lchelp"
+        echo " * Tip-02: To do terminal logging, run: tl"
+        echo "-- Less code, better world!  Please try and enjoy! --"
+    fi
 
     export LCS_IMPORT_COUNT=$((${LCS_IMPORT_COUNT} + 1))
-fi
+fi >&2
 
 #
 # ================
@@ -61,5 +63,8 @@ fi
 # >>> 2023-02-15, Man Hung-Coeng <udc577@126.com>:
 #   01. Add a counter variable LCS_IMPORT_COUNT.
 #   02. Remove "set -e -u" to avoid weird sideeffects.
+#
+# >>> 2024-06-01, Man Hung-Coeng <udc577@126.com>:
+#   01. (Conditionally) Suppress, and redirect the welcome message.
 #
 

@@ -1,7 +1,7 @@
 "
 " The leader script that groups other ones together.
 "
-" Copyright 2023 Man Hung-Coeng <udc577@126.com>
+" Copyright 2023-2024 Man Hung-Coeng <udc577@126.com>
 "
 " Licensed under the Apache License, Version 2.0 (the "License");
 " you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ function s:load_module_config_if_any(infix)
 
         if filereadable(l:cfg_dir . '/module-specific.' . a:infix . '.vim')
             let l:cfg_path = l:cfg_dir . '/module-specific.' . a:infix . '.vim'
+        elseif filereadable(l:cfg_dir . '/project-specific.' . a:infix . '.vim')
+            let l:cfg_path = l:cfg_dir . '/project-specific.' . a:infix . '.vim'
         endif
     endfor
 
@@ -71,5 +73,8 @@ call s:load_module_config_if_any('post')
 "       to control whether to import minimum_settings.vim and
 "       coding_templates.vim respectively.
 "   03. Add ctags, cscope and YouCompleteMe settings.
+"
+" >>> 2024-06-01, Man Hung-Coeng <udc577@126.com>:
+"   01. Search and load project-specific.vim if any.
 "
 

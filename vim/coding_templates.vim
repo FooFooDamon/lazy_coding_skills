@@ -24,7 +24,7 @@ let s:PRIVATE_TEMPLATE_DIR = s:THIS_DIR . "/private/" . s:BASENAME
 let s:PRIVATE_TEMPLATES = split(globpath(s:PRIVATE_TEMPLATE_DIR, '*.tpl'), '\n')
 
 function s:wait(hint = "Press any key to continue.")
-    if len(a:hint) > 0
+    if !empty(a:hint)
         echohl MoreMsg | echo a:hint | echohl None
     endif
     call getchar()
@@ -44,9 +44,9 @@ function s:load_template(template)
 
     if isdirectory(l:list_dir)
         let l:MAX_ITEMS_OF_ALL = 128
-        let l:template_list = filter(readfile(l:template_file), "v:val !~ '^$'")[0:(l:MAX_ITEMS_OF_ALL - 1)]
+        let l:template_list = filter(readfile(l:template_file), "v:val !~ '^[# \t]*$'")[0:(l:MAX_ITEMS_OF_ALL - 1)]
 
-        if 0 == len(readdir(l:list_dir))
+        if empty(readdir(l:list_dir))
             echohl ErrorMsg | echo "*** No template files in [" . l:list_dir . "] directory!" | echohl None
             return
         else
@@ -56,23 +56,23 @@ function s:load_template(template)
         let l:MAX_ITEMS_PER_PAGE = 9
         let l:START_PAGE = 1
         let l:END_PAGE = (len(l:template_list) / l:MAX_ITEMS_PER_PAGE)
-            \+ !!(len(l:template_list) % l:MAX_ITEMS_PER_PAGE)
+            \ + !!(len(l:template_list) % l:MAX_ITEMS_PER_PAGE)
         let l:pagenum = 1
 
-        while 0 == len(l:template_file)
+        while empty(l:template_file)
             let l:start_index = l:MAX_ITEMS_PER_PAGE * (l:pagenum - 1)
             let l:end_index = l:start_index + l:MAX_ITEMS_PER_PAGE - 1
             let l:cur_page_items = l:template_list[(l:start_index):(l:end_index)]
             let l:hint = "Found multiple template files [" . l:pagenum . "/" . l:END_PAGE . "]:"
 
-            for l:i in range(0, len(l:cur_page_items) - 1)
-                let l:hint = l:hint . "\n  " . (l:i + 1) . ". " . l:cur_page_items[(l:i)]
+            for l:i in range(len(l:cur_page_items))
+                let l:hint .= "\n  " . (l:i + 1) . ". " . l:cur_page_items[(l:i)]
             endfor
-            let l:hint = l:hint . "\nInput a number ranging from 1 to " . len(l:cur_page_items) . " to select a template."
-            let l:hint = l:hint . "\nOr press \"j\" or Space key to go to next page (if any)."
-            let l:hint = l:hint . "\nOr press \"k\" key to go to previous page (if any)."
-            let l:hint = l:hint . "\nOr press \"q\" key to quit."
-            let l:hint = l:hint . "\nYour choice? [1] "
+            let l:hint .= "\nInput a number ranging from 1 to " . len(l:cur_page_items) . " to select a template."
+            let l:hint .= "\nOr press \"j\" or Space key to go to next page (if any)."
+            let l:hint .= "\nOr press \"k\" key to go to previous page (if any)."
+            let l:hint .= "\nOr press \"q\" key to quit."
+            let l:hint .= "\nYour choice? [1] "
 
             redraw!
             echo l:hint
@@ -97,7 +97,7 @@ function s:load_template(template)
                 echoerr "*** Invalid choice! See the hint above for help."
                 call s:wait()
             endif
-        endwhile " while 0 == len(l:template_file)
+        endwhile " while empty(l:template_file)
     endif " if isdirectory(l:list_dir)
 
     if !filereadable(l:template_file)
@@ -117,9 +117,9 @@ function s:load_template(template)
     let l:CMD_ADJUST_SELF_HEADER = "g/${SELF_HEADER}/s//".fnamemodify(expand('%:r'), ':t')."/g"
     let l:CMD_ADJUST_TITLE = "g/${TITLE}/s//".fnamemodify(expand('%:r'), ':t')."/g"
     let l:EXEC_ADJUST_ALL = "execute l:CMD_ADJUST_USER | execute l:CMD_ADJUST_EMAIL"
-        \. " | execute l:CMD_ADJUST_YEAR | execute l:CMD_ADJUST_DATE"
-        \. " | execute l:CMD_ADJUST_HEADER_LOCK | execute l:CMD_ADJUST_SELF_HEADER"
-        \. " | execute l:CMD_ADJUST_TITLE"
+        \ . " | execute l:CMD_ADJUST_YEAR | execute l:CMD_ADJUST_DATE"
+        \ . " | execute l:CMD_ADJUST_HEADER_LOCK | execute l:CMD_ADJUST_SELF_HEADER"
+        \ . " | execute l:CMD_ADJUST_TITLE"
 
     execute "0r " . l:template_file . " | " . l:EXEC_ADJUST_ALL
 endfunction

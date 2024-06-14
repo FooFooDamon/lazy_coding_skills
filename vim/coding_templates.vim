@@ -1,7 +1,7 @@
 "
 " Providing templates for file creation of many languages.
 "
-" Copyright 2023 Man Hung-Coeng <udc577@126.com>
+" Copyright 2023-2024 Man Hung-Coeng <udc577@126.com>
 "
 " Licensed under the Apache License, Version 2.0 (the "License");
 " you may not use this file except in compliance with the License.
@@ -23,12 +23,85 @@ let s:PUBLIC_TEMPLATES = split(globpath(s:PUBLIC_TEMPLATE_DIR, '*.tpl'), '\n')
 let s:PRIVATE_TEMPLATE_DIR = s:THIS_DIR . "/private/" . s:BASENAME
 let s:PRIVATE_TEMPLATES = split(globpath(s:PRIVATE_TEMPLATE_DIR, '*.tpl'), '\n')
 
+function s:wait(hint = "Press any key to continue.")
+    if len(a:hint) > 0
+        echohl MoreMsg | echo a:hint | echohl None
+    endif
+    call getchar()
+endfunction
+
 function s:load_template(template)
     echo "Load from a temple? [Y/n] "
     "let l:confirm = getcharstr()
     let l:confirm = nr2char(getchar())
 
     if l:confirm == 'n' || l:confirm == 'N'
+        return
+    endif
+
+    let l:template_file = a:template
+    let l:list_dir = l:template_file . ".list"
+
+    if isdirectory(l:list_dir)
+        let l:MAX_ITEMS_OF_ALL = 128
+        let l:template_list = filter(readfile(l:template_file), "v:val !~ '^$'")[0:(l:MAX_ITEMS_OF_ALL - 1)]
+
+        if 0 == len(readdir(l:list_dir))
+            echohl ErrorMsg | echo "*** No template files in [" . l:list_dir . "] directory!" | echohl None
+            return
+        else
+            let l:template_file = ""
+        endif
+
+        let l:MAX_ITEMS_PER_PAGE = 9
+        let l:START_PAGE = 1
+        let l:END_PAGE = (len(l:template_list) / l:MAX_ITEMS_PER_PAGE)
+            \+ !!(len(l:template_list) % l:MAX_ITEMS_PER_PAGE)
+        let l:pagenum = 1
+
+        while 0 == len(l:template_file)
+            let l:start_index = l:MAX_ITEMS_PER_PAGE * (l:pagenum - 1)
+            let l:end_index = l:start_index + l:MAX_ITEMS_PER_PAGE - 1
+            let l:cur_page_items = l:template_list[(l:start_index):(l:end_index)]
+            let l:hint = "Found multiple template files [" . l:pagenum . "/" . l:END_PAGE . "]:"
+
+            for l:i in range(0, len(l:cur_page_items) - 1)
+                let l:hint = l:hint . "\n  " . (l:i + 1) . ". " . l:cur_page_items[(l:i)]
+            endfor
+            let l:hint = l:hint . "\nInput a number ranging from 1 to " . len(l:cur_page_items) . " to select a template."
+            let l:hint = l:hint . "\nOr press \"j\" or Space key to go to next page (if any)."
+            let l:hint = l:hint . "\nOr press \"k\" key to go to previous page (if any)."
+            let l:hint = l:hint . "\nOr press \"q\" key to quit."
+            let l:hint = l:hint . "\nYour choice? [1] "
+
+            redraw!
+            echo l:hint
+
+            let l:choice = nr2char(getchar())
+
+            if nr2char(13) == l:choice " Enter
+                let l:template_file = l:list_dir . "/" . l:cur_page_items[0]
+            elseif 'q' == l:choice || 'Q' == l:choice
+                quit
+            elseif 'j' == l:choice || 'J' == l:choice || nr2char(32) == l:choice
+                if l:pagenum < l:END_PAGE
+                    let l:pagenum += 1
+                endif
+            elseif 'k' == l:choice || 'K' == l:choice
+                if l:pagenum > l:START_PAGE
+                    let l:pagenum -= 1
+                endif
+            elseif l:choice >= '1' && l:choice <= string(l:MAX_ITEMS_PER_PAGE)
+                let l:template_file = l:list_dir . "/" . l:cur_page_items[(l:choice - 1)]
+            else
+                echoerr "*** Invalid choice! See the hint above for help."
+                call s:wait()
+            endif
+        endwhile " while 0 == len(l:template_file)
+    endif " if isdirectory(l:list_dir)
+
+    if !filereadable(l:template_file)
+        echohl ErrorMsg | echo "*** File does not exist or is not allowed to read: " . l:template_file | echohl None
         return
     endif
 
@@ -48,7 +121,7 @@ function s:load_template(template)
         \. " | execute l:CMD_ADJUST_HEADER_LOCK | execute l:CMD_ADJUST_SELF_HEADER"
         \. " | execute l:CMD_ADJUST_TITLE"
 
-    execute "0r " . a:template . " | " . l:EXEC_ADJUST_ALL
+    execute "0r " . l:template_file . " | " . l:EXEC_ADJUST_ALL
 endfunction
 
 for s:i in s:PUBLIC_TEMPLATES
@@ -104,5 +177,8 @@ execute "autocmd BufNewFile [Mm][Aa][Kk][Ee][Ff][Ii][Ll][Ee] call s:load_templat
 " >>> 2023-05-16, Man Hung-Coeng <udc577@126.com>:
 "   01. Replace getcharstr() with nr2char(getchar()) in load_template()
 "       for backward compatibility.
+"
+" >>> 2024-06-14, Man Hung-Coeng <udc577@126.com>:
+"   01. Support selection from multiple alternative templates.
 "
 

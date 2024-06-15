@@ -31,5 +31,5 @@
  * ================
  *
  * >>> ${DATE}, ${LCS_USER} <${LCS_EMAIL}>:
- *  01. Create.
+ *  01. Initial release.
  */

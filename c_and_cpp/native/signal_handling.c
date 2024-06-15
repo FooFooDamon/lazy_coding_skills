@@ -1,7 +1,7 @@
 /*
  * Signal handling.
  *
- * Copyright (c) 2021-2023 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2021-2024 Man Hung-Coeng <udc577@126.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -230,7 +230,7 @@ int sig_register(int signum, void (*nullable_handler)(int))
     act.sa_handler = sig_set_happen_flag_and_call_handler;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
-#if defined(SA_INTERRUPT) || defined(SA_RESTART)
+#if defined(SIGACT_AUTO_RESTART_SYSCALL) && (defined(SA_INTERRUPT) || defined(SA_RESTART))
     act.sa_flags |= SA_RESTART;
 #endif
     if (sigaction(signum, &act, NULL) < 0)
@@ -470,7 +470,7 @@ int main(int argc, char **argv)
  * ================
  *
  * >>> 2021-12-25, Man Hung-Coeng:
- *  01. Create.
+ *  01. Initial release.
  *
  * >>> 2021-12-27, Man Hung-Coeng:
  *  01. Eliminate errors appeared in terminal
@@ -493,5 +493,9 @@ int main(int argc, char **argv)
  *
  * >>> 2023-12-24, Man Hung-Coeng:
  *  01. Add several functions for simple application usage.
+ *
+ * >>> 2024-06-15, Man Hung-Coeng:
+ *  01. Disable the action of automatically restarting the interrupted syscall
+ *      by default in sig_register().
  */
 

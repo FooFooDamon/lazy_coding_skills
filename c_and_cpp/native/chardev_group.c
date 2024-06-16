@@ -3,12 +3,13 @@
 /*
  * Chardev wrappers organized in groups.
  *
- * Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
  * All rights reserved.
 */
 
 #include "chardev_group.h"
 
+#include <linux/version.h>
 #include <linux/slab.h>
 #include <linux/fs.h>
 #include <linux/cdev.h>
@@ -88,7 +89,11 @@ struct chardev_group* chardev_group_create(const char *name, unsigned int basemi
         goto lbl_unreg_region;
     }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
     group->class = class_create(THIS_MODULE, name);
+#else
+    group->class = class_create(name);
+#endif
     if (IS_ERR(group->class))
     {
         ret = PTR_ERR(group->class);
@@ -494,5 +499,8 @@ MODULE_AUTHOR("Man Hung-Coeng <udc577@126.com>");
  *
  * >>> 2023-12-16, Man Hung-Coeng <udc577@126.com>:
  *  01. Add property accessor functions.
+ *
+ * >>> 2024-06-16, Man Hung-Coeng <udc577@126.com>:
+ *  01. Fix the compilation error of class_create() on kernel 6.4.0 and above.
  */
 

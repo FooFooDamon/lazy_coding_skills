@@ -3,11 +3,12 @@
 /*
  * Supplements to device class in linux mainline.
  *
- * Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
 */
 
 #include "devclass_supplements.h"
 
+#include <linux/version.h>
 #include <linux/device.h>
 
 #ifdef __cplusplus
@@ -72,17 +73,25 @@ static demo_device_t s_dev = {
     },
 };
 
-static ssize_t version_show(struct class *cls, struct class_attribute *attr, char *buf)
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
+#define DECLARE_SHOW_FUNC(_name)         \
+    ssize_t _name##_show(struct class *cls, struct class_attribute *attr, char *buf)
+#else
+#define DECLARE_SHOW_FUNC(_name)         \
+    ssize_t _name##_show(const struct class *cls, const struct class_attribute *attr, char *buf)
+#endif
+
+static DECLARE_SHOW_FUNC(version)
 {
     return sprintf(buf, "%s\n", __VER__);
 }
 
-static ssize_t max_node_count_show(struct class *cls, struct class_attribute *attr, char *buf)
+static DECLARE_SHOW_FUNC(max_node_count)
 {
     return sprintf(buf, "%d\n", DEV_MAX_NODE_COUNT);
 }
 
-static ssize_t minor_start_show(struct class *cls, struct class_attribute *attr, char *buf)
+static DECLARE_SHOW_FUNC(minor_start)
 {
     return sprintf(buf, "%d\n", DEV_MINOR_NUM_START);
 }
@@ -115,7 +124,11 @@ static __init int class_supp_demo_init(void)
         goto lbl_unreg_region;
     }
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(6, 4, 0)
     s_dev.class = class_create(THIS_MODULE, DEV_NAME);
+#else
+    s_dev.class = class_create(DEV_NAME);
+#endif
     if (IS_ERR(s_dev.class))
     {
         ret = PTR_ERR(s_dev.class);
@@ -194,5 +207,8 @@ MODULE_AUTHOR("Man Hung-Coeng <udc577@126.com>");
  *
  * >>> 2023-12-17, Man Hung-Coeng <udc577@126.com>:
  *  01. Create.
+ *
+ * >>> 2024-06-16, Man Hung-Coeng <udc577@126.com>:
+ *  01. Fix the compilation error of class_create() on kernel 6.4.0 and above.
  */
 

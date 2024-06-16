@@ -84,7 +84,7 @@ clean-drivers:
 		${MAKE} T=driver DRVNAME=$$i clean; \
 	done
 
-ARCH_LIST ?= arm avr host mips powerpc x86
+ARCH_LIST ?= aarch64 arm avr host mips powerpc x86
 
 $(foreach i, ${ARCH_LIST}, ${i}-release): %:
 	${Q}${MAKE} ARCH=${@:-release=}

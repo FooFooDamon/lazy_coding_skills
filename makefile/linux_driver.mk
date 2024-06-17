@@ -107,6 +107,7 @@ ARCH ?= host
 ifeq (${ARCH},host)
     override ARCH := ${HOST_ARCH}
 endif
+CROSS_COMPILE_FOR_aarch64 ?= aarch64-linux-gnu-
 CROSS_COMPILE_FOR_arm ?= arm-linux-gnueabihf-
 CROSS_COMPILE_FOR_avr32 ?= avr-
 CROSS_COMPILE_FOR_mips ?= mips-linux-gnu-
@@ -341,5 +342,8 @@ endif # ifeq (${KERNELRELEASE},)
 #
 # >>> 2024-05-17, Man Hung-Coeng <udc577@126.com>:
 #   01. Update some printings of verbose mode.
+#
+# >>> 2024-06-17, Man Hung-Coeng <udc577@126.com>:
+#   01. Add CROSS_COMPILE_FOR_aarch64, which should have been done on 2023-11-19.
 #
 

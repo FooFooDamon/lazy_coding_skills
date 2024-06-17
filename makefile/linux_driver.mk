@@ -346,6 +346,6 @@ endif # ifeq (${KERNELRELEASE},)
 #
 # >>> 2024-06-17, Man Hung-Coeng <udc577@126.com>:
 #   01. Add CROSS_COMPILE_FOR_aarch64, which should have been done on 2023-11-19.
-#   01. Support arm64 architecture, which is a synonym for aarch64.
+#   02. Support arm64 architecture, which is a synonym for aarch64.
 #
 

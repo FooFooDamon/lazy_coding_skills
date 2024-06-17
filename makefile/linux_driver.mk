@@ -100,7 +100,7 @@ endef
 # Global settings.
 #=======================
 
-ARCH_LIST ?= aarch64 arm avr32 host mips powerpc x86
+ARCH_LIST ?= aarch64 arm64 arm avr32 host mips powerpc x86
 export HOST_ARCH ?= $(shell uname -m | sed 's/\(.*\)[-_]\(32\|64\)\?$$/\1/')
 # NOTE: The "host" is the architecture of host computer CPU, which is usually x86.
 ARCH ?= host
@@ -108,6 +108,7 @@ ifeq (${ARCH},host)
     override ARCH := ${HOST_ARCH}
 endif
 CROSS_COMPILE_FOR_aarch64 ?= aarch64-linux-gnu-
+CROSS_COMPILE_FOR_arm64 ?= aarch64-linux-gnu-
 CROSS_COMPILE_FOR_arm ?= arm-linux-gnueabihf-
 CROSS_COMPILE_FOR_avr32 ?= avr-
 CROSS_COMPILE_FOR_mips ?= mips-linux-gnu-
@@ -345,5 +346,6 @@ endif # ifeq (${KERNELRELEASE},)
 #
 # >>> 2024-06-17, Man Hung-Coeng <udc577@126.com>:
 #   01. Add CROSS_COMPILE_FOR_aarch64, which should have been done on 2023-11-19.
+#   01. Support arm64 architecture, which is a synonym for aarch64.
 #
 

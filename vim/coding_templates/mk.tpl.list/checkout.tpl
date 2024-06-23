@@ -57,7 +57,7 @@ THIRD_PARTY_PROJECTS := ${LAZY_CODING_ALIAS}@@partial@@git@@main@@${LAZY_CODING_
     # FIXME: Add more items ahead of this line if needed. \
     # Beware that each line should begin with 4 spaces and end with a backslash.
 
-all: chkout-exec
+all prepare: chkout-exec
 
 chkout-exec:
 	${Q}for i in ${THIRD_PARTY_PROJECTS}; \
@@ -72,7 +72,7 @@ chkout-exec:
 		fi; \
 		ask_and_quit() { echo "*** Have you modified [$${MKFILE}] correctly ?!" >&2; exit 1; }; \
 		$(if ${Q},printf ">>> CHKOUT: Begin checking out [$${CHKOUT_ALIAS}].\n";) \
-		${MAKE} $(if ${Q},-s) checkout VCS=$${VCS_CMD} CHKOUT_TARGET=$${CHKOUT_ALIAS} CHKOUT_PARENT_DIR=${PWD} \
+		${MAKE} $(if ${Q},-s) checkout VCS=$${VCS_CMD} CHKOUT_TARGET=$${CHKOUT_ALIAS} CHKOUT_PARENT_DIR=$$(pwd) \
 			|| ask_and_quit; \
 		$(if ${Q},printf ">>> CHKOUT: Done checking out [$${CHKOUT_ALIAS}].\n";) \
 	done
@@ -90,7 +90,7 @@ seeds:
 		[ ! -e $${MKFILE} ] || continue; \
 		echo "# It's better to use a relative path in a project under versioning control," > $${MKFILE}; \
 		echo "# or define this variable in absolute path through command line parameter." >> $${MKFILE}; \
-		echo "#export CHKOUT_PARENT_DIR := ${PWD}" >> $${MKFILE}; \
+		echo "#export CHKOUT_PARENT_DIR := $$(pwd)" >> $${MKFILE}; \
 		echo "export CHKOUT_ALIAS := $${CHKOUT_ALIAS}" >> $${MKFILE}; \
 		echo "export CHKOUT_METHOD := $${CHKOUT_METHOD}" >> $${MKFILE}; \
 		echo "export CHKOUT_TAG :=" >> $${MKFILE}; \

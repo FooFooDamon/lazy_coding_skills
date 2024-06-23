@@ -55,8 +55,6 @@ USER_HELP_PRINTS := ${DEFAULT_USER_HELP_PRINTS}
 
 ${APPLY_DEFAULT_MODULE_TARGET_ALIAS}
 
-export DEPENDENCY_DIRS ?= ${PWD}/../3rdparty
-
 # FIXME: Add more rules if needed, and delete this comment line then.
 
 endif

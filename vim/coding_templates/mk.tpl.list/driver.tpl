@@ -1,21 +1,21 @@
 # SPDX-License-Identifier: GPL-2.0
 
 #
-# Makefile wrapper for Linux kernel porting project.
+# Makefile wrapper for out-of-tree Linux driver.
 #
 # Copyright (c) ${YEAR} ${LCS_USER} <${LCS_EMAIL}>
 #
 
-.PHONY: all prepare
+.PHONY: all prepare dependencies
 
-# NOTE: MUST use absolute paths!!! Same with others below.
-LAZY_CODING_MAKEFILES := ${PWD}/__ver__.mk ${PWD}/linux_driver.mk
+# NOTE: Some paths must be absolute paths while some mustn't, and the rest don't care.
+export LAZY_CODING_MAKEFILES ?= $(abspath __ver__.mk linux_driver.mk)
 
 ifeq ($(shell [ true $(foreach i, ${LAZY_CODING_MAKEFILES}, -a -s ${i}) ] && echo 1 || echo 0),0)
 
 LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 
-all prepare:
+all prepare: dependencies
 	@for i in ${LAZY_CODING_MAKEFILES}; \
 	do \
 		mkdir -p $$(dirname $${i}); \
@@ -26,15 +26,15 @@ all prepare:
 
 else
 
-all: prepare
+all: dependencies
 
-EVAL_VERSION_ONCE := Y
+export EVAL_VERSION_ONCE ?= Y
 export NO_PRIV_STUFF := $(strip $(filter-out n N no NO No 0, ${NO_PRIV_STUFF}))
 
 #
 # FIXME: Uncomment and modify lines below according to your needs.
 #
-# ARCH := aarch64
+# export ARCH := aarch64
 # export HOST_KERNEL_DIR := /lib/modules/`uname -r`/build
 # export CROSS_KERNEL_DIR := ${HOME}/src/linux
 # export DRVNAME ?= xxx
@@ -46,14 +46,14 @@ export NO_PRIV_STUFF := $(strip $(filter-out n N no NO No 0, ${NO_PRIV_STUFF}))
 
 include ${LAZY_CODING_MAKEFILES}
 
-export DEPENDENCY_DIRS ?= ${PWD}/../3rdparty
-
-prepare:
-	@for i in ${DEPENDENCY_DIRS}; \
-	do \
-		[ -s $${i}/[Mm]akefile ] && ${MAKE} -C $${i} || true; \
-	done
-
 # FIXME: Add more rules if needed, and delete this comment line then.
 
 endif
+
+export DEPENDENCY_DIRS ?= $(abspath ../3rdparty)
+
+dependencies:
+	@for i in ${DEPENDENCY_DIRS}; \
+	do \
+		[ -s $${i}/[Mm]akefile ] && ${MAKE} $(filter all prepare, ${MAKECMDGOALS}) -C $${i} || true; \
+	done

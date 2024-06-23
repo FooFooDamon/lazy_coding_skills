@@ -14,15 +14,15 @@
 # limitations under the License.
 #
 
-.PHONY: all prepare
+.PHONY: all prepare dependencies
 
-LAZY_CODING_MAKEFILES := __ver__.mk c_and_cpp.mk
+export LAZY_CODING_MAKEFILES ?= $(abspath __ver__.mk c_and_cpp.mk)
 
 ifeq ($(shell [ true $(foreach i, ${LAZY_CODING_MAKEFILES}, -a -s ${i}) ] && echo 1 || echo 0),0)
 
 LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 
-all prepare:
+all prepare: dependencies
 	@for i in ${LAZY_CODING_MAKEFILES}; \
 	do \
 		mkdir -p $$(dirname $${i}); \
@@ -33,9 +33,9 @@ all prepare:
 
 else
 
-all: prepare
+all: dependencies
 
-EVAL_VERSION_ONCE ?= N
+export EVAL_VERSION_ONCE ?= N
 export NO_PRIV_STUFF := $(strip $(filter-out n N no NO No 0, ${NO_PRIV_STUFF}))
 
 C_SRCS := $(shell find ./ -name "*.c" | grep -v '\.priv\.c$$')
@@ -76,14 +76,14 @@ ${GOAL}: $(addsuffix .o, $(basename ${C_SRCS} ${CXX_SRCS}))
 
 include ${LAZY_CODING_MAKEFILES}
 
-export DEPENDENCY_DIRS ?= ../3rdparty
-
-prepare:
-	@for i in ${DEPENDENCY_DIRS}; \
-	do \
-		[ -s $${i}/[Mm]akefile ] && ${MAKE} -C $${i} || true; \
-	done
-
 # FIXME: Add more rules if needed, and delete this comment line then.
 
 endif
+
+export DEPENDENCY_DIRS ?= $(abspath ../3rdparty)
+
+dependencies:
+	@for i in ${DEPENDENCY_DIRS}; \
+	do \
+		[ -s $${i}/[Mm]akefile ] && ${MAKE} $(filter all prepare, ${MAKECMDGOALS}) -C $${i} || true; \
+	done

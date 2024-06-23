@@ -46,16 +46,6 @@ CUSTOM_FILES += arch/${ARCH}/cpu/armv7/start.S \
 
 include $(word 2, ${LAZY_CODING_MAKEFILES})
 
-export DEPENDENCY_DIRS ?= ${PWD}/../3rdparty
-
-all: prepare
-
-prepare:
-	@for i in ${DEPENDENCY_DIRS}; \
-	do \
-		[ -s $${i}/[Mm]akefile ] && ${MAKE} -C $${i} || true; \
-	done
-
 # FIXME: Add more rules if needed, and delete this comment line then.
 
 endif

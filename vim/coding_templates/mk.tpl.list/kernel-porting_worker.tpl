@@ -57,14 +57,6 @@ ${APPLY_DEFAULT_MODULE_TARGET_ALIAS}
 
 export DEPENDENCY_DIRS ?= ${PWD}/../3rdparty
 
-${KERNEL_IMAGE} all modules: prepare
-
-prepare:
-	@for i in ${DEPENDENCY_DIRS}; \
-	do \
-		[ -s $${i}/[Mm]akefile ] && ${MAKE} -C $${i} || true; \
-	done
-
 # FIXME: Add more rules if needed, and delete this comment line then.
 
 endif

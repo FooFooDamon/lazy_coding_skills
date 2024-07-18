@@ -3,7 +3,7 @@
 #
 # STM32CubeIDE makefile wrapper.
 #
-# Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -83,7 +83,11 @@ clean:
 clean_debug:
 	make clean MODE=Debug
 
--include ${CPU_SERIES}_private.mk
+ifneq ($(wildcard ${CPU_SERIES}_extra.mk),)
+include ${CPU_SERIES}_extra.mk
+else
+-include stm32_extra.mk
+endif
 
 #
 # ================
@@ -91,11 +95,14 @@ clean_debug:
 # ================
 #
 # >>> 2023-05-25, Man Hung-Coeng <udc577@126.com>:
-#   01. Create.
+#   01. Initial release.
 #
 # >>> 2023-05-26, Man Hung-Coeng <udc577@126.com>:
 #   01. Add RAM_ADDR_START variable and download_to_ram target.
 #   02. Add burn, burn_to_flash and burn_to_ram target aliases.
 #   03. Include ${CPU_SERIES}_private.mk.
+#
+# >>> 2024-07-18, Man Hung-Coeng <udc577@126.com>:
+#   01. Improve the logic of including an extra makefile with more build targets.
 #
 

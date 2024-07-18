@@ -18,8 +18,10 @@
 
 .PHONY: all prepare dependencies
 
-# export CPU_SERIES ?= stm32f1x
-export LAZY_CODING_MAKEFILES ?= $(abspath stm32_cube_ide.mk) # $(abspath ${CPU_SERIES}_private.mk)
+# FIXME: Choose the right CPU series.
+export CPU_SERIES ?= stm32f1x
+# Be aware that ${CPU_SERIES}_extra.mk should be downloaded and be preferred over stm32_extra.mk if it exists.
+export LAZY_CODING_MAKEFILES ?= $(abspath stm32_cube_ide.mk stm32_extra.mk) # $(abspath ${CPU_SERIES}_extra.mk)
 
 ifeq ($(shell [ true $(foreach i, ${LAZY_CODING_MAKEFILES}, -a -s ${i}) ] && echo 1 || echo 0),0)
 
@@ -53,7 +55,7 @@ include ${LAZY_CODING_MAKEFILES}
 
 endif
 
-export DEPENDENCY_DIRS ?= $(abspath ../3rdparty)
+export DEPENDENCY_DIRS ?= $(abspath ./3rdparty)
 
 dependencies:
 	@for i in ${DEPENDENCY_DIRS}; \

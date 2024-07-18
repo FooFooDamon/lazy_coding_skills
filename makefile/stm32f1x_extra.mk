@@ -1,9 +1,9 @@
 #!/usr/bin/make -f
 
 #
-# Private makefile for MCUs of STM32F1 series.
+# Extra build targets for MCUs of STM32F1 series.
 #
-# Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,13 +19,13 @@
 #
 
 flash_as_storage:
-	cp STM32F1*_ON_FLASH.ld $$(ls STM32F1*_FLASH.ld | grep -v ON_FLASH)
+	-cp STM32F1*_ON_FLASH.ld $$(ls STM32F1*_FLASH.ld | grep -v ON_FLASH)
 	for i in USER_VECT_TAB_ADDRESS VECT_TAB_SRAM; do \
 		sed -i "s/\(\/\*\)*[ ]*\(#define[ ]\+$${i}\>\)[ ]*\(\*\/\)*/\/\* \2 \*\//" Core/Src/system_stm32f1xx.c; \
 	done
 
 ram_as_storage:
-	cp STM32F1*_ON_RAM.ld $$(ls STM32F1*_FLASH.ld | grep -v ON_FLASH)
+	-cp STM32F1*_ON_RAM.ld $$(ls STM32F1*_FLASH.ld | grep -v ON_FLASH)
 	for i in USER_VECT_TAB_ADDRESS VECT_TAB_SRAM; do \
 		sed -i "s/\(\/\*\)*[ ]*\(#define[ ]\+$${i}\>\)[ ]*\(\*\/\)*/\2/" Core/Src/system_stm32f1xx.c; \
 	done
@@ -36,6 +36,10 @@ ram_as_storage:
 # ================
 #
 # >>> 2023-05-26, Man Hung-Coeng <udc577@126.com>:
-#   01. Create.
+#   01. Initial release.
+#
+# >>> 2024-07-18, Man Hung-Coeng <udc577@126.com>:
+#   01. {flash,ram}_as_storage: Keep going even if
+#       the copying of STM32F1*_ON_{FLASH,RAM}.ld failed.
 #
 

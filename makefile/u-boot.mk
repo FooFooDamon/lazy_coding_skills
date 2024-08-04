@@ -18,8 +18,10 @@
 
 ARCH ?= arm
 CROSS_COMPILE ?= arm-linux-gnueabihf-
+LOCALVERSION ?= $(if $(wildcard .localversion),-$(shell cat .localversion))
 __VER__ ?= 123456789abc
-MAKE_ARGS ?= ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} $(if ${__VER__},EXTRAVERSION=-${__VER__})
+MAKE_ARGS ?= ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} $(if ${__VER__},EXTRAVERSION=-${__VER__}) \
+    $(if ${LOCALVERSION},LOCALVERSION=${LOCALVERSION})
 NTHREADS ?= $(shell nproc)
 CP ?= cp -R -P
 DIFF ?= diff --color
@@ -62,7 +64,7 @@ all: ${__CUSTOMIZED_DEPENDENCIES}
 menuconfig: $(if ${DEFCONFIG},defconfig) ${__CUSTOMIZED_DEPENDENCIES}
 	[ -z "${DEFCONFIG}" ] && conf_file=.config || conf_file=${DEFCONFIG}; \
 	[ "$${conf_file}" = ".config" -a -f $${conf_file} ] && ${CP} $${conf_file} ${SRC_ROOT_DIR}/.config || : ; \
-	${MAKE} menuconfig -C ${SRC_ROOT_DIR} ${MAKE_ARGS} EXTRAVERSION=""; \
+	${MAKE} menuconfig -C ${SRC_ROOT_DIR} ${MAKE_ARGS} EXTRAVERSION="" LOCALVERSION=""; \
 	if [ -f ${SRC_ROOT_DIR}/.config ]; then \
 		set -x; \
 		[ -f $${conf_file} ] && ${DIFF} ${SRC_ROOT_DIR}/.config $${conf_file} || ${CP} ${SRC_ROOT_DIR}/.config $${conf_file}; \
@@ -71,7 +73,7 @@ menuconfig: $(if ${DEFCONFIG},defconfig) ${__CUSTOMIZED_DEPENDENCIES}
 ifneq (${DEFCONFIG},)
 
 defconfig: ${SRC_ROOT_DIR}/${DEFCONFIG}
-	${MAKE} $(notdir ${DEFCONFIG}) -C ${SRC_ROOT_DIR} ${MAKE_ARGS} EXTRAVERSION=""
+	${MAKE} $(notdir ${DEFCONFIG}) -C ${SRC_ROOT_DIR} ${MAKE_ARGS} EXTRAVERSION="" LOCALVERSION=""
 
 endif
 
@@ -158,7 +160,7 @@ else
 endif
 	$(if $(strip ${USER_HELP_PRINTS}),@printf "\nUser help info:\n"; (${USER_HELP_PRINTS}))
 
-__VARS__ := ARCH CROSS_COMPILE __VER__ MAKE_ARGS NTHREADS \
+__VARS__ := ARCH CROSS_COMPILE LOCALVERSION __VER__ MAKE_ARGS NTHREADS \
     CP DIFF TOUCH UNCOMPRESS \
     PKG_FILE PKG_URL PKG_DOWNLOAD SRC_PARENT_DIR SRC_ROOT_DIR \
     INSTALL_DIR INSTALL_CMD UNINSTALL_CMD \
@@ -175,7 +177,7 @@ showvars:
 # ================
 #
 # >>> 2024-01-18, Man Hung-Coeng <udc577@126.com>:
-#   01. Create.
+#   01. Initial release.
 #
 # >>> 2024-01-19, Man Hung-Coeng <udc577@126.com>:
 #   01. Fix the bug of infinite recursion (due to the invocation of
@@ -220,5 +222,8 @@ showvars:
 #
 # >>> 2024-06-01, Man Hung-Coeng <udc577@126.com>:
 #   01. Add target "inverse_sync".
+#
+# >>> 2024-08-04, Man Hung-Coeng <udc577@126.com>:
+#   01. Support local version.
 #
 

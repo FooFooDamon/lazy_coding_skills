@@ -1,10 +1,7 @@
 app_or_lib.tpl
 driver.tpl
 checkout.tpl
-kernel-porting_selector.tpl
-kernel-porting_worker.tpl
-uboot-porting_selector.tpl
-uboot-porting_worker.tpl
-buildroot-porting_selector.tpl
-buildroot-porting_worker.tpl
+kernel-porting.tpl
+uboot-porting.tpl
+buildroot-porting.tpl
 stm32cubeide.tpl

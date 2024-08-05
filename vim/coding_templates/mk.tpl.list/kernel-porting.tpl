@@ -31,8 +31,8 @@ include $(word 1, ${LAZY_CODING_MAKEFILES})
 #
 # FIXME: Modify variables below according to your needs and delete this line then.
 #
-ARCH := arm64
-CROSS_COMPILE := aarch64-linux-gnu-
+ARCH ?= arm64
+CROSS_COMPILE ?= aarch64-linux-gnu-
 PKG_FILE ?= ./linux-orangepi-b03bc7f3661bd8fd41f8ca8011e28acdaeec0a67.tar.gz
 # -- Rule of URL --
 # Example: GitHub
@@ -43,10 +43,10 @@ PKG_FILE ?= ./linux-orangepi-b03bc7f3661bd8fd41f8ca8011e28acdaeec0a67.tar.gz
 # Download by commit: <prefix>/archive/<full-commit-hash>.<suffix>
 # See also: https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives
 PKG_URL ?= https://github.com/orangepi-xunlong/linux-orangepi/archive/b03bc7f3661bd8fd41f8ca8011e28acdaeec0a67.tar.gz
-KERNEL_IMAGE := Image
-DTS_PATH := arch/${ARCH}/boot/dts/rockchip/rk3588s-orangepi-5.dts
+KERNEL_IMAGE ?= Image
+DTS_PATH ?= arch/${ARCH}/boot/dts/rockchip/rk3588s-orangepi-5.dts
 INSTALL_DIR ?= $(if $(filter aarch64, $(shell uname -m)), /boot, ${HOME}/tftpd/orange-pi-5)
-DEFCONFIG := arch/${ARCH}/configs/rockchip_linux_defconfig
+DEFCONFIG ?= arch/${ARCH}/configs/rockchip_linux_defconfig
 EXT_TARGETS += drivers/media/i2c/ov7670.ko \
     drivers/net/can/usb/peak_usb/peak_usb.ko \
     drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko
@@ -59,7 +59,7 @@ CUSTOM_FILES += arch/${ARCH}/boot/dts/rockchip/Makefile \
 
 include $(word 2, ${LAZY_CODING_MAKEFILES})
 
-USER_HELP_PRINTS := ${DEFAULT_USER_HELP_PRINTS}
+USER_HELP_PRINTS ?= ${DEFAULT_USER_HELP_PRINTS}
 
 ${APPLY_DEFAULT_MODULE_TARGET_ALIASES}
 

@@ -149,7 +149,7 @@ ${1}: ${2}
 install_${1}: ${2}-install
 endef
 
-APPLY_DEFAULT_MODULE_TARGET_ALIAS = $(foreach i, ${__PARTIAL_MODULES}, \
+APPLY_DEFAULT_MODULE_TARGET_ALIASES = $(foreach i, ${__PARTIAL_MODULES}, \
     $(eval \
         $(call default_module_target_alias,$(notdir ${i:.ko=}),${i}) \
     ) \
@@ -286,5 +286,8 @@ showvars:
 #
 # >>> 2024-06-01, Man Hung-Coeng <udc577@126.com>:
 #   01. Add target "inverse_sync".
+#
+# >>> 2024-08-05, Man Hung-Coeng <udc577@126.com>:
+#   01. Rename APPLY_DEFAULT_MODULE_TARGET_ALIAS to *ES.
 #
 

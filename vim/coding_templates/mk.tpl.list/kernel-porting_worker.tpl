@@ -34,6 +34,14 @@ include $(word 1, ${LAZY_CODING_MAKEFILES})
 ARCH := arm64
 CROSS_COMPILE := aarch64-linux-gnu-
 PKG_FILE ?= ./linux-orangepi-b03bc7f3661bd8fd41f8ca8011e28acdaeec0a67.tar.gz
+# -- Rule of URL --
+# Example: GitHub
+# URL prefix: https://github.com/<user>/<repo>
+# Package suffix: tar.gz | zip
+# Download by tag or release: <prefix>/archive/refs/tags/<tag>.<suffix>
+# Download by branch: <prefix>/archive/refs/heads/<branch>.<suffix>
+# Download by commit: <prefix>/archive/<full-commit-hash>.<suffix>
+# See also: https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives
 PKG_URL ?= https://github.com/orangepi-xunlong/linux-orangepi/archive/b03bc7f3661bd8fd41f8ca8011e28acdaeec0a67.tar.gz
 KERNEL_IMAGE := Image
 DTS_PATH := arch/${ARCH}/boot/dts/rockchip/rk3588s-orangepi-5.dts
@@ -53,7 +61,7 @@ include $(word 2, ${LAZY_CODING_MAKEFILES})
 
 USER_HELP_PRINTS := ${DEFAULT_USER_HELP_PRINTS}
 
-${APPLY_DEFAULT_MODULE_TARGET_ALIAS}
+${APPLY_DEFAULT_MODULE_TARGET_ALIASES}
 
 # FIXME: Add more rules if needed, and delete this comment line then.
 

@@ -34,6 +34,14 @@ include $(word 1, ${LAZY_CODING_MAKEFILES})
 ARCH := arm
 CROSS_COMPILE := arm-linux-gnueabihf-
 PKG_FILE ?= ./uboot-imx-rel_imx_4.1.15_2.1.0_ga.tar.gz
+# -- Rule of URL --
+# Example: GitHub
+# URL prefix: https://github.com/<user>/<repo>
+# Package suffix: tar.gz | zip
+# Download by tag or release: <prefix>/archive/refs/tags/<tag>.<suffix>
+# Download by branch: <prefix>/archive/refs/heads/<branch>.<suffix>
+# Download by commit: <prefix>/archive/<full-commit-hash>.<suffix>
+# See also: https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives
 PKG_URL ?= https://github.com/nxp-imx/uboot-imx/archive/refs/tags/rel_imx_4.1.15_2.1.0_ga.tar.gz
 INSTALL_DIR ?= ${HOME}/tftpd/imx6ullevk
 DEFCONFIG := configs/mx6ull_14x14_evk_nand_defconfig

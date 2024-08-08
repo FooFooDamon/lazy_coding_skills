@@ -11,7 +11,7 @@ LAZY_CODING_MAKEFILES := __ver__.mk linux_kernel.mk
 
 ifeq ($(shell [ true $(foreach i, ${LAZY_CODING_MAKEFILES}, -a -s ${i}) ] && echo 1 || echo 0),0)
 
-.PHONY: all prepare
+.PHONY: all help prepare
 
 LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 
@@ -58,9 +58,9 @@ CUSTOM_FILES += arch/${ARCH}/boot/dts/rockchip/Makefile \
 
 include $(word 2, ${LAZY_CODING_MAKEFILES})
 
-USER_HELP_PRINTS ?= ${DEFAULT_USER_HELP_PRINTS}
-
 ${APPLY_DEFAULT_MODULE_TARGET_ALIASES}
+
+USER_HELP_PRINTS ?= ${DEFAULT_USER_HELP_PRINTS}
 
 # FIXME: Add more rules if needed, and delete this comment line then.
 

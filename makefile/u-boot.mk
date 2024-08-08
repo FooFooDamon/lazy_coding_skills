@@ -46,6 +46,7 @@ SRC_ROOT_DIR ?= $(shell \
 )
 INSTALL_DIR ?= ${HOME}/tftpd
 INSTALL_CMD ?= [ -d ${INSTALL_DIR} ] || mkdir -p ${INSTALL_DIR}; ${CP} ${SRC_ROOT_DIR}/u-boot* ${INSTALL_DIR}/
+POST_INSTALL_CMD ?= ls ${INSTALL_DIR}/u-boot* | grep -v "u-boot\.\(imx\|mk\)" | xargs -I {} rm {}
 UNINSTALL_CMD ?= ls ${INSTALL_DIR}/u-boot* | grep -v u-boot.mk | xargs -I {} rm {}
 DEFCONFIG ?= configs/mx6ull_14x14_evk_nand_defconfig
 EXT_TARGETS +=
@@ -82,6 +83,7 @@ download:
 
 install:
 	${INSTALL_CMD}
+	$(if ${POST_INSTALL_CMD},${POST_INSTALL_CMD})
 
 uninstall:
 	${UNINSTALL_CMD}
@@ -163,7 +165,7 @@ endif
 __VARS__ := ARCH CROSS_COMPILE LOCALVERSION __VER__ MAKE_ARGS NTHREADS \
     CP DIFF TOUCH UNCOMPRESS \
     PKG_FILE PKG_URL PKG_DOWNLOAD SRC_PARENT_DIR SRC_ROOT_DIR \
-    INSTALL_DIR INSTALL_CMD UNINSTALL_CMD \
+    INSTALL_DIR INSTALL_CMD POST_INSTALL_CMD UNINSTALL_CMD \
     DEFCONFIG EXT_TARGETS CUSTOM_FILES USER_HELP_PRINTS
 
 showvars:
@@ -225,5 +227,8 @@ showvars:
 #
 # >>> 2024-08-04, Man Hung-Coeng <udc577@126.com>:
 #   01. Support local version.
+#
+# >>> 2024-08-08, Man Hung-Coeng <udc577@126.com>:
+#   01. Add variable POST_INSTALL_CMD for post-installation tasks (if any).
 #
 

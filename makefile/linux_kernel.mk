@@ -46,6 +46,7 @@ INSTALL_DIR ?= ${HOME}/tftpd
 INSTALL_CMD ?= [ -d ${INSTALL_DIR} ] || mkdir -p ${INSTALL_DIR}; \
     find ${SRC_ROOT_DIR}/arch/${ARCH}/boot/ -name ${KERNEL_IMAGE} -exec ${CP} {} ${INSTALL_DIR}/ \; \
     $(if ${__DTB_PATH},; ${CP} ${SRC_ROOT_DIR}/${__DTB_PATH} ${INSTALL_DIR}/)
+POST_INSTALL_CMD ?=
 UNINSTALL_CMD ?= rm -f ${INSTALL_DIR}/${KERNEL_IMAGE} $(if ${__DTB_PATH},${INSTALL_DIR}/$(notdir ${__DTB_PATH}))
 LOCALVERSION ?= $(if $(wildcard .localversion),-$(shell cat .localversion))
 __VER__ ?= 123456789abc
@@ -105,7 +106,7 @@ install:
 	if [ -n "$(shell echo ${INSTALL_DIR} | grep '^/boot$$\|^/boot/[^/]*')" ]; then \
 		${MAKE} install INSTALL_PATH=${INSTALL_DIR} -C ${SRC_ROOT_DIR} ${MAKE_ARGS}; \
 	else \
-		${INSTALL_CMD}; \
+		${INSTALL_CMD}; $(if ${POST_INSTALL_CMD},${POST_INSTALL_CMD};) \
 	fi
 
 uninstall:
@@ -239,7 +240,7 @@ precheck:
 __VARS__ := ARCH CROSS_COMPILE CP DIFF TOUCH UNCOMPRESS \
     PKG_FILE PKG_URL PKG_DOWNLOAD SRC_PARENT_DIR SRC_ROOT_DIR \
     KBUILD_IMAGE KERNEL_IMAGE DTS_PATH INSTALL_DTBS_PATH \
-    INSTALL_DIR INSTALL_CMD UNINSTALL_CMD \
+    INSTALL_DIR INSTALL_CMD POST_INSTALL_CMD UNINSTALL_CMD \
     LOCALVERSION BUILDVERSION __VER__ KBUILD_BUILD_VERSION MAKE_ARGS NTHREADS \
     DEFCONFIG EXT_TARGETS CUSTOM_FILES DEFAULT_USER_HELP_PRINTS USER_HELP_PRINTS
 
@@ -256,7 +257,7 @@ showvars:
 # ================
 #
 # >>> 2024-02-07, Man Hung-Coeng <udc577@126.com>:
-#   01. Create.
+#   01. Initial release.
 #
 # >>> 2024-02-14, Man Hung-Coeng <udc577@126.com>:
 #   01. Change the non-error output redirection of Shell commands of
@@ -289,5 +290,8 @@ showvars:
 #
 # >>> 2024-08-05, Man Hung-Coeng <udc577@126.com>:
 #   01. Rename APPLY_DEFAULT_MODULE_TARGET_ALIAS to *ES.
+#
+# >>> 2024-08-08, Man Hung-Coeng <udc577@126.com>:
+#   01. Add variable POST_INSTALL_CMD for post-installation tasks (if any).
 #
 

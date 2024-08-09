@@ -44,6 +44,7 @@ PKG_FILE ?= ./uboot-imx-rel_imx_4.1.15_2.1.0_ga.tar.gz
 # See also: https://docs.github.com/en/repositories/working-with-files/using-files/downloading-source-code-archives
 PKG_URL ?= https://github.com/nxp-imx/uboot-imx/archive/refs/tags/rel_imx_4.1.15_2.1.0_ga.tar.gz
 INSTALL_DIR ?= ${HOME}/tftpd/imx6ullevk
+POST_INSTALL_CMD ?= ls ${INSTALL_DIR}/u-boot* | grep -v "u-boot\.\(imx\|mk\)" | xargs -I {} rm {}
 DEFCONFIG ?= configs/mx6ull_14x14_evk_nand_defconfig
 EXT_TARGETS +=
 CUSTOM_FILES += arch/${ARCH}/cpu/armv7/start.S \

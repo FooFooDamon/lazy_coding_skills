@@ -19,7 +19,8 @@
 time if [ -n "${LAZY_CODING_HOME}" ]; then
     [ -n "${LCS_IMPORT_COUNT}" ] || export LCS_IMPORT_COUNT=0
 
-    [ ${LCS_IMPORT_COUNT} -lt 1 ] && export PATH=${PATH}:${LAZY_CODING_HOME}/scripts:${LAZY_CODING_HOME}/scripts/private
+    grep "\(^\|:\)${LAZY_CODING_HOME}/scripts/private:${LAZY_CODING_HOME}/scripts\(:\|$\)" <<< "${PATH}" > /dev/null \
+        || export PATH=${LAZY_CODING_HOME}/scripts/private:${LAZY_CODING_HOME}/scripts:${PATH}
 
     for i in .bash_aliases .bash_variables .bash_functions .bash_openup .bash_completions
     do
@@ -47,7 +48,7 @@ fi >&2
 # ================
 #
 # >>> 2023-02-11, Man Hung-Coeng <udc577@126.com>:
-#   01. Create.
+#   01. Initial release.
 #
 # >>> 2023-02-12, Man Hung-Coeng <udc577@126.com>:
 #   01. Add two tips.
@@ -66,5 +67,8 @@ fi >&2
 #
 # >>> 2024-06-01, Man Hung-Coeng <udc577@126.com>:
 #   01. (Conditionally) Suppress, and redirect the welcome message.
+#
+# >>> 2024-08-15, Man Hung-Coeng <udc577@126.com>:
+#   01. Prepend instead of appending script directories to PATH.
 #
 

@@ -237,5 +237,5 @@ MODULE_AUTHOR("${LCS_USER} <${LCS_EMAIL}>");
  * ================
  *
  * >>> ${DATE}, ${LCS_USER} <${LCS_EMAIL}>:
- *  01. Initial release.
+ *  01. Initial commit.
  */

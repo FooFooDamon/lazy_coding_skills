@@ -5,3 +5,4 @@ kernel-porting.tpl
 uboot-porting.tpl
 buildroot-porting.tpl
 stm32cubeide.tpl
+qt.tpl

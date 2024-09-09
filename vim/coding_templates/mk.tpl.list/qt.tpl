@@ -33,7 +33,6 @@ all: dependencies
 include __ver__.mk
 include QtMakefile
 
-OS_MACRO ?= -D__linux__
 DEFINES += -D__VER__=\"${__VER__}\"
 CFLAGS += -Wno-unused-parameter
 CXXFLAGS += -Wno-unused-parameter
@@ -41,6 +40,9 @@ INCPATH +=
 LFLAGS +=
 LIBS +=
 NO_CPPCHECK = true
+OS_MACRO ?= -D__linux__
+PREDEFS_FOR_CPPCHECK ?= $(if $(wildcard moc_predefs.h), --include=moc_predefs.h, \
+    ${OS_MACRO} $$(g++ -dM -E - < /dev/null | grep ENDIAN | awk '{ printf("-D%s=%s\n", $$2, $$3) }'))
 
 .PHONY: ext_clean check ui_fix
 
@@ -53,7 +55,7 @@ check:
 	-${NO_CPPCHECK} && printf "\n[Warning] Cppcheck has been disabled since it consumes too much time!\n%s\n\n" \
 		"If you want to enable it, run with NO_CPPCHECK=false" \
 		|| cppcheck --quiet --force --enable=all -j $$(nproc) --language=c++ --std=c++11 \
-		--library=qt ${OS_MACRO} $$(g++ -dM -E - < /dev/null | grep ENDIAN | awk '{ printf("-D%s=%s\n", $$2, $$3) }') \
+		--library=qt ${PREDEFS_FOR_CPPCHECK} \
 		${DEFINES} ${INCPATH} $(filter-out moc_%.cpp, ${SOURCES})
 	clang --analyze $(filter-out moc_${TARGET}.cpp, ${SOURCES}) ${CXXFLAGS} ${INCPATH}
 

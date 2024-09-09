@@ -20,6 +20,7 @@
 !init.d
 !profile.d
 *.dat
+*.debug.pri
 *.dtb
 *.dtbo
 *.elf

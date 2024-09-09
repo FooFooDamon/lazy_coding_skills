@@ -44,7 +44,7 @@ OS_MACRO ?= -D__linux__
 PREDEFS_FOR_CPPCHECK ?= $(if $(wildcard moc_predefs.h), --include=moc_predefs.h, \
     ${OS_MACRO} $$(g++ -dM -E - < /dev/null | grep ENDIAN | awk '{ printf("-D%s=%s\n", $$2, $$3) }'))
 
-.PHONY: ext_clean check ui_fix
+.PHONY: ext_clean check debug_patch ui_fix
 
 clean: ext_clean
 
@@ -53,11 +53,20 @@ ext_clean:
 
 check:
 	-${NO_CPPCHECK} && printf "\n[Warning] Cppcheck has been disabled since it consumes too much time!\n%s\n\n" \
-		"If you want to enable it, run with NO_CPPCHECK=false" \
+		"If you want to enable it, run with NO_CPPCHECK=false" >&2 \
 		|| cppcheck --quiet --force --enable=all -j $$(nproc) --language=c++ --std=c++11 \
 		--library=qt ${PREDEFS_FOR_CPPCHECK} \
 		${DEFINES} ${INCPATH} $(filter-out moc_%.cpp, ${SOURCES})
 	clang --analyze $(filter-out moc_${TARGET}.cpp, ${SOURCES}) ${CXXFLAGS} ${INCPATH}
+
+debug_patch:
+	@if [ -s ${TARGET}.debug.pri ]; then \
+		echo "${TARGET}.debug.pri already exists." >&2; \
+	else \
+		echo "CONFIG += debug" > ${TARGET}.debug.pri; \
+		${MAKE} distclean; \
+		printf "\n~ ~ ~ ${TARGET}.debug.pri was generated successfully. ~ ~ ~\n\nYou can re-build the project now.\n\n"; \
+	fi
 
 ui_fix: ui_${TARGET}.h
 	sed -i 's/\(.*\<QPalette::PlaceholderText\>.*\)/\/\/\1/' $<
@@ -71,4 +80,3 @@ dependencies:
 	do \
 		[ -s $${i}/[Mm]akefile ] && ${MAKE} $(filter all prepare, ${MAKECMDGOALS}) -C $${i} || true; \
 	done
-

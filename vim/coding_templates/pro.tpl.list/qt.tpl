@@ -1,13 +1,13 @@
 MAKEFILE = QtMakefile
 
-CONFIG += c++11 qt warn_on release
-exists(${TITLE}.debug.pri) {
-    include(${TITLE}.debug.pri) # Should contain: CONFIG += debug
-}
 TEMPLATE = app
 TARGET = ${TITLE}
+CONFIG += c++11 qt warn_on release
+exists($${TARGET}.debug.pri) {
+    include($${TARGET}.debug.pri) # Should contain: CONFIG += debug
+}
 
 FORMS += *.ui
-HEADERS += ${TITLE}.hpp
+HEADERS += $${TARGET}.hpp
 SOURCES += *.cpp
 QT += widgets

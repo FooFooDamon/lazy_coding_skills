@@ -5,7 +5,7 @@
  *
  * Copyright (c) ${YEAR} ${LCS_USER} <${LCS_EMAIL}>
  * All rights reserved.
-*/
+ */
 
 //#include "${SELF_HEADER}.h"
 

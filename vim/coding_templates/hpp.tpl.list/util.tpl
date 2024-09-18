@@ -14,7 +14,7 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
-*/
+ */
 
 #ifndef __${HEADER_LOCK}_HPP__
 #define __${HEADER_LOCK}_HPP__

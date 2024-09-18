@@ -16,6 +16,15 @@
 #include <QThread>
 #include <QLoggingCategory>
 
+#if defined(__unix) || defined(__unix__) || defined(unix) \
+    || defined(__linux) || defined(__linux__) || defined(linux) || defined(__gnu_linux__)
+
+#ifndef QT_PRINT_WITH_COLOR
+#define QT_PRINT_WITH_COLOR 1
+#endif
+
+#endif
+
 #define QPRINT_FMT_ESCAPE_DEBUG(_format_)           _format_
 #define QPRINT_FMT_ESCAPE_INFO(_format_)            _format_
 #if defined(QT_PRINT_WITH_COLOR) && QT_PRINT_WITH_COLOR

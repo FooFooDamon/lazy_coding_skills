@@ -1,7 +1,7 @@
 "
 " Minimum settings for daily use.
 "
-" Copyright 2023 Man Hung-Coeng <udc577@126.com>
+" Copyright 2023-2024 Man Hung-Coeng <udc577@126.com>
 "
 " Licensed under the Apache License, Version 2.0 (the "License");
 " you may not use this file except in compliance with the License.
@@ -93,7 +93,7 @@ set cursorline
 " Always show status bar, and show it with specified format.
 set laststatus=2
 "set statusline=[%F]%y[%{&ff}]%m%r%h%w%*%=[Line:%l/%L,Column:%c][%p%%]\ %{strftime(\"%Y/%m/%d\ %H:%M\")}
-set statusline=[%F]%y[%{&ff}]%m%r%h%w%*%=[Line:%l/%L,Column:%c][%p%%]
+set statusline=[%F]%y[%{&ff}]%m%r%h%w%*%=[Line:%l/%L,Column:%v][%p%%]
 
 " Show ruler which contains infomation such as line number, column number and position percentage:
 " 1) If status bar is visible, show it in status bar.
@@ -133,4 +133,8 @@ inoremap #en #end
 "
 " >>> 2023-04-12, Man Hung-Coeng <udc577@126.com>:
 "   01. Turn all global variables into local ones.
+"
+" >>> 2024-11-08, Man Hung-Coeng <udc577@126.com>:
+"   01. Use %v instead of %c as column number specifier at statusline
+"       so that the width of each Tab characters won't be ignored.
 "

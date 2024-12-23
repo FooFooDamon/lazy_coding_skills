@@ -1,2 +1,4 @@
 util.tpl
-class.tpl
+thin_class.tpl
+rich_class.tpl
+qt_gui_class.tpl

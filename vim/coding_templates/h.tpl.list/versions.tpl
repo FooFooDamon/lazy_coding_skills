@@ -31,10 +31,10 @@ extern "C" {
 #define __VER__                         "<none>"
 #endif
 
-#undef ___stringify
+#ifndef __stringify
 #define ___stringify(x)                 #x
-#undef __stringify
 #define __stringify(x)                  ___stringify(x)
+#endif
 
 #ifndef PRODUCT_VERSION
 #define PRODUCT_VERSION                 __stringify(MAJOR_VER) "." __stringify(MINOR_VER) "." __stringify(PATCH_VER)

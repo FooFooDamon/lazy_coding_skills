@@ -113,12 +113,12 @@ function s:load_template(template)
     let l:CMD_ADJUST_EMAIL = "g/${LCS_EMAIL}/s//".l:LCS_EMAIL."/g"
     let l:CMD_ADJUST_YEAR = "g/${YEAR}/s//".strftime('%Y')."/g"
     let l:CMD_ADJUST_DATE = "g/${DATE}/s//".strftime('%Y-%m-%d')."/g"
-    let l:CMD_ADJUST_HEADER_LOCK = "g/${HEADER_LOCK}/s//".toupper(fnamemodify(expand('%:r'), ':t'))."/g"
+    let l:CMD_ADJUST_HEADER_GUARD = "g/${HEADER_GUARD}/s//".toupper(fnamemodify(expand('%:r'), ':t'))."/g"
     let l:CMD_ADJUST_SELF_HEADER = "g/${SELF_HEADER}/s//".fnamemodify(expand('%:r'), ':t')."/g"
     let l:CMD_ADJUST_TITLE = "g/${TITLE}/s//".fnamemodify(expand('%:r'), ':t')."/g"
     let l:EXEC_ADJUST_ALL = "execute l:CMD_ADJUST_USER | execute l:CMD_ADJUST_EMAIL"
         \ . " | execute l:CMD_ADJUST_YEAR | execute l:CMD_ADJUST_DATE"
-        \ . " | execute l:CMD_ADJUST_HEADER_LOCK | execute l:CMD_ADJUST_SELF_HEADER"
+        \ . " | execute l:CMD_ADJUST_HEADER_GUARD | execute l:CMD_ADJUST_SELF_HEADER"
         \ . " | execute l:CMD_ADJUST_TITLE"
 
     execute "0r " . l:template_file . " | " . l:EXEC_ADJUST_ALL
@@ -180,5 +180,8 @@ execute "autocmd BufNewFile [Mm][Aa][Kk][Ee][Ff][Ii][Ll][Ee] call s:load_templat
 "
 " >>> 2024-06-14, Man Hung-Coeng <udc577@126.com>:
 "   01. Support selection from multiple alternative templates.
+"
+" >>> 2024-12-23, Man Hung-Coeng <udc577@126.com>:
+"   01. Rename variable CMD_ADJUST_HEADER_LOCK to CMD_ADJUST_HEADER_GUARD.
 "
 

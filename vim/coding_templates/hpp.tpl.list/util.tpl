@@ -16,14 +16,14 @@
  * limitations under the License.
  */
 
-#ifndef __${HEADER_LOCK}_HPP__
-#define __${HEADER_LOCK}_HPP__
+#ifndef __${HEADER_GUARD}_HPP__
+#define __${HEADER_GUARD}_HPP__
 
 /* TODO: Include other header files here, if needed. */
 
 /* TODO: Add your own stuff here. */
 
-#endif /* #ifndef __${HEADER_LOCK}_HPP__ */
+#endif /* #ifndef __${HEADER_GUARD}_HPP__ */
 
 /*
  * ================

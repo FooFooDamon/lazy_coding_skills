@@ -7,8 +7,8 @@
  * All rights reserved.
  */
 
-#ifndef __${HEADER_LOCK}_H__
-#define __${HEADER_LOCK}_H__
+#ifndef __${HEADER_GUARD}_H__
+#define __${HEADER_GUARD}_H__
 
 /* TODO: Include other header files here, if needed. */
 
@@ -22,7 +22,7 @@ extern "C" {
 }
 #endif
 
-#endif /* #ifndef __${HEADER_LOCK}_H__ */
+#endif /* #ifndef __${HEADER_GUARD}_H__ */
 
 /*
  * ================

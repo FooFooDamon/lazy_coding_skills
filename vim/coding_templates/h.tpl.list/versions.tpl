@@ -3,6 +3,9 @@
 /*
  * Copyright (c) ${YEAR} ${LCS_USER} <${LCS_EMAIL}>
  * All rights reserved.
+ *
+ * >>> V0.1.0|${DATE}, ${LCS_USER} <${LCS_EMAIL}>:
+ *  01. Initial commit.
  */
 
 #ifndef __${HEADER_LOCK}_H__
@@ -12,29 +15,29 @@
 extern "C" {
 #endif
 
-#undef ___stringify
-#define ___stringify(x)                 #x
-#undef __stringify
-#define __stringify(x)                  ___stringify(x)
-
 #ifndef MAJOR_VER
 #define MAJOR_VER                       0
 #endif
 
 #ifndef MINOR_VER
-#define MINOR_VER                       0
+#define MINOR_VER                       1
 #endif
 
 #ifndef PATCH_VER
 #define PATCH_VER                       0
 #endif
 
-#ifndef PRODUCT_VERSION
-#define PRODUCT_VERSION                 __stringify(MAJOR_VER) "." __stringify(MINOR_VER) "." __stringify(PATCH_VER)
-#endif
-
 #ifndef __VER__
 #define __VER__                         "<none>"
+#endif
+
+#undef ___stringify
+#define ___stringify(x)                 #x
+#undef __stringify
+#define __stringify(x)                  ___stringify(x)
+
+#ifndef PRODUCT_VERSION
+#define PRODUCT_VERSION                 __stringify(MAJOR_VER) "." __stringify(MINOR_VER) "." __stringify(PATCH_VER)
 #endif
 
 #ifndef FULL_VERSION
@@ -46,12 +49,3 @@ extern "C" {
 #endif
 
 #endif /* #ifndef __${HEADER_LOCK}_H__ */
-
-/*
- * ================
- *   CHANGE LOG
- * ================
- *
- * >>> ${DATE}, ${LCS_USER} <${LCS_EMAIL}>:
- *  01. Initial commit.
- */

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-//#include "${SELF_HEADER}.hpp"
+//#include "${BASENAME}.hpp"
 
 // TODO: Include other header files here, if needed.
 

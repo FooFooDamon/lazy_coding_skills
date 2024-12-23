@@ -7,7 +7,7 @@
  * All rights reserved.
  */
 
-//#include "${SELF_HEADER}.h"
+//#include "${BASENAME}.h"
 
 #include <string.h>
 #include <stdlib.h>

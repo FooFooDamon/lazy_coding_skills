@@ -9,7 +9,7 @@
 
 // set shiftwidth=8 | set tabstop=8 | set softtabstop=8 | set noexpandtab
 
-//#include "${SELF_HEADER}.h"
+//#include "${BASENAME}.h"
 
 #include <linux/version.h>
 #include <linux/module.h>
@@ -39,24 +39,24 @@
 #ifdef KBUILD_MODNAME
 #define __DRVNAME__			KBUILD_MODNAME
 #else
-#define __DRVNAME__			"${TITLE}"
+#define __DRVNAME__			"${BASENAME}"
 #endif
 #endif
 
-typedef struct ${TITLE}
+typedef struct ${BASENAME}
 {
 	struct i2c_client *client;
 	// TODO: More fields according to your need.
-} ${TITLE}_t;
+} ${BASENAME}_t;
 
-static int ${TITLE}_probe(struct i2c_client *client
+static int ${BASENAME}_probe(struct i2c_client *client
 #if LINUX_VERSION_CODE < KERNEL_VERSION(6, 3, 0)
 	, const struct i2c_device_id *id
 #endif
 )
 {
 	struct device *dev = &client->dev;
-	${TITLE}_t *info = devm_kzalloc(dev, sizeof(${TITLE}_t), GFP_KERNEL);
+	${BASENAME}_t *info = devm_kzalloc(dev, sizeof(${BASENAME}_t), GFP_KERNEL);
 	int err = info ? 0 : -ENOMEM;
 
 	if (err)
@@ -73,9 +73,9 @@ static int ${TITLE}_probe(struct i2c_client *client
 	return 0;
 }
 
-static void ${TITLE}_remove(struct i2c_client *client)
+static void ${BASENAME}_remove(struct i2c_client *client)
 {
-	//${TITLE}_t *${TITLE} = i2c_get_clientdata(client);
+	//${BASENAME}_t *${BASENAME} = i2c_get_clientdata(client);
 
 	// TODO: Add your own stuff.
 
@@ -86,37 +86,37 @@ static void ${TITLE}_remove(struct i2c_client *client)
 /*
  * Match by devicetree (Open Firmware).
  */
-static const struct of_device_id ${TITLE}_of_match[] = {
-	{ .compatible = "${TITLE}" },
+static const struct of_device_id ${BASENAME}_of_match[] = {
+	{ .compatible = "${BASENAME}" },
 	{ /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(of, ${TITLE}_of_match);
+MODULE_DEVICE_TABLE(of, ${BASENAME}_of_match);
 #endif
 
 /*
  * Traditional match.
  */
-static const struct i2c_device_id ${TITLE}_ids[] = {
-	{ .name = "${TITLE}" },
+static const struct i2c_device_id ${BASENAME}_ids[] = {
+	{ .name = "${BASENAME}" },
 	{ /* sentinel */ }
 };
-MODULE_DEVICE_TABLE(i2c, ${TITLE}_ids);
+MODULE_DEVICE_TABLE(i2c, ${BASENAME}_ids);
 
-static struct i2c_driver ${TITLE}_driver = {
-	.probe = ${TITLE}_probe,
-	.remove = ${TITLE}_remove,
+static struct i2c_driver ${BASENAME}_driver = {
+	.probe = ${BASENAME}_probe,
+	.remove = ${BASENAME}_remove,
 	.driver = {
-		.name = "${TITLE}",
+		.name = "${BASENAME}",
 #if IS_ENABLED(CONFIG_OF)
-		.of_match_table = of_match_ptr(${TITLE}_of_match),
+		.of_match_table = of_match_ptr(${BASENAME}_of_match),
 #endif
 	},
-	.id_table = ${TITLE}_ids,
+	.id_table = ${BASENAME}_ids,
 };
 
-module_i2c_driver(${TITLE}_driver);
+module_i2c_driver(${BASENAME}_driver);
 
-MODULE_DESCRIPTION("Driver for ${TITLE}");
+MODULE_DESCRIPTION("Driver for ${BASENAME}");
 MODULE_LICENSE("GPL");
 MODULE_VERSION(DRIVER_VERSION "-" __VER__);
 MODULE_AUTHOR("${LCS_USER} <${LCS_EMAIL}>");

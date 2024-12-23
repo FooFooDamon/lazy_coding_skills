@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-//#include "${SELF_HEADER}.hpp"
+//#include "${BASENAME}.hpp"
 
 #include <string.h>
 #include <stdlib.h>

@@ -1,7 +1,7 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 <base target="_blank" />
 
-# ${TITLE}
+# ${BASENAME}
 
 ## 第1章 | Chapter 1
 

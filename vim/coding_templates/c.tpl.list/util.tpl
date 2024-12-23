@@ -7,7 +7,7 @@
  * All rights reserved.
  */
 
-//#include "${SELF_HEADER}.h"
+//#include "${BASENAME}.h"
 
 /* TODO: Include other header files here, if needed. */
 

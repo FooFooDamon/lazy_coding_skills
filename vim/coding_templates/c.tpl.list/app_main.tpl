@@ -414,7 +414,7 @@ int register_signals(const cmd_args_t *args, const conf_file_t *conf)
     return 0;
 }
 
-#define BIZ_FUN_ARG_LIST                int argc, char **argv, const cmd_args_t *parsed_args, const conf_file_t *conf
+#define BIZ_FUN_ARG_LIST                int argc, char **argv, const cmd_args_t *cmd_args, const conf_file_t *conf
 #define DECLARE_BIZ_FUN(name)           int name(BIZ_FUN_ARG_LIST)
 #define BIZ_FUN(name)                   name
 typedef int (*biz_func_t)(BIZ_FUN_ARG_LIST);

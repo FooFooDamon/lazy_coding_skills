@@ -17,7 +17,8 @@
 struct cmd_args;
 struct conf_file;
 
-#define BIZ_FUN_ARG_LIST                int argc, char **argv, const cmd_args_t &cmd_args, const conf_file_t &conf
+#define BIZ_FUN_ARG_LIST                int argc, char **argv, const struct cmd_args &cmd_args, \
+                                        const struct conf_file &conf
 
 #define DECLARE_BIZ_FUN(name)           int name(BIZ_FUN_ARG_LIST)
 #define BIZ_FUN(name)                   name

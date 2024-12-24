@@ -1,4 +1,5 @@
 util.tpl
+cmdline_args.tpl
 cooperative_main.tpl
 selfcontained_main.tpl
 thin_class.tpl

@@ -356,7 +356,7 @@ void assert_parsed_args(const cmd_args_t &args)
     // FIXME: Add more validations according to your need, and delete this comment line.
 } // void assert_parsed_args(const cmd_args_t &args)
 
-#define todo()                          fprintf(stderr, __FILE__ ":%d %s(): todo ...\n", __LINE__, __func__)
+#define TODO()                          fprintf(stderr, __FILE__ ":%d %s(): TODO ...\n", __LINE__, __func__)
 
 typedef struct conf_file
 {
@@ -369,7 +369,7 @@ typedef struct conf_file
 int load_config_file(const char *path, conf_file_t &result)
 {
 #ifdef HAS_CONFIG_FILE
-    todo();
+    TODO();
 #endif
     return 0;
 }
@@ -377,14 +377,14 @@ int load_config_file(const char *path, conf_file_t &result)
 void unload_config_file(conf_file_t &result)
 {
 #ifdef HAS_CONFIG_FILE
-    todo();
+    TODO();
 #endif
 }
 
 int logger_init(const cmd_args_t &args, const conf_file_t &conf)
 {
 #ifdef HAS_LOGGER
-    todo();
+    TODO();
 #endif
     return 0;
 }
@@ -392,14 +392,14 @@ int logger_init(const cmd_args_t &args, const conf_file_t &conf)
 void logger_finalize(void)
 {
 #ifdef HAS_LOGGER
-    todo();
+    TODO();
 #endif
 }
 
 int register_signals(const cmd_args_t &args, const conf_file_t &conf)
 {
 #ifdef NEED_OS_SIGNALS
-    todo();
+    TODO();
 #endif
     return 0;
 }
@@ -411,14 +411,14 @@ typedef int (*biz_func_t)(BIZ_FUN_ARG_LIST);
 
 static DECLARE_BIZ_FUN(normal_biz)
 {
-    todo();
+    TODO();
 
     return EXIT_SUCCESS;
 }
 
 static DECLARE_BIZ_FUN(test_biz)
 {
-    todo();
+    TODO();
 
     return EXIT_SUCCESS;
 }

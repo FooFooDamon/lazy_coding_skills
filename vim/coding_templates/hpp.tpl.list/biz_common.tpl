@@ -10,7 +10,12 @@
 #ifndef __${HEADER_GUARD}_HPP__
 #define __${HEADER_GUARD}_HPP__
 
+#include <stdio.h>
+
 // FIXME: Include other header files here according to your need, and delete this comment line.
+
+struct cmd_args;
+struct conf_file;
 
 #define BIZ_FUN_ARG_LIST                int argc, char **argv, const cmd_args_t &cmd_args, const conf_file_t &conf
 

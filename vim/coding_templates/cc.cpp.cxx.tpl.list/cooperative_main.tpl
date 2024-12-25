@@ -20,30 +20,8 @@
 #include <iostream>
 
 #include "cmdline_args.hpp"
+#include "config_file.hpp"
 #include "biz_common.hpp"
-
-typedef struct conf_file
-{
-#ifdef HAS_CONFIG_FILE
-    std::string path;
-    // Add more fields according to your need, and delete this comment line.
-#endif
-} conf_file_t;
-
-int load_config_file(const char *path, conf_file_t &result)
-{
-#ifdef HAS_CONFIG_FILE
-    TODO();
-#endif
-    return 0;
-}
-
-void unload_config_file(conf_file_t &result)
-{
-#ifdef HAS_CONFIG_FILE
-    TODO();
-#endif
-}
 
 int logger_init(const cmd_args_t &args, const conf_file_t &conf)
 {

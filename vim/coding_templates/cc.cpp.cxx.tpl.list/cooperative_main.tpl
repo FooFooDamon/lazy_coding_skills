@@ -64,6 +64,9 @@ int main(int argc, char **argv)
 {
     cmd_args_t parsed_args = parse_cmdline(argc, argv);
     conf_file_t conf;
+    biz_context_t ctx = {
+        argc, argv, &parsed_args, &conf,
+    };
     std::map<std::string, biz_func_t> biz_handlers = {
         { "normal", BIZ_FUN(normal_biz) },
         { "test", BIZ_FUN(test_biz) },
@@ -88,7 +91,7 @@ int main(int argc, char **argv)
     if ((ret = register_signals(parsed_args, conf)) < 0)
         goto lbl_finalize_log;
 
-    ret = biz_func(argc, argv, parsed_args, conf);
+    ret = biz_func(ctx);
 
 lbl_finalize_log:
     logger_finalize();

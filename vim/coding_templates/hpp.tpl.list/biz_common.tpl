@@ -17,8 +17,16 @@
 struct cmd_args;
 struct conf_file;
 
-#define BIZ_FUN_ARG_LIST                int argc, char **argv, const struct cmd_args &cmd_args, \
-                                        const struct conf_file &conf
+typedef struct biz_context
+{
+    int argc;
+    char **argv;
+    struct cmd_args *cmd_args;
+    struct conf_file *conf;
+    // FIXME: Add more fields according to your need, and delete this comment line.
+} biz_context_t;
+
+#define BIZ_FUN_ARG_LIST                biz_context_t &ctx
 
 #define DECLARE_BIZ_FUN(name)           int name(BIZ_FUN_ARG_LIST)
 #define BIZ_FUN(name)                   name

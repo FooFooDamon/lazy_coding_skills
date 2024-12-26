@@ -25,6 +25,7 @@ ${BASENAME}::${BASENAME}(QWidget *parent/* = nullptr*/)
     //this->setFixedSize(this->geometry().size());
     //this->setWindowFlags(Qt::Window | Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint);
     this->setWindowTitle(QString::asprintf("%s [%s]", this->windowTitle().toStdString().c_str(), FULL_VERSION()));
+    //this->setAttribute(Qt::WA_DeleteOnClose, true); // Useful for instance alloated on heap in some cases.
 }
 
 ${BASENAME}::~${BASENAME}()
@@ -55,7 +56,7 @@ void ${BASENAME}::errorBox(const QString &title, const QString &text)
 void ${BASENAME}::closeEvent(QCloseEvent *event)/* override */
 {
     QMessageBox::StandardButton button = QMessageBox::question(
-        this, "", "Exit now ?", QMessageBox::Yes | QMessageBox::No);
+        this, "", "Exit now?", QMessageBox::Yes | QMessageBox::No);
 
     if (QMessageBox::Yes == button)
         event->accept();

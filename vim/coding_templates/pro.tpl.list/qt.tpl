@@ -9,5 +9,5 @@ exists($${TARGET}.debug.pri) {
 
 FORMS += *.ui
 HEADERS += $${TARGET}.hpp
-SOURCES += *.cpp
+SOURCES += *.c *.cpp
 QT += widgets

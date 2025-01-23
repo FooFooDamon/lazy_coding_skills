@@ -7,17 +7,25 @@
 
 .PHONY: all prepare dependencies
 
+LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
+
 export LAZY_CODING_MAKEFILES ?= $(abspath __ver__.mk c_and_cpp.mk)
 
-ifeq ($(shell [ true $(foreach i, ${LAZY_CODING_MAKEFILES}, -a -s ${i}) ] && echo 1 || echo 0),0)
+override undefine PREREQUISITE_FILES
+PREREQUISITE_FILES := ${LAZY_CODING_URL}/raw/3b93336d4e3e4c2f46fd795f2acf2fd437c08c9c/c_and_cpp/native/signal_handling.c \
+    ${LAZY_CODING_URL}/raw/38cf125e08241b9330812f6b040a072b6116adf6/c_and_cpp/native/signal_handling.h \
 
-LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
+ifeq ($(shell [ true $(foreach i, ${LAZY_CODING_MAKEFILES} $(notdir ${PREREQUISITE_FILES}), -a -s ${i}) ] && echo 1 || echo 0),0)
 
 all prepare: dependencies
 	@for i in ${LAZY_CODING_MAKEFILES}; \
 	do \
 		mkdir -p $$(dirname $${i}); \
 		[ -s $${i} ] || wget -c -O $${i} "${LAZY_CODING_URL}/raw/main/makefile/$$(basename $${i})"; \
+	done
+	@for i in ${PREREQUISITE_FILES}; \
+	do \
+		[ -s $$(basename $${i}) ] || wget -c -O $$(basename $${i}) "$${i}"; \
 	done
 	@echo "~ ~ ~ Minimum preparation finished successfully ~ ~ ~"
 	@echo "Re-run your command again to continue your work."

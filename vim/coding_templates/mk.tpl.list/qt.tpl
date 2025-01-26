@@ -52,12 +52,17 @@ ext_clean:
 	rm -f ${TARGET} *.d *.plist
 
 check:
-	-${NO_CPPCHECK} && printf "\n[Warning] Cppcheck has been disabled since it consumes too much time!\n%s\n\n" \
+	-${NO_CPPCHECK} \
+		|| cppcheck --quiet --force --enable=all -j $$(nproc) --language=c --std=c11 \
+		${PREDEFS_FOR_CPPCHECK} \
+		${DEFINES} ${INCPATH} $(filter %.c, ${SOURCES})
+	-${NO_CPPCHECK} && printf "\n\033[0;33m[Warning] Cppcheck has been disabled since it consumes too much time!\033[0m\n%s\n\n" \
 		"If you want to enable it, run with NO_CPPCHECK=false" >&2 \
 		|| cppcheck --quiet --force --enable=all -j $$(nproc) --language=c++ --std=c++11 \
 		--library=qt ${PREDEFS_FOR_CPPCHECK} \
-		${DEFINES} ${INCPATH} $(filter-out moc_%.cpp, ${SOURCES})
-	clang --analyze $(filter-out moc_${TARGET}.cpp, ${SOURCES}) ${CXXFLAGS} ${INCPATH}
+		${DEFINES} ${INCPATH} $(filter-out %.c moc_%.cpp, ${SOURCES})
+	clang --analyze $(filter %.c, ${SOURCES}) ${CFLAGS} ${INCPATH}
+	clang --analyze $(filter-out %.c moc_%.cpp, ${SOURCES}) ${CXXFLAGS} ${INCPATH}
 
 debug_patch:
 	@if [ -s ${TARGET}.debug.pri ]; then \

@@ -21,7 +21,7 @@ CXX_LDFLAGS := -lpthread
 
 NULL :=
 SPACE := ${NULL} ${NULL}
-C_SRCS := $(shell find ./ -name "*.c" | grep -v "\($(subst ${SPACE},\|,${MODULES})\)\.c")
+C_SRCS := $(shell find ./ -name "*.c" | grep -v "\($(subst ${SPACE},\|,${MODULES})\|\.mod\)\.c")
 CXX_SRCS := $(shell find ./ -name "*.cpp")
 
 GOALS := $(addsuffix .elf, $(basename ${C_SRCS} ${CXX_SRCS}))

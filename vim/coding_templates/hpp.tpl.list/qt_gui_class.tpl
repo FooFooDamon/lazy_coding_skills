@@ -29,6 +29,17 @@ public:
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+
+Q_SIGNALS:
+    void delegatingClose(void);
+    void delegatingResize(int width, int height);
+
+private Q_SLOTS:
+    void __delegatingClose(void);
+    void __delegatingResize(int width, int height);
+
+private:
+    bool m_delegating_close_happens;
 };
 
 #endif /* #ifndef __${HEADER_GUARD}_HPP__ */

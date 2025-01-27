@@ -19,10 +19,14 @@ const QTextCodec *G_TEXT_CODEC = QTextCodec::codecForName("UTF8"/*"GB2312"*/);
 
 ${BASENAME}::${BASENAME}(QWidget *parent/* = nullptr*/)
     : QDialog(parent)
+    , m_delegating_close_happens(false)
 {
     setupUi(this);
 
-    //this->setFixedSize(this->geometry().size());
+    QObject::connect(this, SIGNAL(delegatingClose(void)), this, SLOT(__delegatingClose(void)));
+    QObject::connect(this, SIGNAL(delegatingResize(int,int)), this, SLOT(__delegatingResize(int,int)));
+
+    //this->delegatingResize(this->geometry().width(), this->geometry().height());
     //this->setWindowFlags(Qt::Window | Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint);
     this->setWindowTitle(QString::asprintf("%s [%s]", this->windowTitle().toStdString().c_str(), FULL_VERSION()));
     //this->setAttribute(Qt::WA_DeleteOnClose, true); // Useful for instance alloated on heap in some cases.
@@ -55,13 +59,29 @@ void ${BASENAME}::errorBox(const QString &title, const QString &text)
 
 void ${BASENAME}::closeEvent(QCloseEvent *event)/* override */
 {
-    QMessageBox::StandardButton button = QMessageBox::question(
-        this, "", "Exit now?", QMessageBox::Yes | QMessageBox::No);
-
-    if (QMessageBox::Yes == button)
+    if (m_delegating_close_happens)
         event->accept();
     else
-        event->ignore();
+    {
+        QMessageBox::StandardButton button = QMessageBox::question(
+            this, "", "Exit now?", QMessageBox::Yes | QMessageBox::No);
+
+        if (QMessageBox::Yes == button)
+            event->accept();
+        else
+            event->ignore();
+    }
+}
+
+void ${BASENAME}::__delegatingClose()
+{
+    m_delegating_close_happens = true;
+    this->close();
+}
+
+void ${BASENAME}::__delegatingResize(int width, int height)
+{
+    this->setFixedSize(width, height); // FIXME: Or do it your way.
 }
 
 /*

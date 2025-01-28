@@ -5,7 +5,7 @@
 # Configuration script of YouCompleteMe VIM plugin,
 # which defines common rules for C/C++ grammar checking and code completion.
 #
-# Copyright (c) 2022-2023 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2022-2025 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -18,6 +18,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+
+#
+# IMPORTANT recommendation:
+#   Use "bear" instead, since this tool is far more flexible than this script,
+#   plus it's well developed and requires no extra maintenance,
+#   just running "bear -- make" will do all for you.
+#   Therefore, this script might not be updated any more.
 #
 
 import os
@@ -175,5 +183,8 @@ if __name__ == "__main__":
 #   02. Merge each pair of "-I" and its value to one element of flags list,
 #       and reduce the indent level of JSON serialization from 4 to 2,
 #       so that the generated compile_commands.json is more compact and smaller.
+#
+# >>> 2025-01-28, Man Hung-Coeng <udc577@126.com>:
+#   01. Add IMPORTANT recommendation comment.
 #
 

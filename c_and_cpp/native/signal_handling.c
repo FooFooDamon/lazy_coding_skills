@@ -1,7 +1,7 @@
 /*
- * Signal handling.
+ * Operating system signal handling.
  *
- * Copyright (c) 2021-2024 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2021-2025 Man Hung-Coeng <udc577@126.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,6 +38,7 @@ enum
     , SIG_ERR_NOT_INITIALIZED
     , SIG_ERR_INVALID_SIGNAL_NUM
     , SIG_ERR_INVALID_SIGNAL_NAME
+    , SIG_ERR_FOUND_INTERSECTION
 
     , SIG_ERR_END /* NOTE: All error codes should be defined ahead of this. */
 };
@@ -51,6 +52,7 @@ static const char* const S_ERRORS[] = {
     , "Not initialized"
     , "Invalid signal number"
     , "Invalid signal name"
+    , "One signal list intersects with another"
 };
 
 const char* sig_error(int error_code)
@@ -141,7 +143,7 @@ int sig_global_init(void)
 #ifdef __STRICT_ANSI__
 #pragma message("Oops, popen() is not available in ANSI C!")
     sprintf(cmd, SIG_GET_NUMS_AND_NAMES_CMD" > .signal_handling_init.tmp", SIG_NUM_START, SIG_NUM_END);
-    system(cmd);
+    if (system(cmd)) {} /* NOTE: Use if() to eliminate -Wunused-result warning. */
     stream = fopen(".signal_handling_init.tmp", "r");
 #else
     sprintf(cmd, SIG_GET_NUMS_AND_NAMES_CMD, SIG_NUM_START, SIG_NUM_END);
@@ -165,7 +167,7 @@ int sig_global_init(void)
     }
 #ifdef __STRICT_ANSI__
     fclose(stream);
-    system("rm -f .signal_handling_init.tmp");
+    if (system("rm -f .signal_handling_init.tmp")) {} /* NOTE: Use if() to eliminate -Wunused-result warning. */
 #else
     pclose(stream);
 #endif
@@ -286,6 +288,26 @@ void sig_handler_nop(int signum)
     /* No OPerations. */
 }
 
+#if !defined(WIN32) && !defined(_WIN32) && !defined(windows) && !defined(WINDOWS)
+
+#if defined(__STRICT_ANSI__)
+
+#pragma message("You should implement your own sig_handler_wait_child_process()" \
+    " or specify -U__STRICT_ANSI__ (using the default implementation) in order to pass the program linkage.")
+
+#else
+
+#include <sys/wait.h>
+
+void sig_handler_wait_child_process(int signum) /* For SIGCHLD only. */
+{
+    wait(NULL);
+}
+
+#endif /* if defined(__STRICT_ANSI__) */
+
+#endif
+
 static volatile bool s_critical_flag = false;
 
 void sig_handler_set_critical_flag(int signum)
@@ -331,44 +353,99 @@ int sig_name_to_number(const char *signame, size_t name_len)
     return -SIG_ERR_INVALID_SIGNAL_NAME;
 }
 
-int sig_simple_register(void)
+int sig_simple_register(const char *critical_signals[], const char *plain_signals[])
 {
-    size_t i;
-    const int CRITICAL_SIGNALS[] = {
-        SIGINT, SIGABRT, SIGTERM
-    };
+    const char **crit_sig;
+    const char **plain_sig;
+    int crit_count = 0;
+    int plain_count = 0;
     int err = sig_global_init();
 
     if (err < 0)
         return err;
 
-    for (i = 0; i < sizeof(CRITICAL_SIGNALS) / sizeof(CRITICAL_SIGNALS[0]); ++i)
-    {
-        if ((err = sig_register(CRITICAL_SIGNALS[i], sig_handler_set_critical_flag)) < 0)
-            break;
-    }
+    if (NULL == critical_signals || NULL == plain_signals)
+        return -(EINVAL + SIG_ERR_END);
 
-    if (err < 0)
+    for (crit_sig = critical_signals; NULL != *crit_sig; ++crit_sig)
     {
-        for (i = 0; i < sizeof(CRITICAL_SIGNALS) / sizeof(CRITICAL_SIGNALS[0]); ++i)
+        for (plain_sig = plain_signals; NULL != *plain_sig; ++plain_sig)
         {
-            signal(CRITICAL_SIGNALS[i], SIG_DFL);
+            if (0 == strncmp(*crit_sig, *plain_sig, SIG_NAME_LEN_MAX))
+            {
+                fprintf(stderr, "*** Critical and Plain lists contain the same signal: %s\n", *crit_sig);
+
+                return -SIG_ERR_FOUND_INTERSECTION;
+            }
         }
     }
-#if !defined(WIN32) && !defined(_WIN32)
-    else
+
+    for (crit_sig = critical_signals; NULL != *crit_sig; ++crit_sig)
     {
-        signal(SIGPIPE, SIG_IGN);
-        signal(SIGCHLD, SIG_IGN);
-    }
+        int signum = sig_name_to_number(*crit_sig, strlen(*crit_sig));
+#if !defined(WIN32) && !defined(_WIN32) && !defined(windows) && !defined(WINDOWS)
+        void (*handler)(int) = (SIGCHLD == signum) ? sig_handler_wait_child_process : sig_handler_set_critical_flag;
+#else
+        void (*handler)(int) = sig_handler_set_critical_flag;
 #endif
+
+        ++crit_count;
+
+        if ((err = sig_register(signum, handler)) < 0)
+        {
+            fprintf(stderr, "*** Failed to register critical SIG%s: %s\n", *crit_sig, sig_error(err));
+
+            break;
+        }
+    }
+
+    for (plain_sig = plain_signals; NULL != *plain_sig; ++plain_sig)
+    {
+        int signum = (err < 0) ? SIG_INVALID_NUM : sig_name_to_number(*plain_sig, strlen(*plain_sig));
+#if !defined(WIN32) && !defined(_WIN32) && !defined(windows) && !defined(WINDOWS)
+        void (*handler)(int) = (SIGCHLD == signum) ? sig_handler_wait_child_process : sig_handler_nop;
+#else
+        void (*handler)(int) = sig_handler_nop;
+#endif
+
+        ++plain_count;
+
+        if (err < 0)
+            break;
+
+        if ((err = signum) < 0 || (err = sig_register(signum, handler)) < 0)
+        {
+            fprintf(stderr, "*** Failed to register plain SIG%s: %s\n", *plain_sig, sig_error(err));
+
+            break;
+        }
+    }
+
+    if (err >= 0)
+        return (crit_count > 0 || plain_count > 0) ? 0 : -(EINVAL + SIG_ERR_END);
+
+    for (plain_sig = plain_signals; NULL != *plain_sig; ++plain_sig)
+    {
+        int signum = sig_name_to_number(*plain_sig, strlen(*plain_sig));
+
+        if (signum > 0)
+            signal(signum, SIG_DFL);
+    }
+
+    for (crit_sig = critical_signals; NULL != *crit_sig; ++crit_sig)
+    {
+        int signum = sig_name_to_number(*crit_sig, strlen(*crit_sig));
+
+        if (signum > 0)
+            signal(signum, SIG_DFL);
+    }
 
     return err;
 }
 
 #ifdef TEST
 
-#if defined(WIN32) || defined(_WIN32)
+#if defined(WIN32) || defined(_WIN32) || defined(windows) || defined(WINDOWS)
 #include <windows.h>
 #define sleep(secs)             Sleep(secs * 1000)
 #else
@@ -470,7 +547,7 @@ int main(int argc, char **argv)
  * ================
  *
  * >>> 2021-12-25, Man Hung-Coeng:
- *  01. Initial release.
+ *  01. Initial commit.
  *
  * >>> 2021-12-27, Man Hung-Coeng:
  *  01. Eliminate errors appeared in terminal
@@ -497,5 +574,9 @@ int main(int argc, char **argv)
  * >>> 2024-06-15, Man Hung-Coeng:
  *  01. Disable the action of automatically restarting the interrupted syscall
  *      by default in sig_register().
+ *
+ * >>> 2025-01-28, Man Hung-Coeng:
+ *  01. Change parameter list of sig_simple_register() to 2 char* arrays
+ *      to support customizing critical and plain signals.
  */
 

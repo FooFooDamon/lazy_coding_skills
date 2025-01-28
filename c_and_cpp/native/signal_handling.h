@@ -1,7 +1,7 @@
 /*
- * Signal handling.
+ * Operating system signal handling.
  *
- * Copyright (c) 2021-2023 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2021-2025 Man Hung-Coeng <udc577@126.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,6 +42,10 @@ int sig_clear_happen_flag(int signum);
 
 void sig_handler_nop(int signum); /* No OPerations. */
 
+#if !defined(WIN32) && !defined(_WIN32) && !defined(windows) && !defined(WINDOWS)
+extern void sig_handler_wait_child_process(int signum); /* For SIGCHLD only. */
+#endif
+
 void sig_handler_set_critical_flag(int signum);
 
 bool sig_check_critical_flag(void); /* Works only if the handler above is used. */
@@ -53,7 +57,9 @@ int sig_name_to_number(const char *signame, size_t name_len);
 /*
  * Simple applications can use the function below. For example:
  *
- * int err = sig_simple_register();
+ * const char *critical_signals[] = { "INT", "ABRT", "TERM", "QUIT", "BUS", "PWR", NULL };
+ * const char *plain_signals[] = { "CHLD", "PIPE", "USR1", "USR2", NULL };
+ * int err = sig_simple_register(critical_signals, plain_signals);
  *
  * if (err < 0)
  * {
@@ -73,7 +79,7 @@ int sig_name_to_number(const char *signame, size_t name_len);
  *
  * return EXIT_SUCCESS;
  */
-int sig_simple_register(void);
+int sig_simple_register(const char *critical_signals[], const char *plain_signals[]);
 
 #ifdef __cplusplus
 }
@@ -87,7 +93,7 @@ int sig_simple_register(void);
  * ================
  *
  * >>> 2021-12-25, Man Hung-Coeng:
- *  01. Create.
+ *  01. Initial commit.
  *
  * >>> 2022-01-03, Man Hung-Coeng:
  *  01. Add a function pointer to the parameter list of sig_register()
@@ -95,6 +101,9 @@ int sig_simple_register(void);
  *
  * >>> 2023-12-24, Man Hung-Coeng:
  *  01. Add several functions for simple application usage.
+ *
+ * >>> 2025-01-28, Man Hung-Coeng:
+ *  01. Change parameter list of sig_simple_register() to 2 char* arrays
+ *      to support customizing critical and plain signals.
  */
-
 

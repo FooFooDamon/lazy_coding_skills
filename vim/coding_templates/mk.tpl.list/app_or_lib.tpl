@@ -12,8 +12,8 @@ LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 export LAZY_CODING_MAKEFILES ?= $(abspath __ver__.mk c_and_cpp.mk)
 
 override undefine PREREQUISITE_FILES
-PREREQUISITE_FILES := ${LAZY_CODING_URL}/raw/3b93336d4e3e4c2f46fd795f2acf2fd437c08c9c/c_and_cpp/native/signal_handling.c \
-    ${LAZY_CODING_URL}/raw/38cf125e08241b9330812f6b040a072b6116adf6/c_and_cpp/native/signal_handling.h \
+PREREQUISITE_FILES := ${LAZY_CODING_URL}/raw/77d444b429e8ac0166e876834a52e97e0d3b3237/c_and_cpp/native/signal_handling.c \
+    ${LAZY_CODING_URL}/raw/77d444b429e8ac0166e876834a52e97e0d3b3237/c_and_cpp/native/signal_handling.h \
 
 ifeq ($(shell [ true $(foreach i, ${LAZY_CODING_MAKEFILES} $(notdir ${PREREQUISITE_FILES}), -a -s ${i}) ] && echo 1 || echo 0),0)
 
@@ -70,6 +70,8 @@ ${GOAL}: $(addsuffix .o, $(basename ${C_SRCS} ${CXX_SRCS}))
 # libYYY.a: <Dependencies of libYYY.a>
 
 # libZZZ.so: <Dependencies of libZZZ.so>
+
+signal_handling.o: C_DEFINES += -U__STRICT_ANSI__
 
 # ...
 

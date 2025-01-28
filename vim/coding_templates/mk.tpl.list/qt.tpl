@@ -12,8 +12,8 @@ LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 override undefine PREREQUISITE_FILES
 PREREQUISITE_FILES := ${LAZY_CODING_URL}/raw/main/makefile/__ver__.mk \
     ${LAZY_CODING_URL}/raw/main/c_and_cpp/native/qt_print.hpp \
-    ${LAZY_CODING_URL}/raw/3b93336d4e3e4c2f46fd795f2acf2fd437c08c9c/c_and_cpp/native/signal_handling.c \
-    ${LAZY_CODING_URL}/raw/38cf125e08241b9330812f6b040a072b6116adf6/c_and_cpp/native/signal_handling.h \
+    ${LAZY_CODING_URL}/raw/77d444b429e8ac0166e876834a52e97e0d3b3237/c_and_cpp/native/signal_handling.c \
+    ${LAZY_CODING_URL}/raw/77d444b429e8ac0166e876834a52e97e0d3b3237/c_and_cpp/native/signal_handling.h \
 
 ifeq ($(shell [ -s QtMakefile $(foreach i, $(notdir ${PREREQUISITE_FILES}), -a -s ${i}) ] && echo 1 || echo 0),0)
 

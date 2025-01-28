@@ -33,6 +33,7 @@ ${GOALS}: %.elf: %.o
 NON_ANSI_C_SRCS = ./logger_on_syslog.c ./signal_handling.c ./sleeps.c
 
 ${NON_ANSI_C_SRCS:.c=.o}: C_STD = gnu99
+${NON_ANSI_C_SRCS:.c=.o}: C_DEFINES += -U__STRICT_ANSI__
 
 include ${PWD}/../../makefile/c_and_cpp.mk
 

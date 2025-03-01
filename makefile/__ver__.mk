@@ -1,7 +1,7 @@
 #
 # Version number based on VCS (version control system).
 #
-# Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2025 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -22,7 +22,7 @@ ifeq (${VCS}, git)
 
     # Method 1: It works, but is a little tedious.
     __DIRTY_FLAG ?= $(shell \
-        [ -z "$$(git diff . 2> /dev/null | head -n 1)" ] \
+        [ -z "$$(git diff --name-only . 2> /dev/null | head -n 1)" ] \
         && echo "" \
         || echo "-dirty")
     #
@@ -100,5 +100,9 @@ endif
 #
 # >>> 2024-11-10, Man Hung-Coeng <udc577@126.com>:
 #   01. Use the commit hash of current directory instead of the one of project.
+#
+# >>> 2025-03-01, Man Hung-Coeng <udc577@126.com>:
+#   01. Add --name-only option to reduce the amount of "git diff" output
+#   	when checking dirty status.
 #
 

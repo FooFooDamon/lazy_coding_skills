@@ -1,7 +1,7 @@
 /*
  * Data serialization, deserialization, etc. for communication purpose.
  *
- * Copyright (c) 2022 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2022-2025 Man Hung-Coeng <udc577@126.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,7 +53,7 @@ static const char* const S_ERRORS[] = {
     , "Failed to allocate memory"
     , "Zero length"
     , "String too long"
-    , "Not initialized"
+    , "Protocol facility not initialized"
     , "Unknown field type"
     , "Packet too big"
     , "Wrong meta data"
@@ -997,5 +997,8 @@ void commproto_dump_buffer(const uint8_t *buf, uint32_t size, FILE *nullable_str
  *
  * >>> 2022-09-13, Man Hung-Coeng:
  *  01. Eliminate some warnings from compilers or VIM plugins.
+ *
+ * >>> 2025-03-05, Man Hung-Coeng:
+ *  01. Describe COMMPROTO_ERR_NOT_INITIALIZED more detailedly.
  */
 

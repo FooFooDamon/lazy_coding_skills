@@ -14,6 +14,9 @@
 
 #pragma pack(1)
 
+// Comment out this macro if the type of session_id is string.
+#define INT64_SESSION_ID
+
 #if !defined(INT64_SESSION_ID) && !defined(SESSION_ID_LENGTH)
 #define SESSION_ID_LENGTH                   16
 #define SESSION_ID_ARRAY_SIZE               (SESSION_ID_LENGTH + (sizeof(uint32_t) - (SESSION_ID_LENGTH % sizeof(uint32_t))))
@@ -28,17 +31,23 @@
 // Comment out this macro if session_id is in packet body.
 #define SESSION_ID_IN_HEADER
 
-// Comment out this macro if the type of session_id is string.
-#define INT64_SESSION_ID
-
 typedef struct packet_head
 {
-    uint16_t length;
+    /*
+     * NOTE:
+     *      DO NOT modify these fields directly!
+     *      Use set_once_per_round() and set_for_current_packet() instead!
+     */
+    uint16_t length; // total length of remaining fields of this struct and the following body[n]
     uint16_t command_code;
-    uint16_t packet_seq;
+    uint16_t packet_seq; // value range: [1, total_packets]
     uint16_t total_packets;
-    uint32_t sizeof_all_bodies;
-    uint32_t body_offset;
+    uint32_t sizeof_all_bodies; // includes length of packet_body_prefix
+    // packet[1]:                   0 + length(body[1]) (including length of packet_body_prefix)
+    // packet[2]: next_body_offset[1] + length(body[2])        (no length of packet_body_prefix)
+    // packet[3]: next_body_offset[2] + length(body[3])        (no length of packet_body_prefix)
+    // ...
+    uint32_t next_body_offset;
 #ifdef SESSION_ID_IN_HEADER
 #ifdef INT64_SESSION_ID
     uint64_t session_id;
@@ -53,7 +62,7 @@ typedef struct packet_head
         COMMPROTO_INT16, // packet_seq
         COMMPROTO_INT16, // total_packets
         COMMPROTO_INT32, // sizeof_all_bodies
-        COMMPROTO_INT32, // body_offset
+        COMMPROTO_INT32, // next_body_offset
 #ifdef SESSION_ID_IN_HEADER
         SESSION_ID_META_VAR // session_id
 #endif
@@ -61,8 +70,7 @@ typedef struct packet_head
 
     COMMPROTO_DEFINE_META_FUNCTIONS_IN_STRUCT();
 
-    inline void fill(uint16_t command_code, uint16_t total_packets,
-        uint32_t sizeof_all_bodies, uint16_t body_size, uint32_t body_offset,
+    inline void set_once_per_round(uint16_t command_code, uint16_t total_packets, uint32_t sizeof_all_bodies,
 #ifdef SESSION_ID_IN_HEADER
 #ifdef INT64_SESSION_ID
         uint64_t session_id
@@ -72,21 +80,61 @@ typedef struct packet_head
 #endif
     )
     {
-        this->length = sizeof(packet_head) - sizeof(packet_head::length) + body_size;
         this->command_code = command_code;
-        ++this->packet_seq;
+        this->packet_seq = 0;
         this->total_packets = total_packets;
         this->sizeof_all_bodies = sizeof_all_bodies;
-        this->body_offset = body_offset;
+        this->next_body_offset = 0;
 #ifdef SESSION_ID_IN_HEADER
 #ifdef INT64_SESSION_ID
         this->session_id = session_id;
 #else
         memcpy(this->session_id, session_id, SESSION_ID_LENGTH);
+        session_id[SESSION_ID_LENGTH] = '\0';
 #endif
 #endif
     }
+
+    inline void set_for_current_packet(uint16_t body_size)
+    {
+        ++this->packet_seq;
+        this->length = sizeof(packet_head) - sizeof(packet_head::length) + body_size;
+        this->next_body_offset += body_size;
+    }
+
+    inline bool is_valid(void)
+    {
+        return ((packet_seq > 0) && (total_packets >= packet_seq)
+            && (next_body_offset > 0) && (sizeof_all_bodies >= next_body_offset)
+            && (length > sizeof(packet_head) - sizeof(packet_head::length)));
+    }
+
+    /*
+     * This function CAN be used ONLY AFTER:
+     *      set_once_per_round() and set_for_current_packet() are called,
+     * OR:
+     *      COMMPROTO_CPP_PARSE() or commproto_parse() is called, and is_valid() returns true.
+     */
+    inline uint16_t body_size(void)
+    {
+        return this->length + sizeof(packet_head::length) - sizeof(packet_head);
+    }
+
+    /*
+     * This function CAN be used ONLY AFTER:
+     *      set_once_per_round() and set_for_current_packet() are called,
+     * OR:
+     *      COMMPROTO_CPP_PARSE() or commproto_parse() is called, and is_valid() returns true.
+     */
+    inline uint32_t body_offset(void)
+    {
+        return this->next_body_offset - this->body_size();
+    }
 } packet_head_t;
+
+#ifndef PROTO_VERSION
+#define PROTO_VERSION                       0x01000000
+#endif
 
 // NOTE: This enum type can be defined in somewhere else,
 //      but its name after the enum keyword should not change
@@ -96,9 +144,29 @@ enum proto_err_e //! Protocol Error Codes
     PROTO_ERR_OK = 0, //!> Success
     PROTO_ERR_UNSUPPORTED = 1, //!> Operation unsupported yet
     PROTO_ERR_UNIMPLEMENTED = 2, //!> Operation unimplemented yet
+    PROTO_ERR_INNER = 3, //!> Inner error
+    PROTO_ERR_PKT_BIGGER_THAN_SPECIFIED = 4, //!> Packet bigger than specified
+    PROTO_ERR_PKT_TOO_BIG = 5, //!> Packet too big
+    PROTO_ERR_PKT_TRUNCATED = 6, //!> Packet truncated
+    PROTO_ERR_PKT_FRAGMENTS_NOT_ENOUGH = 7, //!> Fragments not enough to form a full packet
+    PROTO_ERR_PKT_HEADER_PRECHK_FAILED = 8, //!> Packet header precheck failed
+    PROTO_ERR_PKT_TOTAL_FRAGS_INCONSISTENT = 9, //!> Total fragments value inconsistent
+    PROTO_ERR_PKT_SIZEOF_ALL_FRAGS_INCONSISTENT = 10, //!> Size value of all fragments inconsistent
+    PROTO_ERR_PROTO_VERSION_TOO_LOW = 11, //!> Protocol version too low
+    PROTO_ERR_PROTO_VERSION_TOO_MISMATCHED = 12, //!> Protocol version mismatched
+    PROTO_ERR_UNKNOWN_PEER = 13, //!> Unknown peer
+    PROTO_ERR_PEER_ALREADY_EXISTED = 14, //!> Peer already existed
+    PROTO_ERR_REPEATED_REQUEST = 15, //!> Repeated request
+    PROTO_ERR_NULL_SESSION_ID = 16, //!> Null session ID
+    PROTO_ERR_SESSION_ID_TOO_LONG = 17, //!> Session ID too long
+    PROTO_ERR_NULL_NAME = 18, //!> Null name
+    PROTO_ERR_NAME_TOO_LONG = 19, //!> Name too long
+    PROTO_ERR_NULL_STRING = 20, //!> Null string
+    PROTO_ERR_STRING_TOO_LONG = 21, //!> String too long
+    PROTO_ERR_VALUE_OUT_OF_RANGE = 22, //!> Value out of range
 };
 
-typedef struct packet_body_prefix //! Prefix that all bodies should contain one.
+typedef struct packet_body_prefix //! \makecell[l]{Prefix that body of each FULL packet\\ (not sub-packet or fragment) should contain one.}
 {
 #ifndef SESSION_ID_IN_HEADER
 #ifdef INT64_SESSION_ID
@@ -110,7 +178,17 @@ typedef struct packet_body_prefix //! Prefix that all bodies should contain one.
     uint32_t version; //!> | version |
     uint16_t return_code; //!> | return code | See \ref{proto_err_e}
 
-    inline void fill(
+    COMMPROTO_META_VAR_IN_STRUCT = {
+#ifndef SESSION_ID_IN_HEADER
+        SESSION_ID_META_VAR, // session_id
+#endif
+        COMMPROTO_INT32, // version
+        COMMPROTO_INT16, // return_code
+    };
+
+    COMMPROTO_DEFINE_META_FUNCTIONS_IN_STRUCT();
+
+    inline void set(
 #ifndef SESSION_ID_IN_HEADER
 #ifdef INT64_SESSION_ID
         uint64_t session_id,
@@ -125,6 +203,7 @@ typedef struct packet_body_prefix //! Prefix that all bodies should contain one.
         this->session_id = session_id;
 #else
         memcpy(this->session_id, session_id, SESSION_ID_LENGTH);
+        session_id[SESSION_ID_LENGTH] = '\0';
 #endif
 #endif
         this->version = version;
@@ -141,10 +220,6 @@ typedef struct packet_body_prefix //! Prefix that all bodies should contain one.
                                             COMMPROTO_INT32, \
                                             COMMPROTO_INT16
 #endif
-
-#if 0
-
-/******************************** Demo structs begin ********************************/
 
 /*
  * Rules of defining an enum list:
@@ -169,8 +244,18 @@ typedef struct packet_body_prefix //! Prefix that all bodies should contain one.
  * 04. Each field of a struct should be defined in a format of:
  *      <type> <name>; //!> | <meaning> | [optional remark in one single line]
  *
- * 05. LaTeX syntax is allowed when needed, for example: \ref{}, \makecell[l]{}, etc.
+ * 05. At least COMMPROTO_META_VAR_IN_STRUCT and COMMPROTO_DEFINE_META_FUNCTIONS_IN_STRUCT() are needed.
+ *
+ * 06. All structs MUST NOT contain virtual functions!
+ *
+ * 07. LaTeX syntax is allowed when needed, for example: \ref{}, \makecell[l]{}, etc.
  */
+
+#if 0
+
+/******************************** Demo structs begin ********************************/
+
+#define REQ_DEMO                            0x0000
 
 typedef struct req_0000_demo //! Demo Request
 {
@@ -184,6 +269,8 @@ typedef struct req_0000_demo //! Demo Request
     // NOTE: You should define COMMPROTO_META_VAR_OUT_OF_STRUCT(req_0000_demo) in another source file.
     COMMPROTO_DEFINE_META_FUNCTIONS_IN_STRUCT();
 } req_0000_demo_t;
+
+#define REPLY_DEMO                          0x0001
 
 enum demo_status_e //! Options for Demo Status
 {
@@ -236,9 +323,13 @@ typedef struct reply_0001_demo //! Demo Reply
     COMMPROTO_DEFINE_META_FUNCTIONS_IN_STRUCT();
 } reply_0001_demo_t;
 
-typedef req_0000_demo_t                     req_0002_another_demo_t; //! Another Demo Request which reuses body \ref{req_0000_demo}
+#define REQ_ANOTHER_DEMO                    0x0002
 
-typedef reply_0001_demo_t                   reply_0003_another_demo_t; //! Another Demo Reply which reuses body \ref{reply_0001_demo}
+typedef req_0000_demo_t                     req_0002_another_demo_t; //! Another Demo Request, which reuses body \ref{req_0000_demo}
+
+#define REPLY_ANOTHER_DEMO                  0x0003
+
+typedef reply_0001_demo_t                   reply_0003_another_demo_t; //! Another Demo Reply, which reuses body \ref{reply_0001_demo}
 
 /******************************** Demo structs end ********************************/
 

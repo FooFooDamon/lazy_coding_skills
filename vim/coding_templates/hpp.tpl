@@ -1,7 +1,7 @@
 util.tpl
 thin_class.tpl
 rich_class.tpl
-qt_gui_class.tpl
+qt_main_gui_class.tpl
 qt_util_class.tpl
 cmdline_args.tpl
 config_file.tpl

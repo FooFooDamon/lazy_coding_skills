@@ -35,8 +35,8 @@ Q_SIGNALS:
     void delegatingResize(int width, int height);
 
 private Q_SLOTS:
-    void __delegatingClose(void);
-    void __delegatingResize(int width, int height);
+    void doDelegatingClose(void);
+    void doDelegatingResize(int width, int height);
 
 private:
     bool m_delegating_close_happens;

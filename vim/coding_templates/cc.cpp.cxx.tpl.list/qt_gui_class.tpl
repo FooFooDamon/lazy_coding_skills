@@ -23,8 +23,8 @@ ${BASENAME}::${BASENAME}(QWidget *parent/* = nullptr*/)
 {
     setupUi(this);
 
-    QObject::connect(this, SIGNAL(delegatingClose(void)), this, SLOT(__delegatingClose(void)));
-    QObject::connect(this, SIGNAL(delegatingResize(int,int)), this, SLOT(__delegatingResize(int,int)));
+    QObject::connect(this, SIGNAL(delegatingClose(void)), this, SLOT(doDelegatingClose(void)));
+    QObject::connect(this, SIGNAL(delegatingResize(int,int)), this, SLOT(doDelegatingResize(int,int)));
 
     //this->delegatingResize(this->geometry().width(), this->geometry().height());
     //this->setWindowFlags(Qt::Window | Qt::WindowMinimizeButtonHint | Qt::WindowCloseButtonHint);
@@ -73,13 +73,13 @@ void ${BASENAME}::closeEvent(QCloseEvent *event)/* override */
     }
 }
 
-void ${BASENAME}::__delegatingClose()
+void ${BASENAME}::doDelegatingClose()
 {
     m_delegating_close_happens = true;
     this->close();
 }
 
-void ${BASENAME}::__delegatingResize(int width, int height)
+void ${BASENAME}::doDelegatingResize(int width, int height)
 {
     this->setFixedSize(width, height); // FIXME: Or do it your way.
 }

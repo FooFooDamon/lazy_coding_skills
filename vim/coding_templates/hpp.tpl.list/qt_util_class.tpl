@@ -27,7 +27,7 @@ Q_SIGNALS:
     // FIXME: Declare signal functions if any, and delete this comment line.
 
 public Q_SLOTS:
-    // FIXME: Declare private slot functions if any, and delete this comment line.
+    // FIXME: Declare public slot functions if any, and delete this comment line.
 
 private Q_SLOTS:
     // FIXME: Declare private slot functions if any, and delete this comment line.

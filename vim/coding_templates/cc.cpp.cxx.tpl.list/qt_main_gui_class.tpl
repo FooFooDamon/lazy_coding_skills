@@ -19,7 +19,7 @@ const QTextCodec *G_TEXT_CODEC = QTextCodec::codecForName("UTF8"/*"GB2312"*/);
 
 ${BASENAME}::${BASENAME}(QWidget *parent/* = nullptr*/)
     : QDialog(parent)
-    , m_delegating_close_happens(false)
+    , is_delegating_close_(false)
 {
     setupUi(this);
 
@@ -59,7 +59,7 @@ void ${BASENAME}::errorBox(const QString &title, const QString &text)
 
 void ${BASENAME}::closeEvent(QCloseEvent *event)/* override */
 {
-    if (m_delegating_close_happens)
+    if (this->is_delegating_close_)
         event->accept();
     else
     {
@@ -75,7 +75,7 @@ void ${BASENAME}::closeEvent(QCloseEvent *event)/* override */
 
 void ${BASENAME}::doDelegatingClose()
 {
-    m_delegating_close_happens = true;
+    this->is_delegating_close_ = true;
     this->close();
 }
 

@@ -39,7 +39,7 @@ private Q_SLOTS:
     void doDelegatingResize(int width, int height);
 
 private:
-    bool m_delegating_close_happens;
+    bool is_delegating_close_;
 };
 
 #endif /* #ifndef __${HEADER_GUARD}_HPP__ */

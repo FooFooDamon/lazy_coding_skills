@@ -17,9 +17,9 @@
 
 QVideoCanvas::QVideoCanvas(QWidget *parent/* = nullptr*/)
     : QVideoWidget(parent)
+    , player_(nullptr)
 {
     this->setAutoFillBackground(true);
-    this->player_.reset();
     this->context_menu_ = std::make_shared<QMenu>(this);
     this->play_action_ = std::make_shared<QAction>(QIcon::fromTheme("media-playback-start"), "Play\tSpace", this);
     this->context_menu_->addAction(this->play_action_.get());
@@ -45,7 +45,7 @@ QVideoCanvas::~QVideoCanvas()
 
 void QVideoCanvas::contextMenuEvent(QContextMenuEvent *event)/* override */
 {
-    if (this->player_.get())
+    if (nullptr != this->player_)
     {
         auto state = this->player_->state();
 
@@ -65,7 +65,7 @@ void QVideoCanvas::keyPressEvent(QKeyEvent *event)/* override */
 
 void QVideoCanvas::keyReleaseEvent(QKeyEvent *event)/* override */
 {
-    if (!this->player_.get())
+    if (nullptr == this->player_)
     {
         QWidget::keyReleaseEvent(event);
 
@@ -109,7 +109,7 @@ void QVideoCanvas::keyReleaseEvent(QKeyEvent *event)/* override */
     } // switch (event->key())
 }
 
-static inline void avoid_blank_screen(const std::shared_ptr<QMediaPlayer> &player)
+static inline void avoid_blank_screen(QMediaPlayer *player)
 {
     player->setPosition(player->position());
 }
@@ -126,26 +126,26 @@ void QVideoCanvas::focusOutEvent(QFocusEvent *event)/* override */
 
 void QVideoCanvas::play(void)
 {
-    if (this->player_.get())
-        this->player_->play();
-    else
+    if (nullptr == this->player_)
         qtCErrV(::, "*** Player not set yet!\n");
+    else
+        this->player_->play();
 }
 
 void QVideoCanvas::pause(void)
 {
-    if (this->player_.get())
-        this->player_->pause();
-    else
+    if (nullptr == this->player_)
         qtCErrV(::, "*** Player not set yet!\n");
+    else
+        this->player_->pause();
 }
 
 void QVideoCanvas::stop(void)
 {
-    if (this->player_.get())
-        this->player_->stop();
-    else
+    if (nullptr == this->player_)
         qtCErrV(::, "*** Player not set yet!\n");
+    else
+        this->player_->stop();
 }
 
 /*
@@ -155,5 +155,9 @@ void QVideoCanvas::stop(void)
  *
  * >>> 2025-03-27, Man Hung-Coeng <udc577@126.com>:
  *  01. Initial commit.
+ *
+ * >>> 2025-03-28, Man Hung-Coeng <udc577@126.com>:
+ *  01. Change the type of member variable player_
+ *      from std::shard_ptr to raw pointer.
  */
 

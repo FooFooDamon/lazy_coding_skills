@@ -26,7 +26,7 @@ public:
     ~QVideoCanvas();
 
 public:
-    inline void setPlayer(std::shared_ptr<QMediaPlayer> &player)
+    inline void setPlayer(QMediaPlayer *player)
     {
         this->player_ = player;
     }
@@ -44,7 +44,7 @@ public Q_SLOTS:
     void stop(void);
 
 private:
-    std::shared_ptr<QMediaPlayer> player_;
+    QMediaPlayer *player_;
     std::shared_ptr<QMenu> context_menu_;
     std::shared_ptr<QAction> play_action_;
     std::shared_ptr<QAction> pause_action_;
@@ -60,5 +60,9 @@ private:
  *
  * >>> 2025-03-27, Man Hung-Coeng <udc577@126.com>:
  *  01. Initial commit.
+ *
+ * >>> 2025-03-28, Man Hung-Coeng <udc577@126.com>:
+ *  01. Change the type of member variable player_
+ *      from std::shard_ptr to raw pointer.
  */
 

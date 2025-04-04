@@ -4,6 +4,7 @@
 *.o
 *.pdb
 *.elf
+*.elf.*
 *.a
 *.so
 *.so.*

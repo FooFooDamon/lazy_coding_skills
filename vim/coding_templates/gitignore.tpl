@@ -75,6 +75,12 @@ ui_*.h
 lazy_coding
 lazy_coding_skills
 
+QPlayerSlider.cpp
+QPlayerSlider.hpp
+QVideoCanvas.cpp
+QVideoCanvas.hpp
+camera_v4l2.c
+camera_v4l2.h
 chardev_group.c
 chardev_group.h
 communication_protocol.c

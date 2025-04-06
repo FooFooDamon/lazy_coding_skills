@@ -47,7 +47,11 @@ void QVideoCanvas::contextMenuEvent(QContextMenuEvent *event)/* override */
 {
     if (nullptr != this->player_)
     {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         auto state = this->player_->state();
+#else
+        auto state = this->player_->playbackState();
+#endif
 
         this->play_action_->setVisible(QMediaPlayer::PlayingState != state);
         this->pause_action_->setVisible(QMediaPlayer::PausedState != state);
@@ -75,7 +79,11 @@ void QVideoCanvas::keyReleaseEvent(QKeyEvent *event)/* override */
     switch (event->key())
     {
     case Qt::Key_Space:
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         switch (this->player_->state())
+#else
+        switch (this->player_->playbackState())
+#endif
         {
         case QMediaPlayer::PlayingState:
             this->player_->pause();
@@ -91,7 +99,11 @@ void QVideoCanvas::keyReleaseEvent(QKeyEvent *event)/* override */
         break;
 
     case Qt::Key_Escape:
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
         switch (this->player_->state())
+#else
+        switch (this->player_->playbackState())
+#endif
         {
         case QMediaPlayer::PlayingState:
         case QMediaPlayer::PausedState:
@@ -159,5 +171,8 @@ void QVideoCanvas::stop(void)
  * >>> 2025-03-28, Man Hung-Coeng <udc577@126.com>:
  *  01. Change the type of member variable player_
  *      from std::shard_ptr to raw pointer.
+ *
+ * >>> 2025-04-06, Man Hung-Coeng <udc577@126.com>:
+ *  01. Add Qt 6 compatibility.
  */
 

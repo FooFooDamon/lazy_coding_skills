@@ -47,7 +47,12 @@ void QPlayerSlider::mousePressEvent(QMouseEvent *event)/* override*/
     this->mouse_released_ = false;
     if (nullptr != this->player_)
     {
-        if (QMediaPlayer::PlayingState == (this->player_state_ = this->player_->state()))
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+        this->player_state_ = this->player_->state();
+#else
+        this->player_state_ = this->player_->playbackState();
+#endif
+        if (QMediaPlayer::PlayingState == this->player_state_)
             this->player_->pause();
     }
 }
@@ -80,5 +85,8 @@ void QPlayerSlider::setProgress(qint64 progress)
  *
  * >>> 2025-03-28, Man Hung-Coeng <udc577@126.com>:
  *  01. Initial commit.
+ *
+ * >>> 2025-04-06, Man Hung-Coeng <udc577@126.com>:
+ *  01. Add Qt 6 compatibility.
  */
 

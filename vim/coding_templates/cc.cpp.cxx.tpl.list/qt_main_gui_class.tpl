@@ -9,9 +9,9 @@
 
 #include "${BASENAME}.hpp"
 
-#include <QtCore/QTextCodec>
-#include <QtGui/QCloseEvent>
-#include <QtWidgets/QMessageBox>
+#include <QTextCodec> // QT += core
+#include <QCloseEvent> // QT += gui
+#include <QMessageBox> // QT += widgets
 
 #include "versions.h" // For FULL_VERSION()
 

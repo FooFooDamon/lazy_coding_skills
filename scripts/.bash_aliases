@@ -3,7 +3,7 @@
 #
 # Useful aliases.
 #
-# Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2025 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,10 +19,18 @@
 #
 
 if [ -n "${LAZY_CODING_HOME}" ]; then
+    alias clang++_macros="clang++ -dM -E - < /dev/null"
+    alias clang_macros="clang -dM -E - < /dev/null"
     alias cp="time cp"
+    alias cpu_digest="grep '^\(processor\|model name\|cache size\|physical id\|bogomips\)' /proc/cpuinfo \
+        | sed -e 's/^\(.\+\)/\t\1/' -e 's/^\t\(processor\)[ \t]*:\(.\+\)/\1\2:/'"
+    alias cpu_load="watch -n 1 bash ${LAZY_CODING_HOME}/scripts/cpu_load.sh"
+    alias cpu_sysbench='sysbench cpu --cpu-max-prime=10000 --threads=$(nproc) --time=20 run'
     alias diff="diff --color=auto"
     alias dsk="cd ${HOME}/桌面 2> /dev/null || cd ${HOME}/Desktop"
     alias find="time find -L"
+    alias g++_macros="g++ -dM -E - < /dev/null"
+    alias gcc_macros="gcc -dM -E - < /dev/null"
     alias html2pdf=wkhtmltopdf
     alias html2pic=wkhtmltoimage
     alias lc_reload=". ${LAZY_CODING_HOME}/scripts/__import__.sh"
@@ -66,5 +74,8 @@ fi
 #
 # >>> 2024-05-25, Man Hung-Coeng <udc577@126.com>:
 #   01. Add read-only support for nfsmount.
+#
+# >>> 2025-04-06, Man Hung-Coeng <udc577@126.com>:
+#   01. Add {clang*,g++,gcc}_macros and cpu_{digest,load,sysbench}.
 #
 

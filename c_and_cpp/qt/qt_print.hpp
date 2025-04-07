@@ -3,7 +3,7 @@
 /*
  * Formatted print enhancements based on Qt console debugging techniques.
  *
- * Copyright (c) 2024 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2024-2025 Man Hung-Coeng <udc577@126.com>
  * All rights reserved.
  */
 
@@ -46,24 +46,15 @@
 #endif
 
 #ifndef qtNotice
-#define qtNotice(_format_, ...)                     do { \
-    qWarning(QPRINT_FMT_ESCAPE_NOTICE(_format_), ##__VA_ARGS__); \
-    fflush(stderr); \
-} while (0)
+#define qtNotice(_format_, ...)                     qWarning(QPRINT_FMT_ESCAPE_NOTICE(_format_), ##__VA_ARGS__)
 #endif
 
 #ifndef qtWarn
-#define qtWarn(_format_, ...)                       do { \
-    qWarning(QPRINT_FMT_ESCAPE_WARN(_format_), ##__VA_ARGS__); \
-    fflush(stderr); \
-} while (0)
+#define qtWarn(_format_, ...)                       qWarning(QPRINT_FMT_ESCAPE_WARN(_format_), ##__VA_ARGS__)
 #endif
 
 #ifndef qtErr
-#define qtErr(_format_, ...)                        do { \
-    qCritical(QPRINT_FMT_ESCAPE_ERR(_format_), ##__VA_ARGS__); \
-    fflush(stderr); \
-} while (0)
+#define qtErr(_format_, ...)                        qCritical(QPRINT_FMT_ESCAPE_ERR(_format_), ##__VA_ARGS__)
 #endif
 
 #define __QT_PRINT_VERBOSE(_level_, _qt_api_, _namespace_, _format_, ...)     \
@@ -79,24 +70,15 @@
 #endif
 
 #ifndef qtNoticeV
-#define qtNoticeV(_namespace_, _format_, ...)       do { \
-    __QT_PRINT_VERBOSE(NOTICE, qWarning, _namespace_, _format_, ##__VA_ARGS__); \
-    fflush(stderr); \
-} while (0)
+#define qtNoticeV(_namespace_, _format_, ...)       __QT_PRINT_VERBOSE(NOTICE, qWarning, _namespace_, _format_, ##__VA_ARGS__)
 #endif
 
 #ifndef qtWarnV
-#define qtWarnV(_namespace_, _format_, ...)         do { \
-    __QT_PRINT_VERBOSE(WARN, qWarning, _namespace_, _format_, ##__VA_ARGS__); \
-    fflush(stderr); \
-} while (0)
+#define qtWarnV(_namespace_, _format_, ...)         __QT_PRINT_VERBOSE(WARN, qWarning, _namespace_, _format_, ##__VA_ARGS__)
 #endif
 
 #ifndef qtErrV
-#define qtErrV(_namespace_, _format_, ...)          do { \
-    __QT_PRINT_VERBOSE(ERR, qCritical, _namespace_, _format_, ##__VA_ARGS__); \
-    fflush(stderr); \
-} while (0)
+#define qtErrV(_namespace_, _format_, ...)          __QT_PRINT_VERBOSE(ERR, qCritical, _namespace_, _format_, ##__VA_ARGS__)
 #endif
 
 #define __QT_CLASS_PRINT_VERBOSE(_level_, _qt_api_, _namespace_, _format_, ...)     \
@@ -112,24 +94,15 @@
 #endif
 
 #ifndef qtCNoticeV
-#define qtCNoticeV(_namespace_, _format_, ...)      do { \
-    __QT_CLASS_PRINT_VERBOSE(NOTICE, qWarning, _namespace_, _format_, ##__VA_ARGS__); \
-    fflush(stderr); \
-} while (0)
+#define qtCNoticeV(_namespace_, _format_, ...)      __QT_CLASS_PRINT_VERBOSE(NOTICE, qWarning, _namespace_, _format_, ##__VA_ARGS__)
 #endif
 
 #ifndef qtCWarnV
-#define qtCWarnV(_namespace_, _format_, ...)        do { \
-    __QT_CLASS_PRINT_VERBOSE(WARN, qWarning, _namespace_, _format_, ##__VA_ARGS__); \
-    fflush(stderr); \
-} while (0)
+#define qtCWarnV(_namespace_, _format_, ...)        __QT_CLASS_PRINT_VERBOSE(WARN, qWarning, _namespace_, _format_, ##__VA_ARGS__)
 #endif
 
 #ifndef qtCErrV
-#define qtCErrV(_namespace_, _format_, ...)         do { \
-    __QT_CLASS_PRINT_VERBOSE(ERR, qCritical, _namespace_, _format_, ##__VA_ARGS__); \
-    fflush(stderr); \
-} while (0)
+#define qtCErrV(_namespace_, _format_, ...)         __QT_CLASS_PRINT_VERBOSE(ERR, qCritical, _namespace_, _format_, ##__VA_ARGS__)
 #endif
 
 #ifndef QT_GET_THREAD_NAME
@@ -166,11 +139,11 @@
     )); \
 \
     /* To remove the auto-newline of each message. */ \
-    qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &msg){ \
+    /*qInstallMessageHandler([](QtMsgType type, const QMessageLogContext &context, const QString &msg){ \
         FILE *stream = ((QtMsgType::QtDebugMsg == type) || (QtMsgType::QtInfoMsg == type)) ? stdout : stderr; \
 \
         fprintf(stream, "%s", qFormatLogMessage(type, context, msg).toStdString().c_str()); \
-    }); \
+    });*/ \
 } while (0)
 #endif
 
@@ -187,5 +160,8 @@
  *
  * >>> 2024-09-18, Man Hung-Coeng <udc577@126.com>:
  *  01. Initial commit.
+ *
+ * >>> 2025-04-07, Man Hung-Coeng <udc577@126.com>:
+ *  01. Enable auto-newline for each message again.
  */
 

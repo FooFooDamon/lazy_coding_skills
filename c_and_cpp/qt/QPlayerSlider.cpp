@@ -64,7 +64,7 @@ void QPlayerSlider::mouseReleaseEvent(QMouseEvent *event)/* override*/
     emit this->sliderMoved64(this->value()/* this->sliderPosition() */);
     this->previousInFocusChain()->setFocus();
     if (nullptr == this->player_)
-        qtCErrV(::, "*** Player not set yet!\n");
+        qtCErrV(::, "*** Player not set yet!");
     else
     {
         if (QMediaPlayer::PlayingState == this->player_state_)
@@ -88,5 +88,8 @@ void QPlayerSlider::setProgress(qint64 progress)
  *
  * >>> 2025-04-06, Man Hung-Coeng <udc577@126.com>:
  *  01. Add Qt 6 compatibility.
+ *
+ * >>> 2025-04-08, Man Hung-Coeng <udc577@126.com>:
+ *  01. Remove the trailing newline character from each log message.
  */
 

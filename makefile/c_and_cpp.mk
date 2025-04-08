@@ -1,7 +1,7 @@
 #
 # Basic rules for C/C++ app compilation.
 #
-# Copyright (c) 2021-2024 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2021-2025 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -175,13 +175,15 @@ check:
 	$(if ${Q},@printf '>>> CHECK: Begin.\n')
 	$(if ${Q},@printf '>>> CHECK: Patience ...\n')
 	${Q}if [ -n "$(word 1, ${C_SRCS})" ]; then \
-		cppcheck --quiet --enable=all --language=c --std=${C_STD} -j ${NTHREADS} \
-            ${C_DEFINES} ${C_INCLUDES} $(filter-out %.mod.c, ${C_SRCS}) || : ; \
+		cppcheck --quiet --enable=all --suppress=missingIncludeSystem \
+			--language=c --std=${C_STD} -j ${NTHREADS} \
+			${C_DEFINES} ${C_INCLUDES} $(filter-out %.mod.c, ${C_SRCS}) || : ; \
 		clang --analyze ${CFLAGS} $(filter-out %.mod.c, ${C_SRCS}); \
 	fi
 	${Q}if [ -n "$(word 1, ${CXX_SRCS})" ]; then \
-		cppcheck --quiet --enable=all --language=c++ --std=${CXX_STD} -j ${NTHREADS} \
-            -D__cplusplus=${__cplusplus} ${CXX_DEFINES} ${CXX_INCLUDES} ${CXX_SRCS} || : ; \
+		cppcheck --quiet --enable=all --suppress=missingIncludeSystem \
+			--language=c++ --std=${CXX_STD} -j ${NTHREADS} \
+			-D__cplusplus=${__cplusplus} ${CXX_DEFINES} ${CXX_INCLUDES} ${CXX_SRCS} || : ; \
 		clang --analyze ${CXXFLAGS} ${CXX_SRCS}; \
 	fi
 	$(if ${Q},@printf '>>> CHECK: Done.\n')
@@ -322,5 +324,8 @@ endif
 #   01. Suppress the warning messages of guessing C/C++ source files.
 #   02. Keep clang-check going on even if the previous cppcheck failed.
 #   03. Update some printings of verbose mode.
+#
+# >>> 2025-04-08, Man Hung-Coeng <udc577@126.com>:
+#   01. Suppress cppcheck's wrong complains about lack of standard header files.
 #
 

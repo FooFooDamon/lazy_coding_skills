@@ -31,6 +31,29 @@
 #include <sys/mman.h>
 
 #ifdef NO_DEFAULT_FMT_LOG
+/*
+ * One example of fmt_log.h based on Qt console logging:
+ *
+ * #include "../qt/qt_print.hpp"
+ *
+ * #define qtD                                          qtDebug
+ * #define qtDV                                         qtDebugV
+ *
+ * #define qtI                                          qtInfo
+ * #define qtIV                                         qtInfoV
+ *
+ * #define qtN                                          qtNotice
+ * #define qtNV                                         qtNoticeV
+ *
+ * #define qtW                                          qtWarn
+ * #define qtWV                                         qtWarnV
+ *
+ * #define qtE                                          qtErr
+ * #define qtEV                                         qtErrV
+ *
+ * #define FMT_LOG(_filter_, _tag_, _fmt_, ...)         qt##_tag_(_fmt_, ##__VA_ARGS__)
+ * #define FMT_LOG_V(_filter_, _tag_, _fmt_, ...)       qt##_tag_##V(::, _fmt_, ##__VA_ARGS__)
+ */
 #include "fmt_log.h"
 #else
 #include "formatted_logging_adapter.h"
@@ -913,8 +936,10 @@ static int cam_v4l2_enqueue_buffer(struct camera_v4l2 *cam, uint8_t buf_index)
     return cam->err;
 }
 
-static camera_v4l2_t s_log_filter;
-static camera_v4l2_t *cam = &s_log_filter;
+static struct
+{
+    int log_level;
+} s_global_filter, *cam = &s_global_filter;
 
 camera_v4l2_t camera_v4l2(const char *log_level)
 {
@@ -924,9 +949,11 @@ camera_v4l2_t camera_v4l2(const char *log_level)
 
     obj.fd = -1;
     obj.last_func = "<none>";
-#ifndef NO_DEFAULT_FMT_LOG
+#ifdef NO_DEFAULT_FMT_LOG
+    cam->log_level = 0; /* eliminate -Wunused-variable warning */
+#else
     obj.log_level = to_log_level(log_level);
-    s_log_filter.log_level = obj.log_level;
+    s_global_filter.log_level = obj.log_level;
 #endif
 
     obj.open = cam_v4l2_open;
@@ -990,8 +1017,8 @@ int main(int argc, char **argv)
     int max_frame_count;
     int i;
 
-    if (cam_obj.open(&cam_obj, dev_path, /* is_nonblocking = */0) < 0
-        || cam_obj.query_capabilities(&cam_obj, /* with_validation = */1) < 0
+    if (cam_obj.open(&cam_obj, dev_path, /* is_nonblocking = */false) < 0
+        || cam_obj.query_capabilities(&cam_obj, /* with_validation = */true) < 0
         || cam_obj.match_format(&cam_obj, format) < 0
         || cam_obj.set_size_and_format(&cam_obj, width, height) < 0
         || cam_obj.set_frame_rate(&cam_obj, fps, fallback_fps) < 0
@@ -1053,5 +1080,9 @@ int main(int argc, char **argv)
  *
  * >>> 2025-04-04, Man Hung-Coeng <udc577@126.com>:
  *  01. Initial commit.
+ *
+ * >>> 2025-04-08, Man Hung-Coeng <udc577@126.com>:
+ *  01. Change the type of global log filter and thus greatly reduce its size.
+ *  02. Add fmt_log.h example comment.
  */
 

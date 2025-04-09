@@ -30,12 +30,11 @@ all:
 
 ${GOALS}: %.elf: %.o
 
-NON_ANSI_C_SRCS = ./logger_on_syslog.c ./signal_handling.c ./sleeps.c
+NON_ANSI_C_SRCS = ./camera_v4l2.c ./logger_on_syslog.c ./signal_handling.c
 
-${NON_ANSI_C_SRCS:.c=.o}: C_STD = gnu99
-${NON_ANSI_C_SRCS:.c=.o}: C_DEFINES += -U__STRICT_ANSI__
+${NON_ANSI_C_SRCS:.c=.o}: C_STD = c99
 
-./camera_v4l2.o: C_STD = c99
+./signal_handling.o: C_DEFINES += -U__STRICT_ANSI__
 
 include ${PWD}/../../makefile/c_and_cpp.mk
 

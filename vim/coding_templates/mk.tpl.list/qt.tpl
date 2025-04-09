@@ -28,6 +28,15 @@ all prepare: dependencies
 
 else
 
+ifeq (${MAKELEVEL}, 0)
+
+.PHONY: fast
+
+fast:
+	${MAKE} -j $$(nproc)
+
+endif
+
 all: dependencies
 
 include __ver__.mk

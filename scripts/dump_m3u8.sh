@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2025 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ usage()
     printf "  3. $(basename $0) 'http://www.xxx.com/index.m3u8'\n"
     printf "  4. $(basename $0) 'http://www.xxx.com/index.m3u8' 'test video 2'.mkv\n"
     printf "  5. LCS_HTTP_USER_AGENT='Mozilla/5.0 (X11; Linux x86_64)' $(basename $0) 'http://www.xxx.com/index.m3u8'\n"
-    printf "  6. LCS_CHKSUM_NAMED_FRAGMENT=1 'http://www.xxx.com/index.m3u8'\n"
+    printf "  6. LCS_CHKSUM_NAMED_FRAGMENT=1 $(basename $0) 'http://www.xxx.com/index.m3u8'\n"
     printf "\nNOTES:\n"
     printf "  1. This script supports breakpoint-resuming.\n"
     printf "     So, feel free to abort and restart at any time.\n"
@@ -182,7 +182,7 @@ dumping_task()
     if [ -n "${LCS_CHKSUM_NAMED_FRAGMENT}" ]; then
         local _fragment="$(printf "$1" | sha1sum | awk '{ print $1 }')"
     else
-        local _fragment="$(basename "$1")"
+        local _fragment="$(basename "$1" | sed 's/?.\+$//')"
     fi
 
     set -x
@@ -227,7 +227,7 @@ if [ -n "${LCS_CHKSUM_NAMED_FRAGMENT}" ]; then
         }
     }' ${REMOTE_PLAYLIST} | sed "s/\(EXT-X-KEY:.*,URI=\)[^,]*\([,]*.*\)/\1\"key.key\"\2/g" > ${LOCAL_PLAYLIST}
 else
-    sed -e "/^[^#]/s/.*\/\(.*\)/\1/g" -e "s/\(EXT-X-KEY:.*,URI=\)[^,]*\([,]*.*\)/\1\"key.key\"\2/g" ${REMOTE_PLAYLIST} > ${LOCAL_PLAYLIST}
+    sed -e "/^[^#]/s/.\+\/\([^?]\+\)?.\+$/\1/" -e "s/\(EXT-X-KEY:.*,URI=\)[^,]*\([,]*.*\)/\1\"key.key\"\2/g" ${REMOTE_PLAYLIST} > ${LOCAL_PLAYLIST}
 fi
 
 # Splice fragments together into a video.
@@ -240,7 +240,7 @@ ffmpeg -allowed_extensions ALL -protocol_whitelist "file,http,https,crypto,tcp,t
 # ================
 #
 # >>> V1.0.0|2023-02-12, Man Hung-Coeng <udc577@126.com>:
-#   01. Create.
+#   01. Initial commit.
 #
 # >>> V1.0.1|2023-02-14, Man Hung-Coeng <udc577@126.com>:
 #   01. Add 3 new functions: printW(), printE() and eexit().
@@ -251,5 +251,9 @@ ffmpeg -allowed_extensions ALL -protocol_whitelist "file,http,https,crypto,tcp,t
 # >>> V1.0.3|2023-12-08, Man Hung-Coeng <udc577@126.com>:
 #   01. Fix the bug of not supporting playlists with CRLF line terminators.
 #   02. Support downloading fragments with the same basename.
+#
+# >>> V1.0.4|2025-05-01, Man Hung-Coeng <udc577@126.com>:
+#   01. Remove special characters from file name of
+#       each downloaded fragments if any.
 #
 

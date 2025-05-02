@@ -227,7 +227,7 @@ if [ -n "${LCS_CHKSUM_NAMED_FRAGMENT}" ]; then
         }
     }' ${REMOTE_PLAYLIST} | sed "s/\(EXT-X-KEY:.*,URI=\)[^,]*\([,]*.*\)/\1\"key.key\"\2/g" > ${LOCAL_PLAYLIST}
 else
-    sed -e "/^[^#]/s/.\+\/\([^?]\+\)?.\+$/\1/" -e "s/\(EXT-X-KEY:.*,URI=\)[^,]*\([,]*.*\)/\1\"key.key\"\2/g" ${REMOTE_PLAYLIST} > ${LOCAL_PLAYLIST}
+    sed -e "/^[^#]/s/^[^?&]\+\/\([^?&]\+\)\(?.\+\)*$/\1/" -e "s/\(EXT-X-KEY:.*,URI=\)[^,]*\([,]*.*\)/\1\"key.key\"\2/g" ${REMOTE_PLAYLIST} > ${LOCAL_PLAYLIST}
 fi
 
 # Splice fragments together into a video.
@@ -252,7 +252,7 @@ ffmpeg -allowed_extensions ALL -protocol_whitelist "file,http,https,crypto,tcp,t
 #   01. Fix the bug of not supporting playlists with CRLF line terminators.
 #   02. Support downloading fragments with the same basename.
 #
-# >>> V1.0.4|2025-05-01, Man Hung-Coeng <udc577@126.com>:
+# >>> V1.0.4|2025-05-02, Man Hung-Coeng <udc577@126.com>:
 #   01. Remove special characters from file name of
 #       each downloaded fragments if any.
 #

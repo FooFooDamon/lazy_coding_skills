@@ -19,14 +19,16 @@
 #include "camera_v4l2.h"
 
 #include <errno.h>
-#include <string.h> /* For memset() and str*() */
-#include <strings.h> /* For strcasecmp() */
+#include <string.h>
+#include <strings.h> // For strcasecmp().
 #include <stdio.h>
 #include <sys/time.h>
 #include <time.h>
-#include <fcntl.h> /* For open(). */
-#include <unistd.h> /* For close(). */
-#include <linux/videodev2.h> /* For V4L2_MEMORY_* and VIDIOC_*. */
+#include <fcntl.h> // For open().
+#include <unistd.h> // For close().
+#include <linux/videodev2.h> // For V4L2_MEMORY_* and VIDIOC_*.
+#include <linux/dma-buf.h>
+#include <linux/dma-heap.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
@@ -79,6 +81,23 @@
     (obj)->err = 0; \
 } while (0)
 
+#if (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || defined(__cplusplus)
+//#pragma message("Keyword \"inline\" is available.")
+#define __INLINE__                              inline
+#else
+#define __INLINE__
+#endif
+
+static __INLINE__ int enable_close_on_exec_feature(int fd)
+{
+    int flags = fcntl(fd, F_GETFD);
+
+    if (flags < 0 || fcntl(fd, F_SETFD, flags | FD_CLOEXEC) < 0)
+        return -errno;
+
+    return 0;
+}
+
 static int cam_v4l2_open(struct camera_v4l2 *cam, const char *dev_path, bool is_nonblocking)
 {
     RESET_OBJECT_STATUS_FIELDS(cam);
@@ -95,6 +114,12 @@ static int cam_v4l2_open(struct camera_v4l2 *cam, const char *dev_path, bool is_
     {
         cam->dev_path = dev_path;
         CAM_LOG_NOTICE("Opened video device successfully: path = %s, fd = %d.", cam->dev_path, cam->fd);
+        if ((cam->err = enable_close_on_exec_feature(cam->fd)) < 0)
+        {
+            CAM_LOG_ERR_V("*** %s: fcntl(FD_CLOEXEC) failed: %s", dev_path, strerror(-cam->err));
+            close(cam->fd);
+            cam->fd = -1;
+        }
     }
 
     return cam->err;
@@ -118,7 +143,7 @@ static int cam_v4l2_close(struct camera_v4l2 *cam)
     else
     {
         cam->err = -errno;
-        CAM_LOG_ERR_V("*** %s: Failed to close: %s", cam->dev_path, strerror(-cam->err));
+        CAM_LOG_ERR_V("*** %s: Failed to close video device: %s", cam->dev_path, strerror(-cam->err));
     }
 
     return cam->err;
@@ -224,7 +249,7 @@ static void print_frame_intervals(struct camera_v4l2 *cam, uint32_t pixelformat,
 
             break;
         }
-    } /* while (ioctl(cam->fd, VIDIOC_ENUM_FRAMEINTERVALS, &frame_interval) >= 0) */
+    } // while (ioctl(cam->fd, VIDIOC_ENUM_FRAMEINTERVALS, &frame_interval) >= 0)
 }
 
 static int cam_v4l2_match_format(struct camera_v4l2 *cam, const char *expected_format)
@@ -293,7 +318,7 @@ static int cam_v4l2_match_format(struct camera_v4l2 *cam, const char *expected_f
 
                 break;
             }
-        } /* while (ioctl(cam->fd, VIDIOC_ENUM_FRAMESIZES, &frame_size) >= 0) */
+        } // while (ioctl(cam->fd, VIDIOC_ENUM_FRAMESIZES, &frame_size) >= 0)
 
         if (matched)
         {
@@ -321,7 +346,7 @@ static int cam_v4l2_match_format(struct camera_v4l2 *cam, const char *expected_f
         }
 
         ++desc.index;
-    } /* while (ioctl(cam->fd, VIDIOC_ENUM_FMT, &desc) >= 0) */
+    } // while (ioctl(cam->fd, VIDIOC_ENUM_FMT, &desc) >= 0)
 
     if (!is_auto_selecting)
         cam->err = -ENOTSUP;
@@ -361,13 +386,13 @@ static int cam_v4l2_set_size_and_format(struct camera_v4l2 *cam, uint16_t width,
     {
         format.fmt.pix_mp.width = cam->width = width;
         format.fmt.pix_mp.height = cam->height = height;
-        format.fmt.pix_mp.pixelformat = cam->fmt_fourcc; /* auto detected in *_match_format() */
+        format.fmt.pix_mp.pixelformat = cam->fmt_fourcc; // auto detected in *_match_format()
     }
     else
     {
         format.fmt.pix.width = cam->width = width;
         format.fmt.pix.height = cam->height = height;
-        format.fmt.pix.pixelformat = cam->fmt_fourcc; /* auto detected in *_match_format() */
+        format.fmt.pix.pixelformat = cam->fmt_fourcc; // auto detected in *_match_format()
     }
 
     if (ioctl(cam->fd, VIDIOC_S_FMT, &format) < 0)
@@ -405,6 +430,10 @@ static int cam_v4l2_set_size_and_format(struct camera_v4l2 *cam, uint16_t width,
             CAM_LOG_INFO_V("    plane_fmt[%u]:", i);
             CAM_LOG_INFO_V("        bytesperline: %u", format.fmt.pix_mp.plane_fmt[i].bytesperline);
             CAM_LOG_INFO_V("        sizeimage: %u", format.fmt.pix_mp.plane_fmt[i].sizeimage);
+            for (uint8_t b = 0; b < CAMERA_V4L2_MAX_BUF_COUNT; ++b)
+            {
+                cam->buf_sizes[b][i] = format.fmt.pix_mp.plane_fmt[i].sizeimage;
+            }
         }
         CAM_LOG_INFO_V("    flags: 0x%X", format.fmt.pix_mp.flags);
     }
@@ -417,10 +446,14 @@ static int cam_v4l2_set_size_and_format(struct camera_v4l2 *cam, uint16_t width,
         CAM_LOG_INFO_V("    pixelformat: 0x%X -> %s", format.fmt.pix.pixelformat, fourcc_str);
         CAM_LOG_INFO_V("    bytesperline: %u", format.fmt.pix.bytesperline);
         CAM_LOG_INFO_V("    sizeimage: %u", format.fmt.pix.sizeimage);
+        for (uint8_t b = 0; b < CAMERA_V4L2_MAX_BUF_COUNT; ++b)
+        {
+            cam->buf_sizes[b][0] = format.fmt.pix.sizeimage;
+        }
         CAM_LOG_INFO_V("    flags: 0x%X", format.fmt.pix.flags);
     }
 
-    if (cam->plane_count > 2)
+    if (cam->plane_count > CAMERA_V4L2_MAX_PLANE_COUNT)
     {
         cam->err = -ENOTSUP;
         CAM_LOG_ERR_V("*** %s: Too many planes: %u", cam->dev_path, cam->plane_count);
@@ -482,7 +515,7 @@ static int cam_v4l2_set_frame_rate(struct camera_v4l2 *cam, float frames_per_sec
         cam->err = -errno;
         CAM_LOG_ERR_V("*** %s: Failed to read V4L2 stream param: %s", cam->dev_path, strerror(-cam->err));
 
-        /* return cam->err; */
+        // return cam->err;
     }
 
     if (!cam->err && ((uint32_t)calculate_frame_rate(frame_time)) == (uint32_t)cam->fps)
@@ -516,7 +549,7 @@ static int cam_v4l2_set_frame_rate(struct camera_v4l2 *cam, float frames_per_sec
         frame_time->numerator = 1;
         frame_time->denominator = cam->fps;
 
-        if (ioctl(cam->fd, VIDIOC_S_PARM, &fps) < 0) /* try it even if the previous read failed */
+        if (ioctl(cam->fd, VIDIOC_S_PARM, &fps) < 0) // try it even if the previous read failed
         {
             cam->err = -errno;
             CAM_LOG_ERR_V("*** %s: Failed to set V4L2 stream param: %s", cam->dev_path, strerror(-cam->err));
@@ -610,23 +643,21 @@ static int mmap_buffers(camera_v4l2_t *cam)
 
                 break;
             }
-            else
-            {
-                CAM_LOG_DEBUG("%s: Mapped buf_pointers[%d][%d] to %p with total %u bytes.",
-                    cam->dev_path, i, j, cam->buf_pointers[i][j], cam->buf_sizes[i][j]);
-            }
-        } /* for (j : cam->plane_count) */
+
+            CAM_LOG_DEBUG("%s: Mapped buf_pointers[%d][%d] to %p with total %u bytes.",
+                cam->dev_path, i, j, cam->buf_pointers[i][j], cam->buf_sizes[i][j]);
+        } // for (j : cam->plane_count)
 
         if (cam->err)
             break;
-    } /* for (i : cam->buf_count) */
+    } // for (i : cam->buf_count)
 
     if (cam->err)
     {
-        int mmap_err = cam->err;
+        int prev_err = cam->err;
 
         munmap_buffers_if_any(cam);
-        cam->err = mmap_err;
+        cam->err = prev_err;
     }
 
     return cam->err;
@@ -642,12 +673,129 @@ int camera_v4l2_alloc_user_buffers(camera_v4l2_t *cam)
     return cam->err;
 }
 
+/*
+ * If the entries in /dev/dma_heap are missing, maybe the dmabuf heaps are not enabled.
+ * Have a look at these config items:
+ *      CONFIG_DMABUF_HEAPS
+ *      CONFIG_DMABUF_SYSFS_STATS
+ *      CONFIG_DMABUF_HEAPS_SYSTEM
+ *      CONFIG_DMABUF_HEAPS_CMA
+ *
+ * Note that there are 3 ways to configure the CMA area:
+ *      Kernel configuration during compilation (Priority 3)
+ *      Kernel command line during system startup (Priority 2)
+ *      Device tree entry during system startup (Priority 1)
+ *
+ * Path to dmabuf-heap may be one of:
+ *      /dev/dma_heap/system
+ *      /dev/dma_heap/reserved
+ *      /dev/dma_heap/linux,cma // cma or linux,cma is also a device tree node.
+ *
+ * More about dmabuf:
+ *      https://www.kernel.org/doc/html/latest/driver-api/dma-buf.html
+ */
+
+extern const char *CAMERA_V4L2_DMA_DEV_CANDIDATES[];
+
+__attribute__((weak)) const char *CAMERA_V4L2_DMA_DEV_CANDIDATES[] = {
+    "/dev/dma_heap/cma",
+    "/dev/dma_heap/linux,cma",
+    "/dev/dma_heap/system",
+    "/dev/dma_heap/reserved",
+    NULL // sentinel
+};
+
 __attribute__((weak))
 int camera_v4l2_acquire_dma_buffers(camera_v4l2_t *cam)
 {
-    cam->err = -ENOTSUP;
-    CAM_LOG_ERR_V("*** %s: I/O mode not supported yet: 0x%X -> %s",
-        cam->dev_path, cam->io_mode, cam_v4l2_io_mode_name(cam->io_mode));
+    if (cam->dma_dev_fd >= 0)
+    {
+        cam->err = -EEXIST;
+        CAM_LOG_ERR_V("*** %s: DMA device already opened", cam->dma_dev_path);
+
+        return cam->err;
+    }
+
+    for (const char **dev = &CAMERA_V4L2_DMA_DEV_CANDIDATES[0]; NULL != *dev; ++dev)
+    {
+        if ((cam->dma_dev_fd = open(*dev, O_RDWR)) >= 0)
+        {
+            cam->err = 0;
+            cam->dma_dev_path = *dev;
+            CAM_LOG_NOTICE("Opened DMA device successfully: path = %s, fd = %d.", cam->dma_dev_path, cam->dma_dev_fd);
+            if ((cam->err = enable_close_on_exec_feature(cam->dma_dev_fd)) < 0)
+            {
+                CAM_LOG_WARN_V("*** %s: fcntl(FD_CLOEXEC) failed: %s", cam->dma_dev_path, strerror(-cam->err));
+                cam->err = 0;
+            }
+
+            break;
+        }
+
+        cam->err = -errno;
+        CAM_LOG_WARN_V("*** Failed to open(%s): %s", *dev, strerror(-cam->err));
+    }
+
+    if (cam->err)
+        return cam->err;
+
+    for (uint8_t i = 0; i < cam->buf_count; ++i)
+    {
+        for (uint8_t j = 0; j < cam->plane_count; ++j)
+        {
+            struct dma_heap_allocation_data alloc;
+
+            memset(&alloc, 0, sizeof(alloc));
+            alloc.len = cam->buf_sizes[i][j];
+            alloc.fd_flags = O_RDWR/* | O_CLOEXEC */; // NOTE: O_CLOEXEC requires gnu99 instead of c99.
+
+            if (ioctl(cam->dma_dev_fd, DMA_HEAP_IOCTL_ALLOC, &alloc) < 0)
+            {
+                cam->err = -errno;
+                CAM_LOG_ERR_V("*** %s: [%d][%d] ioctl(DMA_HEAP_IOCTL_ALLOC) failed: %s",
+                    cam->dma_dev_path, i, j, strerror(-cam->err));
+
+                break;
+            }
+
+            if ((cam->err = enable_close_on_exec_feature(alloc.fd)) < 0)
+            {
+                CAM_LOG_ERR_V("*** %s: [%d][%d] fcntl(FD_CLOEXEC) failed: %s",
+                    cam->dma_dev_path, i, j, strerror(-cam->err));
+
+                break;
+            }
+
+            cam->buf_file_descriptors[i][j] = alloc.fd;
+
+            cam->buf_pointers[i][j] = (unsigned char *)mmap(NULL, cam->buf_sizes[i][j], PROT_READ | PROT_WRITE,
+                MAP_SHARED, cam->buf_file_descriptors[i][j], 0);
+
+            if (MAP_FAILED == cam->buf_pointers[i][j])
+            {
+                cam->err = -errno;
+                cam->buf_pointers[i][j] = NULL;
+                CAM_LOG_ERR_V("*** %s: mmap(%s) for buf_pointers[%d][%d] failed: %s",
+                    cam->dev_path, cam->dma_dev_path, i, j, strerror(-cam->err));
+
+                break;
+            }
+
+            CAM_LOG_DEBUG("%s: %s: Mapped buf_pointers[%d][%d] to %p with total %u bytes.",
+                cam->dev_path, cam->dma_dev_path, i, j, cam->buf_pointers[i][j], cam->buf_sizes[i][j]);
+        } // for (j : cam->plane_count)
+
+        if (cam->err)
+            break;
+    } // for (i : cam->buf_count)
+
+    if (cam->err)
+    {
+        int prev_err = cam->err;
+
+        camera_v4l2_release_dma_buffers_if_any(cam);
+        cam->err = prev_err;
+    }
 
     return cam->err;
 }
@@ -656,7 +804,7 @@ static const uint32_t S_DEFAULT_IO_MODES[] = {
     V4L2_MEMORY_DMABUF,
     V4L2_MEMORY_USERPTR,
     V4L2_MEMORY_MMAP,
-    0/* sentinel */
+    0 // sentinel
 };
 
 static int cam_v4l2_alloc_buffers(struct camera_v4l2 *cam, uint8_t buf_count, const uint32_t io_mode_candidates[])
@@ -668,8 +816,8 @@ static int cam_v4l2_alloc_buffers(struct camera_v4l2 *cam, uint8_t buf_count, co
 
     memset(&req, 0, sizeof(req));
     req.type = cam->buf_type;
-    req.memory = V4L2_MEMORY_MMAP; /* for querying capabilities */
-    req.count = 0; /* for querying capabilities */
+    req.memory = V4L2_MEMORY_MMAP; // for querying capabilities
+    req.count = 0; // for querying capabilities
 
     if (ioctl(cam->fd, VIDIOC_REQBUFS, &req) < 0)
     {
@@ -684,19 +832,19 @@ static int cam_v4l2_alloc_buffers(struct camera_v4l2 *cam, uint8_t buf_count, co
 
     for (int i = 0; 0 != io_mode_values[i]; ++i)
     {
-        bool not_supported = (0 == (io_mode_values[i] & capabilities));
-        bool not_implemented = (V4L2_MEMORY_USERPTR == io_mode_values[i] || V4L2_MEMORY_DMABUF == io_mode_values[i]);
-        const char *io_mode_name = cam_v4l2_io_mode_name(io_mode_values[i]);
+        cam->err = 0;
+        cam->io_mode = io_mode_values[i];
 
-        if (not_supported || not_implemented)
+        bool not_supported = (0 == (cam->io_mode & capabilities));
+        const char *io_mode_name = cam_v4l2_io_mode_name(cam->io_mode);
+
+        if (not_supported)
         {
             cam->err = -ENOTSUP;
-            CAM_LOG_WARN_V("%s: Streaming I/O mode not %s: %s",
-                cam->dev_path, (not_supported ? "supported" : "implemented yet"), io_mode_name);
+            CAM_LOG_WARN_V("%s: Streaming I/O mode not supported: %s", cam->dev_path, io_mode_name);
 
             continue;
         }
-        cam->io_mode = io_mode_values[i];
 
         memset(&req, 0, sizeof(req));
         req.type = cam->buf_type;
@@ -706,51 +854,68 @@ static int cam_v4l2_alloc_buffers(struct camera_v4l2 *cam, uint8_t buf_count, co
         if (ioctl(cam->fd, VIDIOC_REQBUFS, &req) < 0)
         {
             cam->err = -errno;
-            CAM_LOG_WARN_V("%s: Failed to request %s I/O mode: %s", cam->dev_path, io_mode_name, strerror(-cam->err));
+            CAM_LOG_ERR_V("%s: Failed to request %s I/O mode: %s", cam->dev_path, io_mode_name, strerror(-cam->err));
 
             continue;
         }
-        else
+
+        if (req.count < 1)
         {
-            cam->err = 0;
+            cam->err = -ENOMEM;
+            CAM_LOG_ERR_V("*** %s: No sufficient memory for I/O buffers", cam->dev_path);
+
+            continue;
+        }
+
+        if (cam->buf_count != req.count)
+        {
+            cam->buf_count = req.count;
+            CAM_LOG_WARN_V("%s: Adjusted I/O buffer count to %u", cam->dev_path, cam->buf_count);
+        }
+
+        switch (cam->io_mode)
+        {
+        case V4L2_MEMORY_MMAP:
+            mmap_buffers(cam);
+            break;
+
+        case V4L2_MEMORY_USERPTR:
+            camera_v4l2_alloc_user_buffers(cam);
+            break;
+
+        case V4L2_MEMORY_DMABUF:
+            camera_v4l2_acquire_dma_buffers(cam);
+            break;
+
+        default:
+            CAM_LOG_ERR_V("*** %s: Unsupported I/O mode: 0x%X -> %s",
+                cam->dev_path, cam->io_mode, cam_v4l2_io_mode_name(cam->io_mode));
+            cam->err = -ENOTSUP;
+            break;
+        }
+
+        if (!cam->err)
+        {
             CAM_LOG_NOTICE_V("%s: Requested %s I/O mode successfully.", cam->dev_path, io_mode_name);
 
             break;
         }
-    } /* for (int i = 0; 0 != io_modes[i]; ++i) */
 
-    if (!cam->err && req.count < 1)
-    {
-        cam->err = -ENOMEM;
-        CAM_LOG_ERR_V("*** %s: Cannot reqeust I/O buffers", cam->dev_path);
-    }
+        if (V4L2_MEMORY_USERPTR == req.type)
+            continue;
 
-    if (cam->err)
-        return cam->err;
+        memset(&req, 0, sizeof(req));
+        req.type = cam->buf_type;
+        req.memory = cam->io_mode;
+        req.count = 0;
 
-    if (cam->buf_count != req.count)
-    {
-        cam->buf_count = req.count;
-        CAM_LOG_WARN_V("%s: Adjusted I/O buffer count to %u", cam->dev_path, cam->buf_count);
-    }
+        if (ioctl(cam->fd, VIDIOC_REQBUFS, &req) < 0)
+        {
+            CAM_LOG_ERR_V("%s: Failed to cancel %s I/O request: %s", cam->dev_path, io_mode_name, strerror(errno));
 
-    switch (cam->io_mode)
-    {
-    case V4L2_MEMORY_MMAP:
-        return mmap_buffers(cam);
-
-    case V4L2_MEMORY_USERPTR:
-        return camera_v4l2_alloc_user_buffers(cam);
-
-    case V4L2_MEMORY_DMABUF:
-        return camera_v4l2_acquire_dma_buffers(cam);
-
-    default:
-        CAM_LOG_ERR_V("*** %s: Unsupported I/O mode: 0x%X -> %s",
-            cam->dev_path, cam->io_mode, cam_v4l2_io_mode_name(cam->io_mode));
-        cam->err = -ENOTSUP;
-        break;
-    }
+            break;
+        }
+    } // for (int i = 0; 0 != io_modes[i]; ++i)
 
     return cam->err;
 }
@@ -784,13 +949,104 @@ static int munmap_buffers_if_any(camera_v4l2_t *cam)
 __attribute__((weak))
 int camera_v4l2_free_user_buffers_if_any(camera_v4l2_t *cam)
 {
-    return 0; /* TODO */
+    return 0; // TODO
 }
 
 __attribute__((weak))
 int camera_v4l2_release_dma_buffers_if_any(camera_v4l2_t *cam)
 {
-    return 0; /* TODO */
+    munmap_buffers_if_any(cam);
+
+    for (uint8_t i = 0; i < cam->buf_count; ++i)
+    {
+        for (uint8_t j = 0; j < cam->plane_count; ++j)
+        {
+            if (cam->buf_file_descriptors[i][j] < 0)
+                continue;
+
+            if(close(cam->buf_file_descriptors[i][j]) < 0)
+            {
+                cam->err = -errno;
+                CAM_LOG_ERR_V("*** %s: Failed to close buf_file_descriptors[%d][%d](%d): %s",
+                    cam->dev_path, i, j, cam->buf_file_descriptors[i][j], strerror(-cam->err));
+            }
+            else
+            {
+                CAM_LOG_DEBUG("%s: Closed buf_file_descriptors[%d][%d] successfully.", cam->dev_path, i, j);
+                cam->buf_file_descriptors[i][j] = -1;
+            }
+        }
+    }
+
+    if (cam->dma_dev_fd < 0)
+        return cam->err;
+
+    if (close(cam->dma_dev_fd) < 0)
+    {
+        cam->err = -errno;
+        CAM_LOG_ERR_V("*** Failed to close %s: %s", cam->dma_dev_path, strerror(-cam->err));
+    }
+    else
+    {
+        CAM_LOG_NOTICE("Closed DMA device: path = %s, fd = %d.", cam->dma_dev_path, cam->dma_dev_fd);
+        cam->dma_dev_fd = -1;
+    }
+
+    return cam->err;
+}
+
+static __INLINE__ int sync_dmabuf(int fd, bool is_start)
+{
+    struct dma_buf_sync sync = { 0 };
+
+    sync.flags = (is_start ? DMA_BUF_SYNC_START : DMA_BUF_SYNC_END) | DMA_BUF_SYNC_RW;
+
+    return (0 == ioctl(fd, DMA_BUF_IOCTL_SYNC, &sync)) ? 0 : -errno;
+}
+
+static __INLINE__ int sync_dma_buffers(camera_v4l2_t *cam, uint8_t buf_index, bool is_start)
+{
+    int err_count = 0;
+
+    for (uint8_t j = 0; j < cam->plane_count; ++j)
+    {
+        int dma_bit_index = buf_index * CAMERA_V4L2_MAX_PLANE_COUNT + j;
+        bool sync_started = (cam->dma_synced_bits >> dma_bit_index) & (uint32_t)0x1;
+        bool should_ignore = is_start ? sync_started : !sync_started;
+        int fd = cam->buf_file_descriptors[buf_index][j];
+        int err = (should_ignore || fd < 0) ? 0 : sync_dmabuf(fd, is_start);
+
+        if (err)
+        {
+            CAM_LOG_ERR_V("*** ioctl() failed: %s", strerror(-err));
+            ++err_count;
+
+            continue;
+        }
+
+        if (is_start)
+            cam->dma_synced_bits |= (((uint32_t)0x1) << dma_bit_index);
+        else
+            cam->dma_synced_bits &= ~(((uint32_t)0x1) << dma_bit_index);
+    }
+
+    return (err_count < cam->plane_count) ? 0 : -EIO;
+}
+
+__attribute__((weak))
+int camera_v4l2_begin_access_to_dma_buffer(camera_v4l2_t *cam, uint8_t buf_index)
+{
+    //RESET_OBJECT_STATUS_FIELDS(cam);
+
+    return (buf_index >= cam->buf_count) ? -EINVAL : sync_dma_buffers(cam, buf_index, true);
+}
+
+__attribute__((weak))
+int camera_v4l2_end_access_to_dma_buffer(camera_v4l2_t *cam, uint8_t buf_index)
+{
+    //RESET_OBJECT_STATUS_FIELDS(cam);
+
+    return (buf_index >= cam->buf_count) ? -EINVAL : sync_dma_buffers(cam, buf_index, false);
 }
 
 static int cam_v4l2_free_buffers_if_any(struct camera_v4l2 *cam)
@@ -820,9 +1076,10 @@ static int cam_v4l2_free_buffers_if_any(struct camera_v4l2 *cam)
 
 static int cam_v4l2_enqueue_buffer(struct camera_v4l2 *cam, uint8_t buf_index);
 
-static int cam_v4l2_start_capture(struct camera_v4l2 *cam)
+static int cam_v4l2_start_capture(struct camera_v4l2 *cam, bool needs_dma_sync)
 {
     RESET_OBJECT_STATUS_FIELDS(cam);
+    cam->needs_dma_sync = needs_dma_sync;
 
     if ((cam->err = cam->stream_on ? -EBUSY : 0) < 0)
     {
@@ -904,6 +1161,9 @@ static int cam_v4l2_wait_and_fetch(struct camera_v4l2 *cam, int timeout_msecs, s
         CAM_LOG_ERR_V("*** %s: Failed to dequeue buffer item: %s", cam->dev_path, strerror(-cam->err));
     }
 
+    if (!cam->err && V4L2_MEMORY_DMABUF == cam->io_mode && cam->needs_dma_sync)
+        camera_v4l2_begin_access_to_dma_buffer(cam, out_frame->index);
+
     return cam->err;
 }
 
@@ -911,6 +1171,9 @@ static int cam_v4l2_enqueue_buffer(struct camera_v4l2 *cam, uint8_t buf_index)
 {
     struct v4l2_buffer buffer;
     struct v4l2_plane planes[CAMERA_V4L2_MAX_PLANE_COUNT];
+
+    if (V4L2_MEMORY_DMABUF == cam->io_mode && cam->needs_dma_sync)
+        camera_v4l2_end_access_to_dma_buffer(cam, buf_index);
 
     RESET_OBJECT_STATUS_FIELDS(cam);
 
@@ -922,9 +1185,30 @@ static int cam_v4l2_enqueue_buffer(struct camera_v4l2 *cam, uint8_t buf_index)
     {
         buffer.length = cam->plane_count;
         memset(&planes, 0, sizeof(planes));
+        for (uint8_t j = 0; j < cam->plane_count; ++j)
+        {
+            if (V4L2_MEMORY_DMABUF == cam->io_mode)
+                planes[j].m.fd = cam->buf_file_descriptors[buf_index][j];
+            else if (V4L2_MEMORY_USERPTR == cam->io_mode)
+                planes[j].m.userptr = (unsigned long)cam->buf_pointers[buf_index][j];
+            else
+            {
+                ; // do nothing
+            }
+        }
         buffer.m.planes = planes;
     }
-    /* TODO: fields for V4L2_MEMORY_USERPTR and V4L2_MEMORY_DMABUF */
+    else
+    {
+        if (V4L2_MEMORY_DMABUF == cam->io_mode)
+            buffer.m.fd = cam->buf_file_descriptors[buf_index][0];
+        else if (V4L2_MEMORY_USERPTR == cam->io_mode)
+            buffer.m.userptr = (unsigned long)cam->buf_pointers[buf_index][0];
+        else
+        {
+            ; // do nothing
+        }
+    }
 
     if (ioctl(cam->fd, VIDIOC_QBUF, &buffer) < 0)
     {
@@ -948,9 +1232,11 @@ camera_v4l2_t camera_v4l2(const char *log_level)
     memset(&obj, 0, sizeof(obj));
 
     obj.fd = -1;
+    obj.dma_dev_fd = -1;
+    memset(obj.buf_file_descriptors, -1, sizeof(obj.buf_file_descriptors));
     obj.last_func = "<none>";
 #ifdef NO_DEFAULT_FMT_LOG
-    cam->log_level = 0; /* eliminate -Wunused-variable warning */
+    cam->log_level = 0; // eliminate -Wunused-variable warning
 #else
     obj.log_level = to_log_level(log_level);
     s_global_filter.log_level = obj.log_level;
@@ -1023,7 +1309,7 @@ int main(int argc, char **argv)
         || cam_obj.set_size_and_format(&cam_obj, width, height) < 0
         || cam_obj.set_frame_rate(&cam_obj, fps, fallback_fps) < 0
         || cam_obj.alloc_buffers(&cam_obj, /* buf_count = */4, io_mode_candidates) < 0
-        || cam_obj.start_capture(&cam_obj) < 0)
+        || cam_obj.start_capture(&cam_obj, /* needs_dma_sync = */true) < 0)
     {
         FMT_LOG(&cam_obj, E, "*** %s() failed: %s", cam_obj.last_func, strerror(-cam_obj.err));
         FMT_LOG(&cam_obj, E, "%s", "Make sure you pass correct arguments!");
@@ -1062,7 +1348,7 @@ int main(int argc, char **argv)
 
         if (cam_obj.enqueue_buffer(&cam_obj, frame.index) < 0)
             break;
-    } /* for (i : max_frame_count) */
+    } // for (i : max_frame_count)
 
     cam_obj.stop_capture(&cam_obj);
     cam_obj.free_buffers_if_any(&cam_obj);
@@ -1084,5 +1370,8 @@ int main(int argc, char **argv)
  * >>> 2025-04-08, Man Hung-Coeng <udc577@126.com>:
  *  01. Change the type of global log filter and thus greatly reduce its size.
  *  02. Add fmt_log.h example comment.
+ *
+ * >>> 2025-05-09, Man Hung-Coeng <udc577@126.com>:
+ *  01. Add support for DMABUF streaming I/O mode.
  */
 

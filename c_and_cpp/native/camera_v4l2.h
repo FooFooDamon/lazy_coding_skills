@@ -22,8 +22,14 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifndef CAMERA_V4L2_MAX_BUF_COUNT
 #define CAMERA_V4L2_MAX_BUF_COUNT                       8
-#define CAMERA_V4L2_MAX_PLANE_COUNT                     4
+#endif
+#if CAMERA_V4L2_MAX_BUF_COUNT < 2 || CAMERA_V4L2_MAX_BUF_COUNT > 8
+#error CAMERA_V4L2_MAX_BUF_COUNT must be in range of [2, 8]!
+#endif
+
+#define CAMERA_V4L2_MAX_PLANE_COUNT                     3
 
 struct camera_v4l2;
 struct v4l2_buffer;
@@ -36,17 +42,17 @@ typedef struct camera_v4l2
     int (*open)(struct camera_v4l2 *cam, const char *dev_path, bool is_nonblocking/* not used yet */);
     int (*close)(struct camera_v4l2 *cam);
     int (*query_capabilities)(struct camera_v4l2 *cam, bool with_validation);
-    /* The value of expected_format should be "auto", or a Four-Character Code (for example: NV12). */
+    // The value of expected_format should be "auto", or a Four-Character Code (for example: NV12).
     int (*match_format)(struct camera_v4l2 *cam, const char *expected_format);
     int (*set_size_and_format)(struct camera_v4l2 *cam, uint16_t width, uint16_t height/*, use format matched before*/);
     int (*set_frame_rate)(struct camera_v4l2 *cam, float frames_per_second, float fallback_fps/* suggest: 15.0 */);
-    /* An example of io_mode_candidates could be: */
-    /*      { V4L2_MEMORY_DMABUF, V4L2_MEMORY_MMAP, V4L2_MEMORY_USERPTR, 0 }, // The last 0 is a sentinel. */
-    /* you can reorder or reduce its items depending on the ability of your hareware. */
-    /* When it's null, an inner candidates array will be used. */
+    // An example of io_mode_candidates could be:
+    //      { V4L2_MEMORY_DMABUF, V4L2_MEMORY_MMAP, V4L2_MEMORY_USERPTR, 0 }, // The last 0 is a sentinel.
+    // you can reorder or reduce its items depending on the ability of your hareware.
+    // When it's null, an inner candidates array will be used.
     int (*alloc_buffers)(struct camera_v4l2 *cam, uint8_t buf_count, const uint32_t io_mode_candidates[]);
     int (*free_buffers_if_any)(struct camera_v4l2 *cam);
-    int (*start_capture)(struct camera_v4l2 *cam);
+    int (*start_capture)(struct camera_v4l2 *cam, bool needs_dma_sync/* for dmabuf I/O mode only */);
     int (*stop_capture)(struct camera_v4l2 *cam);
     int (*wait_and_fetch)(struct camera_v4l2 *cam, int timeout_msecs/* not used yet */, struct v4l2_buffer *out_frame);
     int (*enqueue_buffer)(struct camera_v4l2 *cam, uint8_t buf_index);
@@ -54,9 +60,9 @@ typedef struct camera_v4l2
     /*
      * Fields:
      */
-    const char *dev_path; /* Path to camera device, for example: /dev/video0 */
+    const char *dev_path; // Path to camera device, for example: /dev/video0
     int fd;
-    uint32_t fmt_fourcc; /* Four-Character Code of capture format */
+    uint32_t fmt_fourcc; // Four-Character Code of capture format
     float fps;
     uint16_t width;
     uint16_t height;
@@ -66,15 +72,19 @@ typedef struct camera_v4l2
     int buf_file_descriptors[CAMERA_V4L2_MAX_BUF_COUNT][CAMERA_V4L2_MAX_PLANE_COUNT];
     unsigned char *buf_pointers[CAMERA_V4L2_MAX_BUF_COUNT][CAMERA_V4L2_MAX_PLANE_COUNT];
     const char *last_func;
-    int err; /* 0 or -errno */
-    uint32_t io_mode:8; /* V4L2_MEMORY_* */
-    uint32_t plane_count:8; /* range: [1, CAMERA_V4L2_MAX_PLANE_COUNT] */
-    uint32_t buf_count:8; /* range: [1, CAMERA_V4L2_MAX_BUF_COUNT] */
-    uint32_t stream_on:1; /* 0 or 1 */
-    uint32_t log_level:7; /* CAMERA_V4L2_LOG_* */
+    int err; // 0 or -errno
+    uint32_t io_mode:8; // V4L2_MEMORY_*
+    uint32_t plane_count:8; // range: [1, CAMERA_V4L2_MAX_PLANE_COUNT]
+    uint32_t buf_count:8; // range: [1, CAMERA_V4L2_MAX_BUF_COUNT]
+    uint32_t stream_on:1; // whether video streaming is on or not
+    uint32_t needs_dma_sync:1; // for dmabuf I/O mode only
+    uint32_t log_level:6; // CAMERA_V4L2_LOG_*
+    int dma_dev_fd; // for dmabuf I/O mode only
+    uint32_t dma_synced_bits; // for dmabuf I/O mode only
+    const char *dma_dev_path; // for dmabuf I/O mode only
 } camera_v4l2_t;
 
-camera_v4l2_t camera_v4l2(const char *log_level/* = "debug", "info", "notice", "warning", "error"*/);
+camera_v4l2_t camera_v4l2(const char *log_level/* = "debug", "info", "notice", "warning", "error" */);
 
 /*
  * Functions below are allowed to be reimplemented for better customization.
@@ -87,6 +97,8 @@ int camera_v4l2_free_user_buffers_if_any(camera_v4l2_t *cam);
 
 int camera_v4l2_acquire_dma_buffers(camera_v4l2_t *cam);
 int camera_v4l2_release_dma_buffers_if_any(camera_v4l2_t *cam);
+int camera_v4l2_begin_access_to_dma_buffer(camera_v4l2_t *cam, uint8_t buf_index);
+int camera_v4l2_end_access_to_dma_buffer(camera_v4l2_t *cam, uint8_t buf_index);
 
 #endif /* #ifndef __CAMERA_V4L2_H__ */
 
@@ -97,5 +109,8 @@ int camera_v4l2_release_dma_buffers_if_any(camera_v4l2_t *cam);
  *
  * >>> 2025-04-04, Man Hung-Coeng <udc577@126.com>:
  *  01. Initial commit.
+ *
+ * >>> 2025-05-09, Man Hung-Coeng <udc577@126.com>:
+ *  01. Add support for DMABUF streaming I/O mode.
  */
 

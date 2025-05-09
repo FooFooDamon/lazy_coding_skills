@@ -2,18 +2,17 @@
 
 # Cache path: Android/data/tv.danmaku.bili/download
 
-set -xe
-
 codec_args="-c:v hevc -c:a aac"
 
-#cache_dir=64
-cache_dir=c_1558861542/80
+cache_dir=$(ls -d ./c_1558861542/* | grep '.\+/[0-9]\+$')
 
 video_args=$(ffprobe -i ${cache_dir}/video.m4s 2>&1 | grep -i "Stream .\+: Video:" | sed 's/^.\+[, ]\([0-9]\+\) fps.\+[, ]\([0-9km]\+\) tbn.*$/-r \1 -video_track_timescale \2/')
 
 audio_args=$(ffprobe -i ${cache_dir}/audio.m4s 2>&1 | grep -i "Stream .\+: Audio:" | sed 's/^.\+[, ]\([0-9km]\+\) Hz.*$/-ar \1/')
 
 bitstream_filters="-bsf:v hevc_mp4toannexb -bsf:a aac_adtstoasc"
+
+set -xe
 
 op_type=5
 
@@ -29,8 +28,8 @@ elif [ ${op_type} -eq 3 ]; then # Episodes
 
     time for i in $(seq ${start_num} ${end_num}) # 9527 9531 9600 ...
     do
-        cache_dir=${dir_prefix}${i}/64
-        #cache_dir=${i}/64
+        cache_dir=$(ls -d ${dir_prefix}${i}/* | grep '.\+/[0-9]\+$')
+        #cache_dir=$(ls -d ${i}/* | grep '.\+/[0-9]\+$')
         episode=$(printf "%04d\n" $((${i} - 5053 + 1)))
         #episode=$(printf "%04d\n" $((${episode} + 1)))
 

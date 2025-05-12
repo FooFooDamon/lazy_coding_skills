@@ -47,6 +47,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     alias tailf="tail --follow=name"
     alias tl="[ -e ${HOME}/logs ] || mkdir ${HOME}/logs; script -f ${HOME}/logs/terminal_log_\`date +%Y-%m-%d_%H_%M_%S\`.txt"
     alias valgrind="valgrind --tool=memcheck --leak-check=full --track-origins=yes --show-reachable=yes --log-file=valgrind.log"
+    alias zhcon="zhcon --utf8 --drv=fb"
 fi
 
 #
@@ -55,7 +56,7 @@ fi
 # ================
 #
 # >>> 2023-02-12, Man Hung-Coeng <udc577@126.com>:
-#   01. Create.
+#   01. Initial commit.
 #
 # >>> 2023-02-14, Man Hung-Coeng <udc577@126.com>:
 #   01. Add html2pdf and html2pic.
@@ -77,5 +78,8 @@ fi
 #
 # >>> 2025-04-06, Man Hung-Coeng <udc577@126.com>:
 #   01. Add {clang*,g++,gcc}_macros and cpu_{digest,load,sysbench}.
+#
+# >>> 2025-05-12, Man Hung-Coeng <udc577@126.com>:
+#   01. Add zhcon.
 #
 

@@ -1,7 +1,7 @@
 "
 " Settings of YouCompleteMe plugin.
 "
-" Copyright 2023-2024 Man Hung-Coeng <udc577@126.com>
+" Copyright 2023-2025 Man Hung-Coeng <udc577@126.com>
 "
 " Licensed under the Apache License, Version 2.0 (the "License");
 " you may not use this file except in compliance with the License.
@@ -159,6 +159,8 @@ function s:apply_global_variables(value_index)
     endfor
 endfunction
 
+set encoding=utf-8
+
 let s:OLD_KEY_MAPPINGS = {}
 " NOTE: The user is allowed to define g:YCM_KEY_MAPPINGS in another script
 " before this one.
@@ -202,5 +204,9 @@ call EnableYcmConfig()
 "
 " >>> 2024-05-21, Man Hung-Coeng <udc577@126.com>:
 "   01. Customize g:ycm_clangd_args to disable auto insertion of header files.
+"
+" >>> 2025-09-26, Man Hung-Coeng <udc577@126.com>:
+"   01. Add "set encoding=utf-8", since newer versions of YouCompleteMe
+"       require UTF-8 encoding.
 "
 

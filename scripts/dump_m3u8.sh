@@ -127,10 +127,11 @@ shopt -s expand_aliases
 #
 # Prepare.
 #
-[ -n "${LCS_RETRIES}" ] || LCS_RETRIES=5
+[ -n "${LCS_TIMEOUT_SECS}" ] || LCS_TIMEOUT_SECS=5
+[ -n "${LCS_RETRIES}" ] || LCS_RETRIES=30
 [ -n "${LCS_HTTP_USER_AGENT}" ] || LCS_HTTP_USER_AGENT="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36"
 #export WGET="wget -t ${LCS_RETRIES} --no-check-certificate --user-agent=\"${LCS_HTTP_USER_AGENT}\"" # Does not work.
-alias WGET="wget -t ${LCS_RETRIES} --no-check-certificate --user-agent=\"${LCS_HTTP_USER_AGENT}\""
+alias WGET="wget -T ${LCS_TIMEOUT_SECS} -t ${LCS_RETRIES} --no-check-certificate --user-agent=\"${LCS_HTTP_USER_AGENT}\""
 export REMOTE_PLAYLIST=remote_playlist.lc.m3u8
 export LOCAL_PLAYLIST=local_playlist.lc.m3u8
 export RESULT_FILE=result.log
@@ -255,5 +256,8 @@ ffmpeg -allowed_extensions ALL -protocol_whitelist "file,http,https,crypto,tcp,t
 # >>> V1.0.4|2025-05-02, Man Hung-Coeng <udc577@126.com>:
 #   01. Remove special characters from file name of
 #       each downloaded fragments if any.
+#
+# >>> V1.0.5|2025-11-04, Man Hung-Coeng <udc577@126.com>:
+#   01. Specify the default value of read timeout of wget.
 #
 

@@ -3,7 +3,7 @@
 #
 # Useful functions.
 #
-# Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2026 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -94,6 +94,179 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
         fi
     }
 
+    pdf_bookmark_get()
+    {
+        [ -n "${FUNCNAME}" ] || FUNCNAME="pdf_bookmark_get"
+
+        if [ $# -lt 1 ]; then
+            (
+                echo "*** Insufficient arguments!"
+                echo "Usage: ${FUNCNAME} <input-pdf> [<page-offset> [indent-width]]"
+                echo "Example 1: ${FUNCNAME} \"\" # Show a simple example."
+                echo "Example 2: ${FUNCNAME} my_pdf.pdf"
+                echo "Example 3: ${FUNCNAME} my_pdf.pdf 13"
+                echo "Example 4: ${FUNCNAME} my_pdf.pdf 0 2"
+            ) >&2
+
+            return 128
+        fi
+
+        local input_pdf="$1"
+
+        if [ "${input_pdf}" != "" -a ! -f "${input_pdf}" ]; then
+            echo "*** Input PDF file does not exist: ${input_pdf}" >&2
+            return 1
+        fi
+
+        local page_offset=$(echo "$2" | grep '^[0-9]\+$')
+        [ -n "${page_offset}" ] || page_offset=0
+        local indent_width=$(echo "$3" | grep '^[0-9]\+$')
+        [ -n "${indent_width}" ] || indent_width=4
+        local delimiter=" | "
+        local counter=0
+
+        echo "#define OFFSET      ${page_offset}"
+        echo "#define INDENT      ${indent_width}"
+        echo ""
+
+        if [ "${input_pdf}" = "" ]; then
+            local sec_indent="$(printf '%*s' ${indent_width})"
+            local subsec_indent="$(printf '%*s' $((${indent_width} * 2)))"
+
+            counter=$((${counter} + 1))
+
+            echo "Cover${delimiter}$((${counter} - ${page_offset}))"
+            counter=$((${counter} + 2))
+
+            echo "Contents${delimiter}$((${counter} - ${page_offset}))"
+            counter=$((${counter} + 3))
+
+            for i in $(seq 3)
+            do
+                echo "Chapter ${i}${delimiter}$((${counter} - ${page_offset}))"
+
+                for j in $(seq ${i})
+                do
+                    echo "${sec_indent}Section ${i}.${j}${delimiter}$((${counter} - ${page_offset}))"
+
+                    for k in $(seq ${j})
+                    do
+                        echo "${subsec_indent}Subsection ${i}.${j}.${k}${delimiter}$((${counter} - ${page_offset}))"
+                        counter=$((${counter} + 5))
+                    done
+                done
+            done
+
+            echo "# More items with the same format as above ..."
+
+            return 0
+        fi # if [ "${input_pdf}" = "" ]: Show a bookmark example
+
+        local invalid_indent="\r"
+        local indent_spaces="${invalid_indent}"
+        local title=""
+        local page_num=0
+
+        pdftk "${input_pdf}" dump_data_utf8 | grep -a '^Bookmark' | while IFS= read -r line
+        do
+            counter=$((${counter} + 1))
+            tag="${line%%:*}"
+
+            [ "${tag}" != "BookmarkBegin" ] || continue
+
+            line="${line#*:}"
+            [ "${line:0:1}" != " " ] || line="${line:1}"
+
+            if [ "${tag}" = "BookmarkTitle" ]; then
+                title="${line}"
+            elif [ "${tag}" = "BookmarkLevel" ]; then
+                indent_spaces="$(printf '%*s' $((${indent_width} * $((${line} - 1)))))"
+            elif [ "${tag}" = "BookmarkPageNumber" ]; then
+                page_num=$((${line} - ${page_offset}))
+            else
+                echo "*** Line ${counter} unrecognized: ${line}" >&2
+                return 1
+            fi
+
+            if [ "${indent_spaces}" = "${invalid_indent}" -o "${title}" = "" -o ${page_num} -eq 0 ]; then
+                continue
+            fi
+
+            echo "${indent_spaces}${title}${delimiter}${page_num}"
+
+            indent_spaces="${invalid_indent}"
+            title=""
+            page_num=0
+        done
+    }
+
+    pdf_bookmark_set()
+    {
+        [ -n "${FUNCNAME}" ] || FUNCNAME="pdf_bookmark_set"
+
+        if [ $# -lt 3 ]; then
+            (
+                echo "*** Insufficient arguments!"
+                echo "Usage: ${FUNCNAME} <input-pdf> <bookmark> <output-pdf>"
+                echo "Example: ${FUNCNAME} my_old_pdf.pdf my_pdf_bookmark.txt my_new_pdf.pdf"
+            ) >&2
+
+            return 128
+        fi
+
+        local input_pdf="$1"
+        local output_pdf="$3"
+        local orig_bookmark="$2"
+        local conv_bookmark="${2}.bmrk"
+
+        if [ ! -f "${input_pdf}" ]; then
+            echo "*** Input PDF file does not exist: ${input_pdf}" >&2
+            return 1
+        fi
+
+        if [ ! -f "${orig_bookmark}" ]; then
+            echo "*** Bookmark file does not exist: ${orig_bookmark}" >&2
+            return 1
+        fi
+
+        if [ -f "${output_pdf}" ]; then
+            echo "*** Output PDF file already exists: ${output_pdf}" >&2
+            return 1
+        fi
+
+        local page_offset=$(grep -m 1 '^#define[[:blank:]]\+OFFSET[[:blank:]]\+[0-9]\+[[:blank:]]*$' ${orig_bookmark} | awk '{ print $3 }')
+        [ -n "${page_offset}" ] || page_offset=0
+        local indent_width=$(grep -m 1 '^#define[[:blank:]]\+INDENT[[:blank:]]\+[0-9]\+[[:blank:]]*$' ${orig_bookmark} | awk '{ print $3 }')
+        [ -n "${indent_width}" ] || indent_width=4
+        local indent_spaces=$(printf "%*s" ${indent_width})
+
+        # FIXME: This is expected to preserve previous settings for page scaling, but it doesn't work!
+        pdftk "${input_pdf}" dump_data_utf8 | grep -a -v '^Bookmark' > "${conv_bookmark}"
+
+        sed -ne '/^#/d' -ne '/[：:@|][ \t]*[-+]*[0-9]\+[ \t]*$/p' "${orig_bookmark}" \
+            | sed -e 's/[：:@|][ \t]*\([-+]*[0-9]\+\)[ \t]*$/@\1/' -e "s/${indent_spaces}/\t/g" \
+            | while IFS= read -r line
+        do
+            level=$(echo "${line}" | grep -o $'\t' | wc -l)
+            line="${line##*$'\t'}"
+
+            (
+                echo "BookmarkBegin"
+                echo "BookmarkTitle: ${line%@*}"
+                echo "BookmarkLevel: $((${level} + 1))"
+                echo "BookmarkPageNumber: $((${line##*@} + ${page_offset}))"
+            ) >> "${conv_bookmark}"
+        done
+
+        if [ $(grep -m 1 -c '^BookmarkBegin' "${conv_bookmark}") -eq 0 ]; then
+            echo "*** The format of bookmark file is invalid: ${orig_bookmark}" >&2
+            return 128
+        else
+            # FIXME: Previous settings for page scaling might be lost!
+            pdftk "${input_pdf}" update_info_utf8 "${conv_bookmark}" output "${output_pdf}" && rm "${conv_bookmark}"
+        fi
+    }
+
     play_abnormal_exit_audio()
     {
         [ $(echo $@ | grep -c "[ ]*-T[ ]*") -gt 0 ] && echo "Current date time: $(date '+%Y-%m-%d %H:%M:%S')" || :
@@ -158,7 +331,7 @@ fi
 # ================
 #
 # >>> 2023-02-12, Man Hung-Coeng <udc577@126.com>:
-#   01. Create.
+#   01. Initial commit.
 #
 # >>> 2023-02-13, Man Hung-Coeng <udc577@126.com>:
 #   01. Add a command line argument checking in man2pdf().
@@ -171,5 +344,8 @@ fi
 #
 # >>> 2023-10-10, Man Hung-Coeng <udc577@126.com>:
 #   01. Add get_url_by_linux_tag().
+#
+# >>> 2026-01-21, Man Hung-Coeng <udc577@126.com>:
+#   01. Add pdf_bookmark_{get,set}().
 #
 

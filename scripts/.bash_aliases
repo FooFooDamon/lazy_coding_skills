@@ -38,7 +38,6 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     alias make="time make"
     alias mv="time mv"
     alias nfsmount='${SUDO} mount -t nfs -o nolock,soft'$([ -n "$(echo $NFS_RO | grep -i -v '0\|false\|no\|n')" ] && echo ",ro" || echo "")
-    alias viu=less # has the same pronunciation as "view"
     alias pst="ps -eLo uid,pid,ppid,lwp,psr,c,stime,tname,time,args" # Means displaying [t]hread info while executing ps.
     alias report_last_op_status='[ $? -eq 0 ] && play_normal_exit_audio -T || play_abnormal_exit_audio -T'
     alias report_last_op_status_once='[ $? -eq 0 ] && play_normal_exit_audio_once -T || play_abnormal_exit_audio_once -T'
@@ -47,6 +46,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     alias tailf="tail --follow=name"
     alias tl="[ -e ${HOME}/logs ] || mkdir ${HOME}/logs; script -f ${HOME}/logs/terminal_log_\`date +%Y-%m-%d_%H_%M_%S\`.txt"
     alias valgrind="valgrind --tool=memcheck --leak-check=full --track-origins=yes --show-reachable=yes --log-file=valgrind.log"
+    alias viu='less -N -R' # has the same pronunciation as "view"
     alias zhcon="zhcon --utf8 --drv=fb"
 fi
 

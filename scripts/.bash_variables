@@ -25,7 +25,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     export PS1="[\T]${_ps1_prefix}${debian_chroot:+($debian_chroot)}[\u@${_host}:\W][\$?]${_prompt}"
     unset _host _prompt _ps1_prefix
 
-    export LESS="-N -R"
+    #export LESS="-N -R" # DO NOT set this variable since it will affect the output of git diff.
     # Need this installation first on Debian/Ubuntu: sudo apt install source-highlight
     export LESSOPEN="| /usr/share/source-highlight/src-hilite-lesspipe.sh %s"
     export SHELL="`which bash`"

@@ -3,7 +3,7 @@
 #
 # Useful aliases.
 #
-# Copyright (c) 2023-2025 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2026 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,11 +34,11 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     alias html2pdf=wkhtmltopdf
     alias html2pic=wkhtmltoimage
     alias lc_reload=". ${LAZY_CODING_HOME}/scripts/__import__.sh"
-    alias less='less -N'
     alias L="cd ${LAZY_CODING_HOME}"
     alias make="time make"
     alias mv="time mv"
     alias nfsmount='${SUDO} mount -t nfs -o nolock,soft'$([ -n "$(echo $NFS_RO | grep -i -v '0\|false\|no\|n')" ] && echo ",ro" || echo "")
+    alias viu=less # has the same pronunciation as "view"
     alias pst="ps -eLo uid,pid,ppid,lwp,psr,c,stime,tname,time,args" # Means displaying [t]hread info while executing ps.
     alias report_last_op_status='[ $? -eq 0 ] && play_normal_exit_audio -T || play_abnormal_exit_audio -T'
     alias report_last_op_status_once='[ $? -eq 0 ] && play_normal_exit_audio_once -T || play_abnormal_exit_audio_once -T'
@@ -81,5 +81,8 @@ fi
 #
 # >>> 2025-05-12, Man Hung-Coeng <udc577@126.com>:
 #   01. Add zhcon.
+#
+# >>> 2026-03-10, Man Hung-Coeng <udc577@126.com>:
+#   01. Remove less, and add viu.
 #
 

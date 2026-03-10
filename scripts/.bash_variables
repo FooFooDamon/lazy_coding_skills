@@ -3,7 +3,7 @@
 #
 # Necessary variables.
 #
-# Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2026 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +24,10 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     [ -z "$(echo $TERM | grep 'xterm\|rxvt')" ] && _ps1_prefix='' || _ps1_prefix="\[\e]0;\u@${_host}: \W\a\]"
     export PS1="[\T]${_ps1_prefix}${debian_chroot:+($debian_chroot)}[\u@${_host}:\W][\$?]${_prompt}"
     unset _host _prompt _ps1_prefix
+
+    export LESS="-N -R"
+    # Need this installation first on Debian/Ubuntu: sudo apt install source-highlight
+    export LESSOPEN="| /usr/share/source-highlight/src-hilite-lesspipe.sh %s"
     export SHELL="`which bash`"
     [ "$(id -u)" -eq 0 -o "${USER}" = "root" ] && export SUDO="" || export SUDO="sudo"
 fi
@@ -34,7 +38,7 @@ fi
 # ================
 #
 # >>> 2023-02-12, Man Hung-Coeng <udc577@126.com>:
-#   01. Create.
+#   01. Initial commit.
 #
 # >>> 2024-01-03, Man Hung-Coeng <udc577@126.com>:
 #   01. Update the value of PS1 adapt to more terminal emulators.
@@ -44,5 +48,8 @@ fi
 #
 # >>> 2024-05-17, Man Hung-Coeng <udc577@126.com>:
 #   01. Show current time and exit status of last command in bash prompt.
+#
+# >>> 2026-03-10, Man Hung-Coeng <udc577@126.com>:
+#   01. Add LESS* variables for "less" command.
 #
 

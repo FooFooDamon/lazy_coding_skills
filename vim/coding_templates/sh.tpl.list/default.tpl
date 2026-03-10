@@ -46,14 +46,14 @@ DATETIME_CMD="date +%Y-%m-%d_%H:%M:%S.%N"
 handle_sigINT()
 {
     # TODO: Define what to do here when SIGINT arises.
-    printW "$(${DATETIME_CMD}): $(basename $0): Script will exit soon."
+    printW "$(${DATETIME_CMD}): $(basename $0): Script was interrupted."
     exit 1
 }
 
 handle_sigQUIT()
 {
     # TODO: Define what to do here when SIGQUIT arises.
-    printW "$(${DATETIME_CMD}): $(basename $0): Script will exit soon."
+    printW "$(${DATETIME_CMD}): $(basename $0): Script quit."
     exit 1
 }
 

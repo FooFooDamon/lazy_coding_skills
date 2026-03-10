@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #
-# Copyright (c) 2023-2025 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2026 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -30,14 +30,17 @@ usage()
     printf "  3. $(basename $0) 'http://www.xxx.com/index.m3u8'\n"
     printf "  4. $(basename $0) 'http://www.xxx.com/index.m3u8' 'test video 2'.mkv\n"
     printf "  5. LCS_HTTP_USER_AGENT='Mozilla/5.0 (X11; Linux x86_64)' $(basename $0) 'http://www.xxx.com/index.m3u8'\n"
-    printf "  6. LCS_CHKSUM_NAMED_FRAGMENT=1 $(basename $0) 'http://www.xxx.com/index.m3u8'\n"
+    printf "  6. LCS_M3U8_CACHE_DIR=/tmp $(basename $0) 'http://www.xxx.com/index.m3u8'\n"
+    printf "  7. LCS_CHKSUM_NAMED_FRAGMENT=1 $(basename $0) 'http://www.xxx.com/index.m3u8'\n"
     printf "\nNOTES:\n"
     printf "  1. This script supports breakpoint-resuming.\n"
     printf "     So, feel free to abort and restart at any time.\n"
     printf "  2. Sometimes you need to specify the HTTP user agent.\n"
     printf "     See example 5.\n"
-    printf "  3. Use checksum values to rename downloaded fragments with the same name.\n"
-    printf "     See example 6, which is seldomly used.\n"
+    printf "  3. You can cache M3U8 fragments on a memory filesystem if needed.\n"
+    printf "     See example 6.\n"
+    printf "  4. Use checksum values to rename downloaded fragments with the same name.\n"
+    printf "     See example 7, which is seldomly used.\n"
     printf "\n"
 }
 
@@ -64,13 +67,15 @@ eexit()
 
 handle_sigINT()
 {
-    printW "$(${DATETIME_CMD}): $(basename $0): Script will exit soon."
+    set +x
+    printW "$(${DATETIME_CMD}): $(basename $0): Script was interrupted."
     exit 1
 }
 
 handle_sigQUIT()
 {
-    printW "$(${DATETIME_CMD}): $(basename $0): Script will exit soon."
+    set +x
+    printW "$(${DATETIME_CMD}): $(basename $0): Script quit."
     exit 1
 }
 
@@ -135,6 +140,7 @@ alias WGET="wget -T ${LCS_TIMEOUT_SECS} -t ${LCS_RETRIES} --no-check-certificate
 export REMOTE_PLAYLIST=remote_playlist.lc.m3u8
 export LOCAL_PLAYLIST=local_playlist.lc.m3u8
 export RESULT_FILE=result.log
+export OUT_VIDEO_DIR="${PWD}"
 if [ -f "$1" ]; then
     export url="$(realpath "$1")"
     export md5=$(md5sum "${url}" | awk '{ print $1 }')
@@ -144,7 +150,11 @@ else
 fi
 [ -n "$2" ] && video_name="$2" || video_name="${md5}.mp4"
 
-mkdir -p lc-m3u8.${md5} && cd lc-m3u8.${md5} || exit 1
+if [ -n "${LCS_M3U8_CACHE_DIR}" ]; then
+    [ -e "${LCS_M3U8_CACHE_DIR}" ] || eexit "*** Directory not found: ${LCS_M3U8_CACHE_DIR}"
+    LCS_M3U8_CACHE_DIR="${LCS_M3U8_CACHE_DIR}/"
+fi
+mkdir -p "${LCS_M3U8_CACHE_DIR}lc-m3u8.${md5}" && cd "${LCS_M3U8_CACHE_DIR}lc-m3u8.${md5}" || exit 1
 
 #
 # Download playlist if needed.
@@ -233,7 +243,7 @@ fi
 
 # Splice fragments together into a video.
 ffmpeg -allowed_extensions ALL -protocol_whitelist "file,http,https,crypto,tcp,tls" \
-    -i ${LOCAL_PLAYLIST} -c copy ../"${video_name}"
+    -i ${LOCAL_PLAYLIST} -c copy "${OUT_VIDEO_DIR}/${video_name}"
 
 #
 # ================
@@ -259,5 +269,9 @@ ffmpeg -allowed_extensions ALL -protocol_whitelist "file,http,https,crypto,tcp,t
 #
 # >>> V1.0.5|2025-11-04, Man Hung-Coeng <udc577@126.com>:
 #   01. Specify the default value of read timeout of wget.
+#
+# >>> V1.0.6|2026-03-10, Man Hung-Coeng <udc577@126.com>:
+#   01. Execute "set +x" before any other operation in handle_sig*().
+#   02. Support specifying cache directory for M3U8 fragments.
 #
 

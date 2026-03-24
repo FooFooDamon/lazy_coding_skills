@@ -4,7 +4,7 @@
  * Copyright (c) ${YEAR} ${LCS_USER} <${LCS_EMAIL}>
  * All rights reserved.
  *
- * >>> V0.1.0|${DATE}, ${LCS_USER} <${LCS_EMAIL}>:
+ * >>> V0.0.0|${DATE}, ${LCS_USER} <${LCS_EMAIL}>:
  *  01. Initial commit.
  */
 
@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 #ifndef MINOR_VER
-#define MINOR_VER                       1
+#define MINOR_VER                       0
 #endif
 
 #ifndef PATCH_VER

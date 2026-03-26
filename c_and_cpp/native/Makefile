@@ -1,7 +1,7 @@
 __STRICT__ := y
 EVAL_VERSION_ONCE := $(if $(filter driver, ${T}), Y, N)
 
-include ${PWD}/../../makefile/__ver__.mk
+include ${PWD}/../../makefiles/__ver__.mk
 
 MODULES := chardev_group devclass_supplements test_inline_klogging
 
@@ -36,7 +36,7 @@ ${NON_ANSI_C_SRCS:.c=.o}: C_STD = c99
 
 ./signal_handling.o: C_DEFINES += -U__STRICT_ANSI__
 
-include ${PWD}/../../makefile/c_and_cpp.mk
+include ${PWD}/../../makefiles/c_and_cpp.mk
 
 #=======================
 # Linux Drivers Only
@@ -49,7 +49,7 @@ $(error DRVNAME not specified)
 endif
 export APP_NAME ?= $(basename $(shell ls ${DRVNAME}_app.c 2> /dev/null))
 
-include ${PWD}/../../makefile/linux_driver.mk
+include ${PWD}/../../makefiles/linux_driver.mk
 
 #=======================
 # Both

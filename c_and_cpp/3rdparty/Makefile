@@ -17,5 +17,5 @@ help:
 	@echo "  *-debug    - Generate debugging executables for a specific architecture."
 	@echo 'Run with "V=1" or "VERBOSE=1", and find out supported architectures from ARCH_LIST.'
 
-include ../../makefile/c_and_cpp.mk
+include ../../makefiles/c_and_cpp.mk
 

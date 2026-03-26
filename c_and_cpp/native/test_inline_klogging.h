@@ -3,9 +3,9 @@
 /*
  * A demo showing how to use klogging interfaces in an inline function
  * within a header file, which is not recommended, though.
- * See also: ../../makefile/linux_driver.mk
+ * See also: ../../makefiles/linux_driver.mk
  *
- * Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2023-2026 Man Hung-Coeng <udc577@126.com>
  * All rights reserved.
 */
 
@@ -33,6 +33,9 @@ void test_inline_klogging(void)
  * ================
  *
  * >>> 2023-11-07, Man Hung-Coeng <udc577@126.com>:
- *  01. Create.
+ *  01. Initial commit.
+ *
+ * >>> 2026-03-26, Man Hung-Coeng <udc577@126.com>:
+ *  01. Update the directory of linux_driver.mk in comment.
  */
 

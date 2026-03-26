@@ -3,7 +3,7 @@
 #
 # Different ways of checking out a project over Git.
 #
-# Copyright (c) 2023 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2026 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ export CHKOUT_STEM ?= main
 export CHKOUT_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 export CHKOUT_TAIL_PARAMS ?=
 export CHKOUT_METHOD ?= partial
-export CHKOUT_PARTIAL_ITEMS ?= main/makefile/__ver__.mk \
-    dcaa17d6c48ec5baf30fe2602c9032bfa144bed7/makefile/c_and_cpp.mk \
+export CHKOUT_PARTIAL_ITEMS ?= main/makefiles/__ver__.mk \
+    dcaa17d6c48ec5baf30fe2602c9032bfa144bed7/makefiles/c_and_cpp.mk \
     # Add more items ahead of this line if needed. \
     # Beware that each line should begin with 4 spaces and end with a backslash.
 
@@ -136,6 +136,9 @@ endif # ifeq ($(strip ${VCS}),git)
 # ================
 #
 # >>> 2023-07-02, Man Hung-Coeng <udc577@126.com>:
-#   01. Create.
+#   01. Initial commit.
+#
+# >>> 2026-03-26, Man Hung-Coeng <udc577@126.com>:
+#   01. Update the directory of *.mk in CHKOUT_PARTIAL_ITEMS.
 #
 

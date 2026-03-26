@@ -21,7 +21,7 @@ all prepare: dependencies
 	@for i in ${LAZY_CODING_MAKEFILES}; \
 	do \
 		mkdir -p $$(dirname $${i}); \
-		[ -s $${i} ] || wget -c -O $${i} "${LAZY_CODING_URL}/raw/main/makefile/$$(basename $${i})"; \
+		[ -s $${i} ] || wget -c -O $${i} "${LAZY_CODING_URL}/raw/main/makefiles/$$(basename $${i})"; \
 	done
 	@for i in ${PREREQUISITE_FILES}; \
 	do \

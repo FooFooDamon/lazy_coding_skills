@@ -39,6 +39,7 @@ __pycache__
 Module.symvers
 modules.order
 .tmp_versions/
+*.priv.*
 
 # ---- Project-specific rules below ----
 

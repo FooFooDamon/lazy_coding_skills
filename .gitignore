@@ -48,6 +48,9 @@ modules.order
 _tmp_
 *.tmp
 core.*
+rsync.exclude*
+rsync.ign
+rsync.ignore*
 /c_and_cpp/native/ini_file_test.ini
 /res/custom
 /scripts/private

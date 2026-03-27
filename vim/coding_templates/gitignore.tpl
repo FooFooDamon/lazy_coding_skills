@@ -68,6 +68,9 @@ moc_*.cpp
 modules.order
 obj/
 QtMakefile
+rsync.exclude*
+rsync.ign
+rsync.ignore*
 tags
 ui_*.h
 

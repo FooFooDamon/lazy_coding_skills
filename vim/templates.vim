@@ -1,7 +1,7 @@
 "
 " Providing templates for file creation of many languages.
 "
-" Copyright 2023-2024 Man Hung-Coeng <udc577@126.com>
+" Copyright 2023-2026 Man Hung-Coeng <udc577@126.com>
 "
 " Licensed under the Apache License, Version 2.0 (the "License");
 " you may not use this file except in compliance with the License.
@@ -158,7 +158,7 @@ execute "autocmd BufNewFile [Mm][Aa][Kk][Ee][Ff][Ii][Ll][Ee] call s:load_templat
 " ================
 "
 " >>> 2023-02-10, Man Hung-Coeng <udc577@126.com>:
-"   01. Create.
+"   01. Initial commit.
 "
 " >>> 2023-02-14, Man Hung-Coeng <udc577@126.com>:
 "   01. Fix the mismatching bug of autocmd BufNewFile.
@@ -183,5 +183,8 @@ execute "autocmd BufNewFile [Mm][Aa][Kk][Ee][Ff][Ii][Ll][Ee] call s:load_templat
 "   01. Rename variable CMD_ADJUST_HEADER_LOCK to CMD_ADJUST_HEADER_GUARD.
 "   02. Merge variables CMD_ADJUST_SELF_HEADER and CMD_ADJUST_TITLE
 "       into CMD_ADJUST_BASENAME.
+"
+" >>> 2026-03-27, Man Hung-Coeng <udc577@126.com>:
+"   01. Rename this file to templates.vim.
 "
 

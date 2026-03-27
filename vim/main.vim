@@ -1,7 +1,7 @@
 "
 " The leader script that groups other ones together.
 "
-" Copyright 2023-2024 Man Hung-Coeng <udc577@126.com>
+" Copyright 2023-2026 Man Hung-Coeng <udc577@126.com>
 "
 " Licensed under the Apache License, Version 2.0 (the "License");
 " you may not use this file except in compliance with the License.
@@ -45,7 +45,7 @@ if !exists('g:NO_MIN_SETTINGS') || '' == g:NO_MIN_SETTINGS || 0 == match(trim(st
     execute 'source ' . s:THIS_DIR . '/minimum_settings.vim'
 endif
 if !exists('g:NO_CODE_TEMPLATES') || '' == g:NO_CODE_TEMPLATES || 0 == match(trim(string(g:NO_CODE_TEMPLATES[0]), "'"), '[0nN]')
-    execute 'source ' . s:THIS_DIR . '/coding_templates.vim'
+    execute 'source ' . s:THIS_DIR . '/templates.vim'
 endif
 execute 'source ' . s:THIS_DIR . '/ctags.vim'
 execute 'source ' . s:THIS_DIR . '/cscope.vim'
@@ -62,7 +62,7 @@ call s:load_module_config_if_any('post')
 " ================
 "
 " >>> 2023-02-10, Man Hung-Coeng <udc577@126.com>:
-"   01. Create.
+"   01. Initial commit.
 "
 " >>> 2023-04-12, Man Hung-Coeng <udc577@126.com>:
 "   01. Turn all global variables into local ones.
@@ -76,5 +76,8 @@ call s:load_module_config_if_any('post')
 "
 " >>> 2024-06-01, Man Hung-Coeng <udc577@126.com>:
 "   01. Search and load project-specific.vim if any.
+"
+" >>> 2026-03-27, Man Hung-Coeng <udc577@126.com>:
+"   01. Rename coding_templates.vim to templates.vim.
 "
 

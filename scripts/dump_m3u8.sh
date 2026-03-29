@@ -177,7 +177,9 @@ if [ $(grep -c "\.m3u" ${REMOTE_PLAYLIST}) -gt 0 ]; then
     WGET "${url}" -O ${REMOTE_PLAYLIST} || exit 1
     [ $(file ${REMOTE_PLAYLIST} | grep -c CRLF) -eq 0 ] || dos2unix ${REMOTE_PLAYLIST}
     export url_prefix="$(dirname "${url}")"
+    echo "${url_prefix}" > url_prefix.txt
 fi
+[ -e url_prefix.txt ] && export url_prefix="$(cat url_prefix.txt)" || :
 
 make_url()
 {
@@ -273,5 +275,9 @@ ffmpeg -allowed_extensions ALL -protocol_whitelist "file,http,https,crypto,tcp,t
 # >>> V1.0.6|2026-03-10, Man Hung-Coeng <udc577@126.com>:
 #   01. Execute "set +x" before any other operation in handle_sig*().
 #   02. Support specifying cache directory for M3U8 fragments.
+#
+# >>> V1.0.7|2026-03-29, Man Hung-Coeng <udc577@126.com>:
+#   01. Fix the URL prefix error after aborting and restarting the script
+#       for a playlist with a secondary list.
 #
 

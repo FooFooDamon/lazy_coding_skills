@@ -1,7 +1,7 @@
 #
 # Basic rules for C/C++ app compilation.
 #
-# Copyright (c) 2021-2025 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2021-2026 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ FLAGS_FOR_RELEASE ?= -O3 -DNDEBUG
 DEBUG_FLAGS ?= $(if ${NDEBUG},${FLAGS_FOR_RELEASE},${FLAGS_FOR_DEBUG})
 
 COMMON_COMPILE_FLAGS ?= -D$(shell echo __ARCH_${ARCH}__ | tr 'a-z' 'A-Z') \
-    ${DEBUG_FLAGS} -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC \
+    ${DEBUG_FLAGS} -D_REENTRANT -D__VER__='"${__VER__}"' -fPIC \
     ${FLAGS_WARN} ${FLAGS_ANSI} # -fstack-protector-strong
 
 DEFAULT_CFLAGS ?= ${COMMON_COMPILE_FLAGS} -std=${C_STD}
@@ -232,7 +232,7 @@ endif
 # ================
 #
 # >>> 2021-12-11, Man Hung-Coeng <udc577@126.com>:
-#   01. Create.
+#   01. Initial commit.
 #
 # >>> 2021-12-12, Man Hung-Coeng <udc577@126.com>:
 #   01. Rename variable BIZ_VERSION to VCS_VERSION.
@@ -327,5 +327,8 @@ endif
 #
 # >>> 2025-04-08, Man Hung-Coeng <udc577@126.com>:
 #   01. Suppress cppcheck's wrong complains about lack of standard header files.
+#
+# >>> 2026-03-29, Man Hung-Coeng <udc577@126.com>:
+#   01. Replace the slashes surrounding __VER__ with single quotes.
 #
 

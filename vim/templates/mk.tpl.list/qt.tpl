@@ -42,7 +42,7 @@ all: dependencies
 include __ver__.mk
 include QtMakefile
 
-DEFINES += -D__VER__=\"${__VER__}\"
+DEFINES += -D__VER__='"${__VER__}"'
 CFLAGS += -Wno-unused-parameter
 CXXFLAGS += -Wno-unused-parameter
 INCPATH +=

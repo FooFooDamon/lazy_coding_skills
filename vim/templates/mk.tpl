@@ -1,4 +1,5 @@
 app_or_lib.tpl
+project_root.tpl
 driver.tpl
 checkout.tpl
 kernel-porting.tpl

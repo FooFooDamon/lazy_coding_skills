@@ -3,7 +3,7 @@
 /*
  * Class derived from QSlider for mouse reaction.
  *
- * Copyright (c) 2025 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2025-2026 Man Hung-Coeng <udc577@126.com>
  * All rights reserved.
  */
 
@@ -64,7 +64,7 @@ void QPlayerSlider::mouseReleaseEvent(QMouseEvent *event)/* override*/
     emit this->sliderMoved64(this->value()/* this->sliderPosition() */);
     this->previousInFocusChain()->setFocus();
     if (nullptr == this->player_)
-        qtCErrV(::, "*** Player not set yet!");
+        qtCErrV("*** Player not set yet!");
     else
     {
         if (QMediaPlayer::PlayingState == this->player_state_)
@@ -91,5 +91,8 @@ void QPlayerSlider::setProgress(qint64 progress)
  *
  * >>> 2025-04-08, Man Hung-Coeng <udc577@126.com>:
  *  01. Remove the trailing newline character from each log message.
+ *
+ * >>> 2026-03-30, Man Hung-Coeng <udc577@126.com>:
+ *  01. Remove the _namespace_ argument from qtC*V().
  */
 

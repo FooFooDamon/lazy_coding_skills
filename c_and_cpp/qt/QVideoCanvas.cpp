@@ -3,7 +3,7 @@
 /*
  * Class derived from QVideoWidget for playing video.
  *
- * Copyright (c) 2025 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2025-2026 Man Hung-Coeng <udc577@126.com>
  * All rights reserved.
  */
 
@@ -139,7 +139,7 @@ void QVideoCanvas::focusOutEvent(QFocusEvent *event)/* override */
 void QVideoCanvas::play(void)
 {
     if (nullptr == this->player_)
-        qtCErrV(::, "*** Player not set yet!");
+        qtCErrV("*** Player not set yet!");
     else
         this->player_->play();
 }
@@ -147,7 +147,7 @@ void QVideoCanvas::play(void)
 void QVideoCanvas::pause(void)
 {
     if (nullptr == this->player_)
-        qtCErrV(::, "*** Player not set yet!");
+        qtCErrV("*** Player not set yet!");
     else
         this->player_->pause();
 }
@@ -155,7 +155,7 @@ void QVideoCanvas::pause(void)
 void QVideoCanvas::stop(void)
 {
     if (nullptr == this->player_)
-        qtCErrV(::, "*** Player not set yet!");
+        qtCErrV("*** Player not set yet!");
     else
         this->player_->stop();
 }
@@ -177,5 +177,8 @@ void QVideoCanvas::stop(void)
  *
  * >>> 2025-04-08, Man Hung-Coeng <udc577@126.com>:
  *  01. Remove the trailing newline character from each log message.
+ *
+ * >>> 2026-03-30, Man Hung-Coeng <udc577@126.com>:
+ *  01. Remove the _namespace_ argument from qtC*V().
  */
 

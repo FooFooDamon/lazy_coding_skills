@@ -3,7 +3,7 @@
 /*
  * Formatted print enhancements based on Qt console debugging techniques.
  *
- * Copyright (c) 2024-2025 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2024-2026 Man Hung-Coeng <udc577@126.com>
  * All rights reserved.
  */
 
@@ -81,28 +81,28 @@
 #define qtErrV(_namespace_, _format_, ...)          __QT_PRINT_VERBOSE(ERR, qCritical, _namespace_, _format_, ##__VA_ARGS__)
 #endif
 
-#define __QT_CLASS_PRINT_VERBOSE(_level_, _qt_api_, _namespace_, _format_, ...)     \
-    _qt_api_(QPRINT_FMT_ESCAPE_##_level_("(T:%s) " __FILE__ ":%d " #_namespace_ "%s::%s(): " _format_), \
+#define __QT_CLASS_PRINT_VERBOSE(_level_, _qt_api_, _format_, ...)     \
+    _qt_api_(QPRINT_FMT_ESCAPE_##_level_("(T:%s) " __FILE__ ":%d %s::%s(): " _format_), \
         QT_GET_THREAD_NAME(), __LINE__, typeid(*this).name(), __func__, ##__VA_ARGS__)
 
 #ifndef qtCDebugV
-#define qtCDebugV(_namespace_, _format_, ...)       __QT_CLASS_PRINT_VERBOSE(DEBUG, qDebug, _namespace_, _format_, ##__VA_ARGS__)
+#define qtCDebugV(_format_, ...)                    __QT_CLASS_PRINT_VERBOSE(DEBUG, qDebug, _format_, ##__VA_ARGS__)
 #endif
 
 #ifndef qtCInfoV
-#define qtCInfoV(_namespace_, _format_, ...)        __QT_CLASS_PRINT_VERBOSE(INFO, qInfo, _namespace_, _format_, ##__VA_ARGS__)
+#define qtCInfoV(_format_, ...)                     __QT_CLASS_PRINT_VERBOSE(INFO, qInfo, _format_, ##__VA_ARGS__)
 #endif
 
 #ifndef qtCNoticeV
-#define qtCNoticeV(_namespace_, _format_, ...)      __QT_CLASS_PRINT_VERBOSE(NOTICE, qWarning, _namespace_, _format_, ##__VA_ARGS__)
+#define qtCNoticeV(_format_, ...)                   __QT_CLASS_PRINT_VERBOSE(NOTICE, qWarning, _format_, ##__VA_ARGS__)
 #endif
 
 #ifndef qtCWarnV
-#define qtCWarnV(_namespace_, _format_, ...)        __QT_CLASS_PRINT_VERBOSE(WARN, qWarning, _namespace_, _format_, ##__VA_ARGS__)
+#define qtCWarnV(_format_, ...)                     __QT_CLASS_PRINT_VERBOSE(WARN, qWarning, _format_, ##__VA_ARGS__)
 #endif
 
 #ifndef qtCErrV
-#define qtCErrV(_namespace_, _format_, ...)         __QT_CLASS_PRINT_VERBOSE(ERR, qCritical, _namespace_, _format_, ##__VA_ARGS__)
+#define qtCErrV(_format_, ...)                      __QT_CLASS_PRINT_VERBOSE(ERR, qCritical, _format_, ##__VA_ARGS__)
 #endif
 
 #ifndef QT_GET_THREAD_NAME
@@ -163,5 +163,8 @@
  *
  * >>> 2025-04-07, Man Hung-Coeng <udc577@126.com>:
  *  01. Enable auto-newline for each message again.
+ *
+ * >>> 2026-03-30, Man Hung-Coeng <udc577@126.com>:
+ *  01. Remove the _namespace_ parameter from qtC*V().
  */
 

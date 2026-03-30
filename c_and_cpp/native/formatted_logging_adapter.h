@@ -4,7 +4,7 @@
  * Formatted logging adapter for simple/flexible projects/libraries
  * written in C or C++ language.
  *
- * Copyright (c) 2025 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2025-2026 Man Hung-Coeng <udc577@126.com>
  * All rights reserved.
  */
 
@@ -16,12 +16,16 @@
 #include <time.h>
 #include <stdio.h>
 
+#ifndef NO_DEFAULT_FMT_LOG_WARNING
+
 #pragma message("\n\n----\n" \
-    "Default FMT_LOG() FMT_LOG_V() are being used,\n" \
+    "Default FMT_LOG() and FMT_LOG_V() are being used,\n" \
     "  both of which output log contents to console and might not be what you want.\n" \
     "To change this, you can specify some macro in command line or your makefile,\n" \
     "  and define your own FMT_LOG*() then.\n" \
     "----\n\n")
+
+#endif
 
 /*
  * IMPORTANT Note:
@@ -38,7 +42,9 @@
  * they're inner macros and strongly discouraged to use in a formal project.
  */
 
-#if defined(__GNUC__) || defined(__clang__) /* ##__VA_ARGS__ is available. */
+#if (defined(__cplusplus) && __cplusplus >= 201103L) || \
+    (defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L) || \
+    defined(__GNUC__) || defined(__clang__) /* ##__VA_ARGS__ is available. */
 
 #define LOG_ADAPTER(_log_func_, _handle_, _tag_, _fmt_, ...)    do { \
     struct timespec __cur_time; \
@@ -47,22 +53,13 @@
     clock_gettime(CLOCK_REALTIME, &__cur_time); \
     localtime_r(&__cur_time.tv_sec, &__now); \
 \
-    _log_func_(_handle_, #_tag_ " %04d-%02d-%02d %02d:%02d:%02d.%09ld " _fmt_ "\n", \
+    _log_func_(_handle_, #_tag_ " %04d-%02d-%02d %02d:%02d:%02d.%06ld " _fmt_ "\n", \
         __now.tm_year + 1900, __now.tm_mon + 1, __now.tm_mday, \
-        __now.tm_hour, __now.tm_min, __now.tm_sec, __cur_time.tv_nsec, ##__VA_ARGS__); \
+        __now.tm_hour, __now.tm_min, __now.tm_sec, __cur_time.tv_nsec / 1000, ##__VA_ARGS__); \
 } while (0)
 
-#define LOG_ADAPTER_V(_log_func_, _handle_, _tag_, _fmt_, ...)  do { \
-    struct timespec __cur_time; \
-    struct tm __now; \
-\
-    clock_gettime(CLOCK_REALTIME, &__cur_time); \
-    localtime_r(&__cur_time.tv_sec, &__now); \
-\
-    _log_func_(_handle_, #_tag_ " %04d-%02d-%02d %02d:%02d:%02d.%09ld " __FILE__ ":%d %s(): " _fmt_ "\n", \
-        __now.tm_year + 1900, __now.tm_mon + 1, __now.tm_mday, \
-        __now.tm_hour, __now.tm_min, __now.tm_sec, __cur_time.tv_nsec, __LINE__, __func__, ##__VA_ARGS__); \
-} while (0)
+#define LOG_ADAPTER_V(_log_func_, _handle_, _tag_, _fmt_, ...)  \
+    LOG_ADAPTER(_log_func_, _handle_, _tag_, __FILE__ ":%d %s(): " _fmt_, __LINE__, __func__, ##__VA_ARGS__)
 
 #define __PRINT_D(_fmt_, ...)               LOG_ADAPTER(fprintf, stdout, D, _fmt_, ##__VA_ARGS__)
 #define __PRINT_D_V(_fmt_, ...)             LOG_ADAPTER_V(fprintf, stdout, D, _fmt_, ##__VA_ARGS__)
@@ -79,12 +76,12 @@
 #define __PRINT_E(_fmt_, ...)               LOG_ADAPTER(fprintf, stderr, E, "\033[0;31m" _fmt_ "\033[0m", ##__VA_ARGS__)
 #define __PRINT_E_V(_fmt_, ...)             LOG_ADAPTER_V(fprintf, stderr, E, "\033[0;31m" _fmt_ "\033[0m", ##__VA_ARGS__)
 
-#define FMT_LOG(_filter_, _tag_, _fmt_, ...)                    do { \
+#define FMT_LOG_SIMPLE(_filter_, _tag_, _fmt_, ...)             do { \
     if (LOG_LEVEL_##_tag_ <= (_filter_)->log_level) \
         __PRINT_##_tag_(_fmt_, ##__VA_ARGS__); \
 } while (0)
 
-#define FMT_LOG_V(_filter_, _tag_, _fmt_, ...)                  do { \
+#define FMT_LOG_VERBOSE(_filter_, _tag_, _fmt_, ...)            do { \
     if (LOG_LEVEL_##_tag_ <= (_filter_)->log_level) \
         __PRINT_##_tag_##_V(_fmt_, ##__VA_ARGS__); \
 } while (0)
@@ -98,22 +95,13 @@
     clock_gettime(CLOCK_REALTIME, &__cur_time); \
     localtime_r(&__cur_time.tv_sec, &__now); \
 \
-    _log_func_(_handle_, #_tag_ " %04d-%02d-%02d %02d:%02d:%02d.%09ld " _fmt_ "\n", \
+    _log_func_(_handle_, #_tag_ " %04d-%02d-%02d %02d:%02d:%02d.%06ld " _fmt_ "\n", \
         __now.tm_year + 1900, __now.tm_mon + 1, __now.tm_mday, \
-        __now.tm_hour, __now.tm_min, __now.tm_sec, __cur_time.tv_nsec, __VA_ARGS__); \
+        __now.tm_hour, __now.tm_min, __now.tm_sec, __cur_time.tv_nsec / 1000, __VA_ARGS__); \
 } while (0)
 
-#define LOG_ADAPTER_V(_log_func_, _handle_, _tag_, _fmt_, ...)  do { \
-    struct timespec __cur_time; \
-    struct tm __now; \
-\
-    clock_gettime(CLOCK_REALTIME, &__cur_time); \
-    localtime_r(&__cur_time.tv_sec, &__now); \
-\
-    _log_func_(_handle_, #_tag_ " %04d-%02d-%02d %02d:%02d:%02d.%09ld " __FILE__ ":%d %s(): " _fmt_ "\n", \
-        __now.tm_year + 1900, __now.tm_mon + 1, __now.tm_mday, \
-        __now.tm_hour, __now.tm_min, __now.tm_sec, __cur_time.tv_nsec, __LINE__, __func__, __VA_ARGS__); \
-} while (0)
+#define LOG_ADAPTER_V(_log_func_, _handle_, _tag_, _fmt_, ...)  \
+    LOG_ADAPTER(_log_func_, _handle_, _tag_, __FILE__ ":%d %s(): " _fmt_, __LINE__, __func__, __VA_ARGS__)
 
 #define __PRINT_D(_fmt_, ...)               LOG_ADAPTER(fprintf, stdout, D, _fmt_, __VA_ARGS__)
 #define __PRINT_D_V(_fmt_, ...)             LOG_ADAPTER_V(fprintf, stdout, D, _fmt_, __VA_ARGS__)
@@ -130,17 +118,20 @@
 #define __PRINT_E(_fmt_, ...)               LOG_ADAPTER(fprintf, stderr, E, "\033[0;31m" _fmt_ "\033[0m", __VA_ARGS__)
 #define __PRINT_E_V(_fmt_, ...)             LOG_ADAPTER_V(fprintf, stderr, E, "\033[0;31m" _fmt_ "\033[0m", __VA_ARGS__)
 
-#define FMT_LOG(_filter_, _tag_, _fmt_, ...)                    do { \
+#define FMT_LOG_SIMPLE(_filter_, _tag_, _fmt_, ...)             do { \
     if (LOG_LEVEL_##_tag_ <= (_filter_)->log_level) \
         __PRINT_##_tag_(_fmt_, __VA_ARGS__); \
 } while (0)
 
-#define FMT_LOG_V(_filter_, _tag_, _fmt_, ...)                  do { \
+#define FMT_LOG_VERBOSE(_filter_, _tag_, _fmt_, ...)            do { \
     if (LOG_LEVEL_##_tag_ <= (_filter_)->log_level) \
         __PRINT_##_tag_##_V(_fmt_, __VA_ARGS__); \
 } while (0)
 
-#endif /* #if defined(__GNUC__) || defined(__clang__)*/
+#endif /* #if >= C++11 || >= C99 || __GNUC__ || __clang__ */
+
+#define FMT_LOG                             FMT_LOG_SIMPLE
+#define FMT_LOG_V                           FMT_LOG_VERBOSE
 
 enum log_level_e
 {
@@ -164,7 +155,10 @@ enum log_level_e
     LOG_LEVEL_ALL
 };
 
-static enum log_level_e to_log_level(const char *level_str)
+#ifndef __cplusplus
+static
+#endif
+inline enum log_level_e to_log_level(const char *level_str)
 {
     if (NULL == level_str || 'I' == level_str[0] || 'i' == level_str[0])
         return LOG_LEVEL_INFO;
@@ -189,5 +183,10 @@ static enum log_level_e to_log_level(const char *level_str)
  *
  * >>> 2025-04-04, Man Hung-Coeng <udc577@126.com>:
  *  01. Initial commit.
+ *
+ * >>> 2026-03-30, Man Hung-Coeng <udc577@126.com>:
+ *  01. Add macro NO_DEFAULT_FMT_LOG_WARNING to suppress compilation hints.
+ *  02. Add FMT_LOG_{SIMPLE,VERBOSE}() to provide more flexible choices.
+ *  03. Reduce logging timestamp precision to 6 fractional digits.
  */
 

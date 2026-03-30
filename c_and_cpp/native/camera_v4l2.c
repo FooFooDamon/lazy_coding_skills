@@ -1,7 +1,7 @@
 /*
  * Wrapper functions for camera usage based on V4L2 framework.
  *
- * Copyright (c) 2025 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2025-2026 Man Hung-Coeng <udc577@126.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,9 +32,16 @@
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 
-#ifdef NO_DEFAULT_FMT_LOG
+#ifdef USE_CUSTOM_FMT_LOG
+
+#ifndef CUSTOM_FMT_LOG_H
+#define CUSTOM_FMT_LOG_H                        "fmt_log.h"
+#endif
+
 /*
- * One example of fmt_log.h based on Qt console logging:
+ * One implementation demo of CUSTOM_FMT_LOG_H based on Qt console logging:
+ * (Be aware that this source file should be treated as a C++ file
+ * when it includes at least one Qt header file directly or indirectly.)
  *
  * #include "../qt/qt_print.hpp"
  *
@@ -56,10 +63,10 @@
  * #define FMT_LOG(_filter_, _tag_, _fmt_, ...)         qt##_tag_(_fmt_, ##__VA_ARGS__)
  * #define FMT_LOG_V(_filter_, _tag_, _fmt_, ...)       qt##_tag_##V(::, _fmt_, ##__VA_ARGS__)
  */
-#include "fmt_log.h"
+#include CUSTOM_FMT_LOG_H
 #else
 #include "formatted_logging_adapter.h"
-#endif
+#endif // #ifdef USE_CUSTOM_FMT_LOG
 
 #define CAM_LOG_DEBUG(_fmt_, ...)               FMT_LOG(cam, D, _fmt_, __VA_ARGS__)
 #define CAM_LOG_DEBUG_V(_fmt_, ...)             FMT_LOG_V(cam, D, _fmt_, __VA_ARGS__)
@@ -1235,7 +1242,7 @@ camera_v4l2_t camera_v4l2(const char *log_level)
     obj.dma_dev_fd = -1;
     memset(obj.buf_file_descriptors, -1, sizeof(obj.buf_file_descriptors));
     obj.last_func = "<none>";
-#ifdef NO_DEFAULT_FMT_LOG
+#ifdef USE_CUSTOM_FMT_LOG
     cam->log_level = 0; // eliminate -Wunused-variable warning
 #else
     obj.log_level = to_log_level(log_level);
@@ -1373,5 +1380,9 @@ int main(int argc, char **argv)
  *
  * >>> 2025-05-09, Man Hung-Coeng <udc577@126.com>:
  *  01. Add support for DMABUF streaming I/O mode.
+ *
+ * >>> 2026-03-30, Man Hung-Coeng <udc577@126.com>:
+ *  01. Rename macro NO_DEFAULT_FMT_LOG to USE_CUSTOM_FMT_LOG.
+ *  02. Add macro CUSTOM_FMT_LOG_H to allow user to specify logging header file.
  */
 

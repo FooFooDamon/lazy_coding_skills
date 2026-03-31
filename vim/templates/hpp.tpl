@@ -1,4 +1,5 @@
 util.tpl
+console_logging.tpl
 thin_class.tpl
 rich_class.tpl
 qt_main_gui_class.tpl

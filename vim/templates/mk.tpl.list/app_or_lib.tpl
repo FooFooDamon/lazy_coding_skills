@@ -35,7 +35,7 @@ else
 all: dependencies
 
 export EVAL_VERSION_ONCE ?= N
-export NO_PRIV_STUFF := $(strip $(filter-out n N no NO No 0, ${NO_PRIV_STUFF}))
+override NO_PRIV_STUFF := $(strip $(filter-out n N no NO No 0, ${NO_PRIV_STUFF}))
 
 C_SRCS := $(shell find ./ -name "*.c" | grep -v '\.priv\.c$$')
 ifeq (${NO_PRIV_STUFF},)

@@ -53,7 +53,19 @@ OS_MACRO ?= -D__linux__
 PREDEFS_FOR_CPPCHECK ?= $(if $(wildcard moc_predefs.h), --include=moc_predefs.h, \
     ${OS_MACRO} $$(g++ -dM -E - < /dev/null | grep ENDIAN | awk '{ printf("-D%s=%s\n", $$2, $$3) }'))
 
-.PHONY: ext_clean check debug_patch ui_fix
+.PHONY: .ALWAYS_MAKE ext_clean check debug_patch ui_fix
+
+#
+# FIXME: Uncomment contents below if you have a header file for version definitions.
+#
+#versions.h: .revision
+#	${Q}touch $@
+#
+#.revision: .ALWAYS_MAKE:
+#	${Q}[ -e $@ ] || touch $@
+#	${Q}[ '$(file < $@)' = '${__VER__}' ] || printf '${__VER__}' > $@
+
+.ALWAYS_MAKE:
 
 clean: ext_clean
 

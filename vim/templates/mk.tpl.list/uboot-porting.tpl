@@ -11,7 +11,7 @@ LAZY_CODING_MAKEFILES := __ver__.mk u-boot.mk
 
 ifeq ($(shell [ true $(foreach i, ${LAZY_CODING_MAKEFILES}, -a -s ${i}) ] && echo 1 || echo 0),0)
 
-.PHONY: all help prepare
+.PHONY: all help prepare .ALWAYS_MAKE
 
 LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 
@@ -54,6 +54,18 @@ CUSTOM_FILES += arch/${ARCH}/cpu/armv7/start.S \
     drivers/net/phy/ti.c
 
 include $(word 2, ${LAZY_CODING_MAKEFILES})
+
+#
+# FIXME: Uncomment contents below if you have a header file for version definitions.
+#
+#versions.h: .revision
+#	${Q}touch $@
+#
+#.revision: .ALWAYS_MAKE:
+#	${Q}[ -e $@ ] || touch $@
+#	${Q}[ '$(file < $@)' = '${__VER__}' ] || printf '${__VER__}' > $@
+
+.ALWAYS_MAKE:
 
 # FIXME: Add more rules if needed, and delete this comment line then.
 

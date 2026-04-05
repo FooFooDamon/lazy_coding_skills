@@ -6,7 +6,7 @@
 # Copyright (c) ${YEAR} ${LCS_USER} <${LCS_EMAIL}>
 #
 
-.PHONY: all prepare dependencies
+.PHONY: all prepare dependencies .ALWAYS_MAKE
 
 LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 
@@ -54,6 +54,18 @@ export EVAL_VERSION_ONCE ?= Y
 # Other settings if needed: APP_DEFINES, APP_INCLUDES, OTHER_APP_CFLAGS, ccflags-y, etc.
 
 include ${LAZY_CODING_MAKEFILES}
+
+#
+# FIXME: Uncomment contents below if you have a header file for version definitions.
+#
+#versions.h: .revision
+#	${Q}touch $@
+#
+#.revision: .ALWAYS_MAKE:
+#	${Q}[ -e $@ ] || touch $@
+#	${Q}[ '$(file < $@)' = '${__VER__}' ] || printf '${__VER__}' > $@
+
+.ALWAYS_MAKE:
 
 # FIXME: Add more rules if needed, and delete this comment line then.
 

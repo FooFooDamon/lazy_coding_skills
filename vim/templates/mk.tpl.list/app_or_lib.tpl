@@ -5,7 +5,7 @@
 # All rights reserved.
 #
 
-.PHONY: all prepare dependencies
+.PHONY: all prepare dependencies .ALWAYS_MAKE
 
 LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 
@@ -76,6 +76,18 @@ signal_handling.o: C_DEFINES += -U__STRICT_ANSI__
 # ...
 
 include ${LAZY_CODING_MAKEFILES}
+
+#
+# FIXME: Uncomment contents below if you have a header file for version definitions.
+#
+#versions.h: .revision
+#	${Q}touch $@
+#
+#.revision: .ALWAYS_MAKE:
+#	${Q}[ -e $@ ] || touch $@
+#	${Q}[ '$(file < $@)' = '${__VER__}' ] || printf '${__VER__}' > $@
+
+.ALWAYS_MAKE:
 
 # FIXME: Add more rules if needed, and delete this comment line then.
 

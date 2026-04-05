@@ -39,7 +39,6 @@ else
 all: dependencies
 
 export EVAL_VERSION_ONCE ?= Y
-export NO_PRIV_STUFF := $(strip $(filter-out n N no NO No 0, ${NO_PRIV_STUFF}))
 
 #
 # FIXME: Uncomment and modify lines below according to your needs.

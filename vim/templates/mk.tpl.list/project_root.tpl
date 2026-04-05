@@ -15,11 +15,13 @@ ifeq ($(if $(strip $(filter-out n N no NO No 0, ${MODULES_HARDCODED})),1,),1)
 else
     override undefine __PREFIX_MATCHED_ITEMS __EXACTLY_MATCHED_ITEMS
     __PREFIX_MATCHED_ITEMS := \. _ lib[36x]*
+    __SUFFIX_MATCHED_ITEMS := [._-]priv [._-]private
     __EXACTLY_MATCHED_ITEMS := bin etc conf config[s]* doc[s]* include[s]* log[s]* obj[s]* t[e]*mp test[s]* \
-                               build cache common public
+                               build cache common public private
     __PREFIX_MATCHED_ITEMS := ^$(shell echo '${__PREFIX_MATCHED_ITEMS}' | sed 's/ /\\|^/g')
+    __SUFFIX_MATCHED_ITEMS := $(shell echo '${__SUFFIX_MATCHED_ITEMS}' | sed 's/ /$$\\|/g')$$
     __EXACTLY_MATCHED_ITEMS := ^$(shell echo '${__EXACTLY_MATCHED_ITEMS}' | sed 's/ /$$\\|^/g')$$
-    __MODULES := $(shell ls ${SRC_DIR} | grep -i -v '${__PREFIX_MATCHED_ITEMS}\|${__EXACTLY_MATCHED_ITEMS}')
+    __MODULES := $(shell ls ${SRC_DIR} | grep -i -v '${__PREFIX_MATCHED_ITEMS}\|${__SUFFIX_MATCHED_ITEMS}\|${__EXACTLY_MATCHED_ITEMS}')
 endif
 
 override undefine __OTHER_TARGETS
@@ -70,9 +72,11 @@ help:
 	@echo "  test              - Run customized tests."
 	@echo "  *-<module>        - Perform one of operations above on a module."
 	@echo "                      See also: list-modules"
-	@echo "--------"
-	@echo "  sync_to_*         - Synchronize project contents to remote side"
-	@echo "                      depending on your own rsync.priv.mk."
+	@if [ -e rsync.priv.mk ]; then \
+		echo "--------"; \
+		echo "  sync_to_*         - Synchronize project contents to remote side"; \
+		echo "                      depending on your own rsync.priv.mk."; \
+	fi
 
 list-modules:
 	$(foreach i, ${__MODULES}, $(info ${i}))

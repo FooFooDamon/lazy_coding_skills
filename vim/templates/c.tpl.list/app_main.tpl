@@ -127,11 +127,13 @@ cmd_args_t parse_cmdline(int argc, char **argv)
 #ifdef HAS_LOGGER
         {
             { "logfile", required_argument, NULL, 0 },
-            " /PATH/TO/LOG/FILE\n\t\t\tSpecify log file. Default to " DEFAULT_LOG_FILE "."
+            " /PATH/TO/LOG/FILE\n\t\t\tSpecify log file."
+                "\n\t\t\tDefault to " DEFAULT_LOG_FILE "."
         },
         {
             { "loglevel", required_argument, NULL, 0 },
-            " {" LOG_LEVEL_CANDIDATES "}\n\t\t\tSpecify log level. Default to " LOG_LEVEL_DEFAULT "."
+            " {" LOG_LEVEL_CANDIDATES "}\n\t\t\tSpecify log level."
+                "\n\t\t\tDefault to " LOG_LEVEL_DEFAULT "."
         },
 #else
         {
@@ -146,12 +148,14 @@ cmd_args_t parse_cmdline(int argc, char **argv)
 #ifdef HAS_CONFIG_FILE
         {
             { "config", required_argument, NULL, 'c' },
-            " /PATH/TO/CONFIG/FILE\n\t\t\tSpecify configuration file. Default to " DEFAULT_CONF_FILE "."
+            " /PATH/TO/CONFIG/FILE\n\t\t\tSpecify configuration file."
+                "\n\t\t\tDefault to " DEFAULT_CONF_FILE "."
         },
 #endif
         {
             { "biz", required_argument, NULL, 'b' },
-            " {" BIZ_TYPE_CANDIDATES "}\n\t\t\tSpecify biz type. Default to " BIZ_TYPE_DEFAULT "."
+            " {" BIZ_TYPE_CANDIDATES "}\n\t\t\tSpecify biz type."
+                "\n\t\t\tDefault to " BIZ_TYPE_DEFAULT "."
         },
         // FIXME: Add more items according to your need, and delete this comment line.
     };

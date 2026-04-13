@@ -11,9 +11,8 @@
 
 #include <QKeyEvent> // QT += gui
 #include <QMenu> // QT += widgets
+#include <QMessageBox> // QT += widgets
 #include <QMediaPlayer> // QT += multimedia
-
-#include "qt_print.hpp"
 
 QVideoCanvas::QVideoCanvas(QWidget *parent/* = nullptr*/)
     : QVideoWidget(parent)
@@ -86,11 +85,11 @@ void QVideoCanvas::keyReleaseEvent(QKeyEvent *event)/* override */
 #endif
         {
         case QMediaPlayer::PlayingState:
-            this->player_->pause();
+            this->pause();
             break;
 
         case QMediaPlayer::PausedState:
-            this->player_->play();
+            this->play();
             break;
 
         default:
@@ -107,7 +106,7 @@ void QVideoCanvas::keyReleaseEvent(QKeyEvent *event)/* override */
         {
         case QMediaPlayer::PlayingState:
         case QMediaPlayer::PausedState:
-            this->player_->stop();
+            this->stop();
             break;
 
         default:
@@ -136,10 +135,14 @@ void QVideoCanvas::focusOutEvent(QFocusEvent *event)/* override */
     avoid_blank_screen(this->player_);
 }
 
+#define ERR_MSG_BOX(_widget_, _title_, _text_)      \
+    QMessageBox::critical(_widget_, _title_, \
+        QString::asprintf("%s:%d %s::%s(): %s", __FILE__, __LINE__, typeid(*this).name(), __func__, _text_))
+
 void QVideoCanvas::play(void)
 {
     if (nullptr == this->player_)
-        qtCErrV("*** Player not set yet!");
+        ERR_MSG_BOX(this, "Null pointer", "Player not set yet!");
     else
         this->player_->play();
 }
@@ -147,7 +150,7 @@ void QVideoCanvas::play(void)
 void QVideoCanvas::pause(void)
 {
     if (nullptr == this->player_)
-        qtCErrV("*** Player not set yet!");
+        ERR_MSG_BOX(this, "Null pointer", "Player not set yet!");
     else
         this->player_->pause();
 }
@@ -155,7 +158,7 @@ void QVideoCanvas::pause(void)
 void QVideoCanvas::stop(void)
 {
     if (nullptr == this->player_)
-        qtCErrV("*** Player not set yet!");
+        ERR_MSG_BOX(this, "Null pointer", "Player not set yet!");
     else
         this->player_->stop();
 }
@@ -180,5 +183,8 @@ void QVideoCanvas::stop(void)
  *
  * >>> 2026-03-30, Man Hung-Coeng <udc577@126.com>:
  *  01. Remove the _namespace_ argument from qtC*V().
+ *
+ * >>> 2026-04-13, Man Hung-Coeng <udc577@126.com>:
+ *  01. Use GUI message box instead of console printing for error report.
  */
 

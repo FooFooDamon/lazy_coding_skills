@@ -9,9 +9,8 @@
 
 #include "QPlayerSlider.hpp"
 
+#include <QMessageBox> // QT += widgets
 #include <QMediaPlayer> // QT += multimedia
-
-#include "qt_print.hpp"
 
 QPlayerSlider::QPlayerSlider(QWidget *parent/* = nullptr*/)
     : QSlider(parent)
@@ -57,6 +56,10 @@ void QPlayerSlider::mousePressEvent(QMouseEvent *event)/* override*/
     }
 }
 
+#define ERR_MSG_BOX(_widget_, _title_, _text_)      \
+    QMessageBox::critical(_widget_, _title_, \
+        QString::asprintf("%s:%d %s::%s(): %s", __FILE__, __LINE__, typeid(*this).name(), __func__, _text_))
+
 void QPlayerSlider::mouseReleaseEvent(QMouseEvent *event)/* override*/
 {
     QSlider::mouseReleaseEvent(event);
@@ -64,7 +67,7 @@ void QPlayerSlider::mouseReleaseEvent(QMouseEvent *event)/* override*/
     emit this->sliderMoved64(this->value()/* this->sliderPosition() */);
     this->previousInFocusChain()->setFocus();
     if (nullptr == this->player_)
-        qtCErrV("*** Player not set yet!");
+        ERR_MSG_BOX(this, "Null pointer", "Player not set yet!");
     else
     {
         if (QMediaPlayer::PlayingState == this->player_state_)
@@ -94,5 +97,8 @@ void QPlayerSlider::setProgress(qint64 progress)
  *
  * >>> 2026-03-30, Man Hung-Coeng <udc577@126.com>:
  *  01. Remove the _namespace_ argument from qtC*V().
+ *
+ * >>> 2026-04-13, Man Hung-Coeng <udc577@126.com>:
+ *  01. Use GUI message box instead of console printing for error report.
  */
 

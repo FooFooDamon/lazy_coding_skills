@@ -42,7 +42,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     alias report_last_op_status='[ $? -eq 0 ] && play_normal_exit_audio -T || play_abnormal_exit_audio -T'
     alias report_last_op_status_once='[ $? -eq 0 ] && play_normal_exit_audio_once -T || play_abnormal_exit_audio_once -T'
     alias rm=safer-rm.sh
-    alias rsync='rsync --archive --verbose --compress --recursive --perms --executability --links --hard-links --times -P'
+    alias rsync='rsync -arvz --delete --perms --links --hard-links --times -P'
     alias startx="printf '\\e[0;33mstartx should not be used when you have entered a graphic desktop\\e[0m\n'"
     alias tailf="tail --follow=name"
     alias tl="[ -e ${HOME}/logs ] || mkdir ${HOME}/logs; script -f ${HOME}/logs/terminal_log_\`date +%Y-%m-%d_%H_%M_%S\`.txt"
@@ -88,5 +88,8 @@ fi
 #
 # >>> 2026-03-22, Man Hung-Coeng <udc577@126.com>:
 #   01. Add rsync.
+#
+# >>> 2026-04-14, Man Hung-Coeng <udc577@126.com>:
+#   01. Update rsync: Remove --executability, add --delete.
 #
 

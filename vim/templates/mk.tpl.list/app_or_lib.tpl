@@ -83,7 +83,7 @@ include ${LAZY_CODING_MAKEFILES}
 #versions.h: .revision
 #	${Q}touch $@
 #
-#.revision: .ALWAYS_MAKE:
+#.revision: .ALWAYS_MAKE
 #	${Q}[ -e $@ ] || touch $@
 #	${Q}[ '$(file < $@)' = '${__VER__}' ] || printf '${__VER__}' > $@
 

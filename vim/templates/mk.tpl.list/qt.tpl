@@ -59,11 +59,11 @@ PREDEFS_FOR_CPPCHECK ?= $(if $(wildcard moc_predefs.h), --include=moc_predefs.h,
 # FIXME: Uncomment contents below if you have a header file for version definitions.
 #
 #versions.h: .revision
-#	${Q}touch $@
+#	@touch $@
 #
-#.revision: .ALWAYS_MAKE:
-#	${Q}[ -e $@ ] || touch $@
-#	${Q}[ '$(file < $@)' = '${__VER__}' ] || printf '${__VER__}' > $@
+#.revision: .ALWAYS_MAKE
+#	@[ -e $@ ] || touch $@
+#	@[ '$(file < $@)' = '${__VER__}' ] || printf '${__VER__}' > $@
 
 .ALWAYS_MAKE:
 

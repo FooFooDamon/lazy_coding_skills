@@ -34,8 +34,13 @@
 #define USAGE_FORMAT                    "[OPTION...] [FILE...]"
 #endif
 
+#ifndef BIZ_TYPE_CANDIDATES
 #define BIZ_TYPE_CANDIDATES             "normal,test"
+#endif
+
+#ifndef BIZ_TYPE_DEFAULT
 #define BIZ_TYPE_DEFAULT                "normal"
+#endif
 
 #ifdef HAS_CONFIG_FILE
 #ifndef DEFAULT_CONF_FILE

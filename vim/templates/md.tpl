@@ -33,4 +33,4 @@
 ...
 
 <!-- </font> -->
-<a target="_self" href="#" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">返回顶部</a>
+<a target="_self" href="#" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">返回顶部 | Back to Top</a>

@@ -13,9 +13,10 @@ ifeq (${T}, app)
 C_STD := c89
 
 C_DEFINES := -DTEST -D__ORDER_LITTLE_ENDIAN__=1234 -D__ORDER_BIG_ENDIAN__=4321 \
-		-D__BYTE_ORDER__=__ORDER_LITTLE_ENDIAN__ -DCOMMPROTO_BIG_ENDIAN -D'likely(x)=__builtin_expect(!!(x), 1)' \
-		-D'unlikely(x)=__builtin_expect(!!(x), 0)'
-CXX_DEFINES := -DTEST -D'likely(x)=__builtin_expect(!!(x), 1)' -D'unlikely(x)=__builtin_expect(!!(x), 0)'
+		-D__BYTE_ORDER__=__ORDER_LITTLE_ENDIAN__ -DCOMMPROTO_BIG_ENDIAN -DNO_DEFAULT_FMT_LOG_WARNING \
+		-D'likely(x)=__builtin_expect(!!(x), 1)' -D'unlikely(x)=__builtin_expect(!!(x), 0)'
+CXX_DEFINES := -DTEST -DNO_DEFAULT_FMT_LOG_WARNING \
+		-D'likely(x)=__builtin_expect(!!(x), 1)' -D'unlikely(x)=__builtin_expect(!!(x), 0)'
 
 CXX_LDFLAGS := -lpthread
 

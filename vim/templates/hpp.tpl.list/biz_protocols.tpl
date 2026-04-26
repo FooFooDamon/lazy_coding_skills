@@ -132,8 +132,12 @@ typedef struct packet_head
     }
 } packet_head_t;
 
-#ifndef PROTO_VERSION
-#define PROTO_VERSION                       0x01000000
+#define DEFINE_PROTO_VERSION_FUNC(_ver_)    static inline constexpr uint32_t version(void) { return _ver_; }
+
+#if __cplusplus >= 201103L
+#define PROTO_FIELD_OFFSET                  offsetof
+#else
+#define PROTO_FIELD_OFFSET(_type_, _field_) ((size_t)&((_type_ *)0)->_field_)
 #endif
 
 // NOTE: This enum type can be defined in somewhere else,
@@ -262,6 +266,8 @@ typedef struct req_0000_demo //! Demo Request
     // NOTE: The "struct" keyword here is mandatory!
     struct packet_body_prefix prefix; //!> | body prefix | See \ref{packet_body_prefix}
 
+    DEFINE_PROTO_VERSION_FUNC(0x01000000);
+
     COMMPROTO_META_VAR_IN_STRUCT = {
         PKT_BODY_PREFIX_META_VARS, // prefix
     };
@@ -304,6 +310,8 @@ typedef struct reply_0001_demo //! Demo Reply
     // Only needed by structs containing fields of dynamic array type.
     reply_0001_demo() = delete; // Avoid uninitialized declaration.
     COMMPROTO_DEFINE_DESTRUCTOR(reply_0001_demo);
+
+    DEFINE_PROTO_VERSION_FUNC(0x01000000);
 
     COMMPROTO_META_VAR_IN_STRUCT = {
         PKT_BODY_PREFIX_META_VARS, // prefix

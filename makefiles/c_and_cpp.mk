@@ -30,7 +30,9 @@ $(eval $(call reassign_if_default, CC, ${CROSS_COMPILE}gcc))
 $(eval $(call reassign_if_default, CXX, ${CROSS_COMPILE}g++))
 $(eval $(call reassign_if_default, AR, ${CROSS_COMPILE}ar))
 $(eval $(call reassign_if_default, STRIP, ${CROSS_COMPILE}strip))
-RM ?= $(shell which rm)
+$(eval $(call reassign_if_default, OBJCOPY, ${CROSS_COMPILE}objcopy))
+RM ?= $(shell which rm) -f
+SYMLINK ?= ln -sf
 
 ifneq ($(filter n N no NO No 0, ${__STRICT__}),)
     override __STRICT__ :=
@@ -50,8 +52,8 @@ CXX_STD ?= c++11
 FLAGS_WARN ?= -Wall -Wextra $(if ${__STRICT__},-Werror) -Wno-unused-parameter \
     -Wno-variadic-macros # -Wno-missing-field-initializers -Wno-implicit-fallthrough
 FLAGS_ANSI ?= -ansi -Wpedantic
-FLAGS_FOR_DEBUG ?= -O0 -g -ggdb
-FLAGS_FOR_RELEASE ?= -O3 -DNDEBUG
+FLAGS_FOR_DEBUG ?= -O0 -g
+FLAGS_FOR_RELEASE ?= -O2 -g -DNDEBUG
 
 DEBUG_FLAGS ?= $(if ${NDEBUG},${FLAGS_FOR_RELEASE},${FLAGS_FOR_DEBUG})
 
@@ -70,7 +72,10 @@ CXXFLAGS ?= ${DEFAULT_CXXFLAGS} ${CXX_DEFINES} ${CXX_INCLUDES} ${OTHER_CXXFLAGS}
 C_COMPILE ?= ${CC} ${D_FLAG} ${CFLAGS} -c -o $@ $<
 CXX_COMPILE ?= ${CXX} ${D_FLAG} ${CXXFLAGS} -c -o $@ $<
 
-STRIP_SYMBOLS ?= [ -z "${NDEBUG}" ] || ${STRIP} -s $(if ${Q},,-v) $@
+EXPORT_DEBUG_INFO ?= [ -z "${NDEBUG}" ] || ${OBJCOPY} $(if ${Q},,-v) --only-keep-debug $@ $@.dbgi
+ADD_DEBUG_LINK ?= [ -z "${NDEBUG}" ] || ${OBJCOPY} $(if ${Q},,-v) --add-gnu-debuglink=$@.dbgi $@
+STRIP_ALL_SYMBOLS ?= [ -z "${NDEBUG}" ] || ${STRIP} $(if ${Q},,-v) --strip-all $@
+STRIP_DEBUG_SYMBOLS ?= [ -z "${NDEBUG}" ] || ${STRIP} $(if ${Q},,-v) --strip-debug $@
 
 ALLOW_REORDER_ON_LINKING ?= y
 ifneq ($(strip $(filter-out n N no NO No 0, ${ALLOW_REORDER_ON_LINKING})),)
@@ -159,8 +164,14 @@ ${GOAL} ${GOALS}: %:
 	else \
 		$(if ${Q},printf 'LD\t$@\n';) \
 		${CXX_LINK}; \
-		[ -z "${NDEBUG}" ] || $(if ${Q},printf 'STRIP\t$@\n',:); \
-		${STRIP_SYMBOLS}; \
+	fi
+	${Q}[ -z "${NDEBUG}" ] || $(if ${Q},printf 'STRIP\t$@\n',:)
+	${Q}${EXPORT_DEBUG_INFO}
+	${Q}${ADD_DEBUG_LINK}
+	${Q}if [ -n "$$(echo '$@' | grep '^lib.*\.a.*\|^lib.*\.so.*')" ]; then \
+		${STRIP_DEBUG_SYMBOLS}; \
+	else \
+		${STRIP_ALL_SYMBOLS}; \
 	fi
 
 $(foreach i, ${ARCH_LIST}, ${i}-release): %:
@@ -190,17 +201,18 @@ check:
 
 clean:
 	$(if ${Q},@printf '>>> CLEAN: Begin.\n')
-	${Q}[ -z "$(word 1, ${GOAL} ${GOALS})" ] || ${RM} ${GOAL} ${GOALS}
+	${Q}[ -z "$(word 1, ${GOAL} ${GOALS})" ] || ${RM} ${GOAL} ${GOALS} $(addsuffix .dbgi, ${GOAL} ${GOALS})
 	${Q}${RM} ${D_FILES:.d=.o}
 	${Q}${RM} ${D_FILES:.d=.plist} *.plist
 	${Q}${RM} ${D_FILES}
 	$(if ${Q},@printf '>>> CLEAN: Done.\n')
 
-__VARS__ := CROSS_COMPILE CC CXX AR STRIP RM __STRICT__ C_STD CXX_STD __cplusplus \
+__VARS__ := CROSS_COMPILE CC CXX AR STRIP OBJCOPY RM __STRICT__ C_STD CXX_STD __cplusplus \
     FLAGS_WARN FLAGS_ANSI FLAGS_FOR_DEBUG FLAGS_FOR_RELEASE NDEBUG D_FLAG \
     C_DEFINES CXX_DEFINES C_INCLUDES CXX_INCLUDES OTHER_CFLAGS OTHER_CXXFLAGS C_LDFLAGS CXX_LDFLAGS \
-    CFLAGS CXXFLAGS C_COMPILE CXX_COMPILE ALLOW_REORDER_ON_LINKING C_LINK CXX_LINK STRIP_SYMBOLS \
-	MAKE_STATIC_LIB MAKE_SHARED_LIB GOAL GOALS C_SRCS CXX_SRCS \
+    CFLAGS CXXFLAGS C_COMPILE CXX_COMPILE ALLOW_REORDER_ON_LINKING C_LINK CXX_LINK \
+    MAKE_STATIC_LIB MAKE_SHARED_LIB EXPORT_DEBUG_INFO ADD_DEBUG_LINK STRIP_ALL_SYMBOLS STRIP_DEBUG_SYMBOLS \
+    GOAL GOALS C_SRCS CXX_SRCS \
     ARCH_LIST ARCH $(foreach i, ${ARCH_LIST}, CROSS_COMPILE_FOR_${i}) \
     NTHREADS
 
@@ -211,7 +223,8 @@ ifeq (${Q},)
             $(info \
                 - ${i}: ${$i} \
                 $(if \
-                    $(filter-out CROSS_COMPILE, $(filter %_COMPILE %_LINK MAKE_%_LIB D_FLAG STRIP_SYMBOLS, ${i})), \
+                    $(filter-out CROSS_COMPILE, \
+                    $(filter %_COMPILE %_LINK MAKE_%_LIB D_FLAG EXPORT_DEBUG_INFO ADD_DEBUG_LINK STRIP_%_SYMBOLS, ${i})), \
                     <-- Might miss "$$@" or/and "$$<" or/and "$$^" on displaying. \
                 ) \
             ) \
@@ -330,5 +343,10 @@ endif
 #
 # >>> 2026-03-29, Man Hung-Coeng <udc577@126.com>:
 #   01. Replace the slashes surrounding __VER__ with single quotes.
+#
+# >>> 2026-04-27, Man Hung-Coeng <udc577@126.com>:
+#   01. Update RM, and add SYMLINK.
+#   02. Optimize library size, and meanwhile preserve debugging info of
+#   	each library and executable file.
 #
 

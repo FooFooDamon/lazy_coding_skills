@@ -26,6 +26,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
         | sed -e 's/^\(.\+\)/\t\1/' -e 's/^\t\(processor\)[ \t]*:\(.\+\)/\1\2:/'"
     alias cpu_load="watch -n 1 bash ${LAZY_CODING_HOME}/scripts/cpu_load.sh"
     alias cpu_sysbench='sysbench cpu --cpu-max-prime=10000 --threads=$(nproc) --time=20 run'
+    alias screen_off='xset dpms force off'
     alias diff="diff --color=auto"
     alias dsk="cd ${HOME}/桌面 2> /dev/null || cd ${HOME}/Desktop"
     alias find="time find -L"
@@ -91,5 +92,8 @@ fi
 #
 # >>> 2026-04-14, Man Hung-Coeng <udc577@126.com>:
 #   01. Update rsync: Remove --executability, add --delete.
+#
+# >>> 2026-05-06, Man Hung-Coeng <udc577@126.com>:
+#   01. Add screen_off.
 #
 

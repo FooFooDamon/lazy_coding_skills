@@ -7,12 +7,12 @@
 # All rights reserved.
 #
 
-.PHONY: all prepare dependencies
+.PHONY: all prepare distclean dependencies
 
 # FIXME: Choose the right CPU series.
-export CPU_SERIES ?= stm32f1x
+CPU_SERIES ?= stm32f1x
 # Be aware that ${CPU_SERIES}_extra.mk should be downloaded and be preferred over stm32_extra.mk if it exists.
-export LAZY_CODING_MAKEFILES ?= $(abspath stm32_cube_ide.mk stm32_extra.mk) # $(abspath ${CPU_SERIES}_extra.mk)
+LAZY_CODING_MAKEFILES ?= $(abspath stm32_cube_ide.mk stm32_extra.mk) # $(abspath ${CPU_SERIES}_extra.mk)
 
 ifeq ($(shell [ true $(foreach i, ${LAZY_CODING_MAKEFILES}, -a -s ${i}) ] && echo 1 || echo 0),0)
 
@@ -34,11 +34,11 @@ all: dependencies
 #
 # FIXME: Uncomment and modify lines below according to your needs.
 #
-# export MODE ?= Release
-# export IDE_PARENT_DIR ?= /opt/st
-# export DEBUG_DEVICE ?= stlink
-# export FLASH_ADDR_START := 0x08000000
-# export RAM_ADDR_START := 0x20000000
+# MODE ?= Release
+# IDE_PARENT_DIR ?= /opt/st
+# DEBUG_DEVICE ?= stlink
+# FLASH_ADDR_START := 0x08000000
+# RAM_ADDR_START := 0x20000000
 
 include ${LAZY_CODING_MAKEFILES}
 
@@ -46,10 +46,11 @@ include ${LAZY_CODING_MAKEFILES}
 
 endif
 
-export DEPENDENCY_DIRS ?= $(abspath ./3rdparty)
+DEPENDENCY_DIRS := $(abspath ./3rdparty)
 
 dependencies:
 	@for i in ${DEPENDENCY_DIRS}; \
 	do \
-		[ -s $${i}/[Mm]akefile ] && ${MAKE} $(filter all prepare, ${MAKECMDGOALS}) -C $${i} || true; \
+		[ -s $${i}/[Mm]akefile ] || continue; \
+		${MAKE} -C $${i} $(filter all prepare distclean, ${MAKECMDGOALS}); \
 	done

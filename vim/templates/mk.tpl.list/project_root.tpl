@@ -13,7 +13,7 @@ MODULES_HARDCODED ?= 0
 ifeq ($(if $(strip $(filter-out n N no NO No 0, ${MODULES_HARDCODED})),1,),1)
     __MODULES := server client
 else
-    override undefine __PREFIX_MATCHED_ITEMS __EXACTLY_MATCHED_ITEMS
+    override undefine __PREFIX_MATCHED_ITEMS __SUFFIX_MATCHED_ITEMS __EXACTLY_MATCHED_ITEMS
     __PREFIX_MATCHED_ITEMS := \. _ lib[36x]*
     __SUFFIX_MATCHED_ITEMS := [._-]priv [._-]private
     __EXACTLY_MATCHED_ITEMS := bin etc conf config[s]* doc[s]* include[s]* log[s]* obj[s]* t[e]*mp test[s]* \
@@ -24,13 +24,10 @@ else
     __MODULES := $(shell ls ${SRC_DIR} | grep -i -v '${__PREFIX_MATCHED_ITEMS}\|${__SUFFIX_MATCHED_ITEMS}\|${__EXACTLY_MATCHED_ITEMS}')
 endif
 
-override undefine __OTHER_TARGETS
-__OTHER_TARGETS := prepare clean distclean dist install uninstall check test
+override __OTHER_TARGETS := prepare clean distclean dist install uninstall check test
 
 .PHONY: all help list-modules ${__MODULES} ${__OTHER_TARGETS}
 .PHONY: $(foreach i, ${__OTHER_TARGETS}, $(foreach j, ${__MODULES}, ${i}-${j}))
-
-export NDEBUG O V VERBOSE
 
 # Q is short for "quiet".
 Q := $(if $(strip $(filter-out n N no NO No 0, ${V} ${VERBOSE})),,@)

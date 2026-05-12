@@ -5,12 +5,11 @@
 # All rights reserved.
 #
 
-.PHONY: all prepare dependencies
+.PHONY: all prepare distclean dependencies
 
 LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 
-override undefine PREREQUISITE_FILES
-PREREQUISITE_FILES := ${LAZY_CODING_URL}/raw/main/makefiles/__ver__.mk \
+override PREREQUISITE_FILES := ${LAZY_CODING_URL}/raw/main/makefiles/__ver__.mk \
     ${LAZY_CODING_URL}/raw/01c4299d4858189ba7072789ff2a6842ecbb44d1/c_and_cpp/qt/qt_print.hpp \
     ${LAZY_CODING_URL}/raw/77d444b429e8ac0166e876834a52e97e0d3b3237/c_and_cpp/native/signal_handling.c \
     ${LAZY_CODING_URL}/raw/77d444b429e8ac0166e876834a52e97e0d3b3237/c_and_cpp/native/signal_handling.h \
@@ -101,10 +100,11 @@ ui_fix: ui_${TARGET}.h
 
 endif
 
-export DEPENDENCY_DIRS ?= $(abspath ../3rdparty)
+DEPENDENCY_DIRS := $(abspath ../3rdparty)
 
 dependencies:
 	@for i in ${DEPENDENCY_DIRS}; \
 	do \
-		[ -s $${i}/[Mm]akefile ] && ${MAKE} $(filter all prepare, ${MAKECMDGOALS}) -C $${i} || true; \
+		[ -s $${i}/[Mm]akefile ] || continue; \
+		${MAKE} -C $${i} $(filter all prepare distclean, ${MAKECMDGOALS}); \
 	done

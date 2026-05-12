@@ -7,9 +7,9 @@
 
 .PHONY: all prepare revision
 
-export LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
+LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 
-export REV_MKFILE ?= $(abspath __ver__.mk)
+REV_MKFILE ?= $(abspath __ver__.mk)
 
 ifeq ($(shell [ -s ${REV_MKFILE} ] && echo 1 || echo 0),0)
 
@@ -27,7 +27,7 @@ all:
 revision:
 	@echo "Revision: ${__VER__}"
 
-export EVAL_VERSION_ONCE ?= Y
+EVAL_VERSION_ONCE ?= Y
 
 include ${REV_MKFILE}
 

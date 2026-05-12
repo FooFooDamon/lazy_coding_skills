@@ -6,15 +6,15 @@
 # Copyright (c) ${YEAR} ${LCS_USER} <${LCS_EMAIL}>
 #
 
-.PHONY: all prepare dependencies .ALWAYS_MAKE
+.PHONY: all prepare distclean dependencies .ALWAYS_MAKE
 
 LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 
 # NOTE: Some paths must be absolute paths while some mustn't, and the rest don't care.
-export LAZY_CODING_MAKEFILES ?= $(abspath __ver__.mk linux_driver.mk)
+LAZY_CODING_MAKEFILES ?= $(abspath __ver__.mk linux_driver.mk)
 
-override undefine PREREQUISITE_FILES
-PREREQUISITE_FILES := ${LAZY_CODING_URL}/raw/217ebcbe23a78dacf7491685ef2e121a0721eb62/c_and_cpp/native/klogging.h \
+override PREREQUISITE_FILES := \
+    ${LAZY_CODING_URL}/raw/217ebcbe23a78dacf7491685ef2e121a0721eb62/c_and_cpp/native/klogging.h \
     ${LAZY_CODING_URL}/raw/5a4cf8c6554177a1ece6ea81d097a60430df84c2/c_and_cpp/native/evol_kernel.h \
     ${LAZY_CODING_URL}/raw/1fb9d6a00f89980ec4b9b72d056d58ca3bc752a6/c_and_cpp/native/chardev_group.c \
     ${LAZY_CODING_URL}/raw/73a04dd9a2a6f44bc4100951eeebcdbb91f4437c/c_and_cpp/native/chardev_group.h \
@@ -38,7 +38,7 @@ else
 
 all: dependencies
 
-export EVAL_VERSION_ONCE ?= Y
+EVAL_VERSION_ONCE ?= Y
 
 #
 # FIXME: Uncomment and modify lines below according to your needs.
@@ -71,10 +71,11 @@ include ${LAZY_CODING_MAKEFILES}
 
 endif
 
-export DEPENDENCY_DIRS ?= $(abspath ../3rdparty)
+DEPENDENCY_DIRS := $(abspath ../3rdparty)
 
 dependencies:
 	@for i in ${DEPENDENCY_DIRS}; \
 	do \
-		[ -s $${i}/[Mm]akefile ] && ${MAKE} $(filter all prepare, ${MAKECMDGOALS}) -C $${i} || true; \
+		[ -s $${i}/[Mm]akefile ] || continue; \
+		${MAKE} -C $${i} $(filter all prepare distclean, ${MAKECMDGOALS}); \
 	done

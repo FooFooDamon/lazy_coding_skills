@@ -19,18 +19,31 @@
 #        then include this file at the end of it.
 #
 
-define reassign_if_default
-    ifeq ($(origin $1), default)
+# NOTE: The "host" is the architecture of host computer CPU, which is usually x86 or x86_64.
+ARCH_LIST += aarch64 arm avr host mips powerpc x86 x86_64
+to_lower = $(shell echo $1 | tr 'A-Z' 'a-z')
+override ARCH := $(if $(filter-out host, $(call to_lower,${ARCH})),$(call to_lower,${ARCH}),$(shell uname -m))
+CROSS_COMPILE_FOR_aarch64 ?= aarch64-linux-gnu-
+CROSS_COMPILE_FOR_arm ?= arm-linux-gnueabihf-
+CROSS_COMPILE_FOR_avr ?= avr-
+CROSS_COMPILE_FOR_mips ?= mips-linux-gnu-
+CROSS_COMPILE_FOR_powerpc ?= powerpc-linux-gnu-
+CROSS_COMPILE_FOR_x86 ?= x86-linux-gnu-
+CROSS_COMPILE_FOR_x86_64 ?= x86_64-linux-gnu-
+export CROSS_COMPILE ?= $(if $(filter $(shell uname -m), ${ARCH}),,${CROSS_COMPILE_FOR_${ARCH}})
+
+define reassign_if_unforced
+    ifeq ($(filter command override, $(origin $1)),)
         $(eval undefine $1)
     endif
     $1 ?= $2
 endef
 
-$(eval $(call reassign_if_default, CC, ${CROSS_COMPILE}gcc))
-$(eval $(call reassign_if_default, CXX, ${CROSS_COMPILE}g++))
-$(eval $(call reassign_if_default, AR, ${CROSS_COMPILE}ar))
-$(eval $(call reassign_if_default, STRIP, ${CROSS_COMPILE}strip))
-$(eval $(call reassign_if_default, OBJCOPY, ${CROSS_COMPILE}objcopy))
+$(eval $(call reassign_if_unforced, CC, ${CROSS_COMPILE}gcc))
+$(eval $(call reassign_if_unforced, CXX, ${CROSS_COMPILE}g++))
+$(eval $(call reassign_if_unforced, AR, ${CROSS_COMPILE}ar))
+$(eval $(call reassign_if_unforced, STRIP, ${CROSS_COMPILE}strip))
+$(eval $(call reassign_if_unforced, OBJCOPY, ${CROSS_COMPILE}objcopy))
 RM ?= $(shell which rm) -f
 SYMLINK ?= ln -sf
 
@@ -41,13 +54,14 @@ endif
 # Q is short for "quiet".
 Q := $(if $(strip $(filter-out n N no NO No 0, ${V} ${VERBOSE})),,@)
 
-NDEBUG ?= y
+export NDEBUG ?= 1
 ifneq ($(filter n N no NO No 0, ${NDEBUG}),)
     override NDEBUG :=
 endif
 
 C_STD ?= c11
 CXX_STD ?= c++11
+__cplusplus ?= 201103L
 
 FLAGS_WARN ?= -Wall -Wextra $(if ${__STRICT__},-Werror) -Wno-unused-parameter \
     -Wno-variadic-macros # -Wno-missing-field-initializers -Wno-implicit-fallthrough
@@ -57,9 +71,8 @@ FLAGS_FOR_RELEASE ?= -O2 -g -DNDEBUG
 
 DEBUG_FLAGS ?= $(if ${NDEBUG},${FLAGS_FOR_RELEASE},${FLAGS_FOR_DEBUG})
 
-COMMON_COMPILE_FLAGS ?= -D$(shell echo __ARCH_${ARCH}__ | tr 'a-z' 'A-Z') \
-    ${DEBUG_FLAGS} -D_REENTRANT -D__VER__='"${__VER__}"' -fPIC \
-    ${FLAGS_WARN} ${FLAGS_ANSI} # -fstack-protector-strong
+COMMON_COMPILE_FLAGS ?= -D__${ARCH}__ -D__VER__='"${__VER__}"' \
+    ${DEBUG_FLAGS} -D_REENTRANT -fPIC ${FLAGS_WARN} ${FLAGS_ANSI} # -fstack-protector-strong
 
 DEFAULT_CFLAGS ?= ${COMMON_COMPILE_FLAGS} -std=${C_STD}
 DEFAULT_CXXFLAGS ?= ${COMMON_COMPILE_FLAGS} -std=${CXX_STD}
@@ -72,13 +85,8 @@ CXXFLAGS ?= ${DEFAULT_CXXFLAGS} ${CXX_DEFINES} ${CXX_INCLUDES} ${OTHER_CXXFLAGS}
 C_COMPILE ?= ${CC} ${D_FLAG} ${CFLAGS} -c -o $@ $<
 CXX_COMPILE ?= ${CXX} ${D_FLAG} ${CXXFLAGS} -c -o $@ $<
 
-EXPORT_DEBUG_INFO ?= [ -z "${NDEBUG}" ] || ${OBJCOPY} $(if ${Q},,-v) --only-keep-debug $@ $@.dbgi
-ADD_DEBUG_LINK ?= [ -z "${NDEBUG}" ] || ${OBJCOPY} $(if ${Q},,-v) --add-gnu-debuglink=$@.dbgi $@
-STRIP_ALL_SYMBOLS ?= [ -z "${NDEBUG}" ] || ${STRIP} $(if ${Q},,-v) --strip-all $@
-STRIP_DEBUG_SYMBOLS ?= [ -z "${NDEBUG}" ] || ${STRIP} $(if ${Q},,-v) --strip-debug $@
-
-ALLOW_REORDER_ON_LINKING ?= y
-ifneq ($(strip $(filter-out n N no NO No 0, ${ALLOW_REORDER_ON_LINKING})),)
+ALLOWS_REORDER_ON_LINKING ?= y
+ifneq ($(strip $(filter-out n N no NO No 0, ${ALLOWS_REORDER_ON_LINKING})),)
     C_LINK ?= ${CC} -o $@ -fPIE -Wl,--start-group $^ ${C_LDFLAGS} -Wl,--end-group
     CXX_LINK ?= ${CXX} -o $@ -fPIE -Wl,--start-group $^ ${CXX_LDFLAGS} -Wl,--end-group
 else
@@ -86,8 +94,13 @@ else
     CXX_LINK ?= ${CXX} -o $@ -fPIE $^ ${CXX_LDFLAGS}
 endif
 
-MAKE_STATIC_LIB ?= ${AR} rs$(if ${Q},,v) $@ $^
-MAKE_SHARED_LIB ?= ${CXX} -shared -o $@ $^
+PACK_ARCHIVE_LIB ?= ${AR} rs$(if ${Q},,v) $@ $^
+PACK_SHARED_LIB ?= ${CXX} -shared -o $@ $^
+
+EXPORT_DEBUG_INFO ?= [ -z "${NDEBUG}" ] || ${OBJCOPY} $(if ${Q},,-v) --only-keep-debug $@ $@.dbgi
+ADD_DEBUG_LINK ?= [ -z "${NDEBUG}" ] || ${OBJCOPY} $(if ${Q},,-v) --add-gnu-debuglink=$@.dbgi $@
+STRIP_ALL_SYMBOLS ?= [ -z "${NDEBUG}" ] || ${STRIP} $(if ${Q},,-v) --strip-all $@
+STRIP_DEBUG_SYMBOLS ?= [ -z "${NDEBUG}" ] || ${STRIP} $(if ${Q},,-v) --strip-debug $@
 
 %.o: %.c
 	$(if ${Q},@printf 'CC\t$<\n')
@@ -140,60 +153,54 @@ ifneq ($(strip ${D_FILES}),)
     $(foreach i, ${D_FILES}, $(eval -include ${i}))
 endif
 
-ARCH_LIST ?= aarch64 arm avr host mips powerpc x86
-# NOTE: The "host" is the architecture of host computer CPU, which is usually x86.
-ARCH ?= host
-CROSS_COMPILE_FOR_arm ?= arm-linux-gnueabihf-
-CROSS_COMPILE_FOR_avr ?= avr-
-CROSS_COMPILE_FOR_mips ?= mips-linux-gnu-
-CROSS_COMPILE_FOR_powerpc ?= powerpc-linux-gnu-
-NTHREADS ?= $(shell grep -c "processor" /proc/cpuinfo)
-__cplusplus ?= 201103L
+MK_JOB_CNT ?= $(shell nproc)
 
 .PHONY: all $(foreach i, ${ARCH_LIST}, ${i}-release ${i}-debug) check clean
 
-all: ${ARCH}-release
+all: $(if $(or ${CROSS_COMPILE}, $(filter 1, ${MK_JOB_CNT})),    ${GOAL} ${GOALS},    ${ARCH}-release)
 
 ${GOAL} ${GOALS}: %:
 	${Q}if [ -n "$$(echo '$@' | grep '^lib.*\.a.*')" ]; then \
 		$(if ${Q},printf 'AR\t$@\n';) \
-		${MAKE_STATIC_LIB}; \
+		${PACK_ARCHIVE_LIB}; \
 	elif [ -n "$$(echo '$@' | grep '^lib.*\.so.*')" ]; then \
 		$(if ${Q},printf 'LD\t$@\n';) \
-		${MAKE_SHARED_LIB}; \
+		${PACK_SHARED_LIB}; \
 	else \
 		$(if ${Q},printf 'LD\t$@\n';) \
 		${CXX_LINK}; \
 	fi
 	${Q}[ -z "${NDEBUG}" ] || $(if ${Q},printf 'STRIP\t$@\n',:)
 	${Q}${EXPORT_DEBUG_INFO}
-	${Q}${ADD_DEBUG_LINK}
 	${Q}if [ -n "$$(echo '$@' | grep '^lib.*\.a.*\|^lib.*\.so.*')" ]; then \
 		${STRIP_DEBUG_SYMBOLS}; \
 	else \
 		${STRIP_ALL_SYMBOLS}; \
 	fi
+	${Q}${ADD_DEBUG_LINK}
 
 $(foreach i, ${ARCH_LIST}, ${i}-release): %:
-	${Q}${MAKE} ${GOAL} ${GOALS} -j ${NTHREADS} \
-		ARCH=${@:-release=} CROSS_COMPILE=${CROSS_COMPILE_FOR_${@:-release=}}
+	${Q}${MAKE} ${GOAL} ${GOALS} -j ${MK_JOB_CNT} NDEBUG=1 \
+		ARCH=$(if $(filter-out host, ${@:-release=}),${@:-release=},$(shell uname -m)) \
+		CROSS_COMPILE=$(if $(filter $(shell uname -m), ${@:-release=}),,${CROSS_COMPILE_FOR_${@:-release=}})
 
 $(foreach i, ${ARCH_LIST}, ${i}-debug): %:
-	${Q}${MAKE} ${GOAL} ${GOALS} -j ${NTHREADS} \
-		ARCH=${@:-debug=} CROSS_COMPILE=${CROSS_COMPILE_FOR_${@:-debug=}} NDEBUG=0
+	${Q}${MAKE} ${GOAL} ${GOALS} -j ${MK_JOB_CNT} NDEBUG=0 \
+		ARCH=$(if $(filter-out host, ${@:-debug=}),${@:-debug=},$(shell uname -m)) \
+		CROSS_COMPILE=$(if $(filter $(shell uname -m), ${@:-debug=}),,${CROSS_COMPILE_FOR_${@:-debug=}})
 
 check:
 	$(if ${Q},@printf '>>> CHECK: Begin.\n')
 	$(if ${Q},@printf '>>> CHECK: Patience ...\n')
 	${Q}if [ -n "$(word 1, ${C_SRCS})" ]; then \
 		cppcheck --quiet --enable=all --suppress=missingIncludeSystem \
-			--language=c --std=${C_STD} -j ${NTHREADS} \
+			--language=c --std=${C_STD} -j ${MK_JOB_CNT} \
 			${C_DEFINES} ${C_INCLUDES} $(filter-out %.mod.c, ${C_SRCS}) || : ; \
 		clang --analyze ${CFLAGS} $(filter-out %.mod.c, ${C_SRCS}); \
 	fi
 	${Q}if [ -n "$(word 1, ${CXX_SRCS})" ]; then \
 		cppcheck --quiet --enable=all --suppress=missingIncludeSystem \
-			--language=c++ --std=${CXX_STD} -j ${NTHREADS} \
+			--language=c++ --std=${CXX_STD} -j ${MK_JOB_CNT} \
 			-D__cplusplus=${__cplusplus} ${CXX_DEFINES} ${CXX_INCLUDES} ${CXX_SRCS} || : ; \
 		clang --analyze ${CXXFLAGS} ${CXX_SRCS}; \
 	fi
@@ -207,31 +214,27 @@ clean:
 	${Q}${RM} ${D_FILES}
 	$(if ${Q},@printf '>>> CLEAN: Done.\n')
 
-__VARS__ := CROSS_COMPILE CC CXX AR STRIP OBJCOPY RM __STRICT__ C_STD CXX_STD __cplusplus \
-    FLAGS_WARN FLAGS_ANSI FLAGS_FOR_DEBUG FLAGS_FOR_RELEASE NDEBUG D_FLAG \
-    C_DEFINES CXX_DEFINES C_INCLUDES CXX_INCLUDES OTHER_CFLAGS OTHER_CXXFLAGS C_LDFLAGS CXX_LDFLAGS \
-    CFLAGS CXXFLAGS C_COMPILE CXX_COMPILE ALLOW_REORDER_ON_LINKING C_LINK CXX_LINK \
-    MAKE_STATIC_LIB MAKE_SHARED_LIB EXPORT_DEBUG_INFO ADD_DEBUG_LINK STRIP_ALL_SYMBOLS STRIP_DEBUG_SYMBOLS \
+__VARS__ := ARCH CROSS_COMPILE CC CXX AR STRIP OBJCOPY RM SYMLINK \
+    __STRICT__ NDEBUG C_STD CXX_STD __cplusplus \
+    FLAGS_WARN FLAGS_ANSI FLAGS_FOR_DEBUG FLAGS_FOR_RELEASE \
+    C_DEFINES CXX_DEFINES C_INCLUDES CXX_INCLUDES OTHER_CFLAGS OTHER_CXXFLAGS \
+    D_FLAG CFLAGS CXXFLAGS C_COMPILE CXX_COMPILE \
+    C_LDFLAGS CXX_LDFLAGS ALLOWS_REORDER_ON_LINKING \
+    C_LINK CXX_LINK PACK_ARCHIVE_LIB PACK_SHARED_LIB \
+    EXPORT_DEBUG_INFO STRIP_ALL_SYMBOLS STRIP_DEBUG_SYMBOLS ADD_DEBUG_LINK \
     GOAL GOALS C_SRCS CXX_SRCS \
-    ARCH_LIST ARCH $(foreach i, ${ARCH_LIST}, CROSS_COMPILE_FOR_${i}) \
-    NTHREADS
+    ARCH_LIST $(foreach i, ${ARCH_LIST}, CROSS_COMPILE_FOR_${i}) \
+    MK_JOB_CNT
+
+__match_special_var = $(filter %_COMPILE %_LINK PACK_%_LIB D_FLAG EXPORT_DEBUG_INFO ADD_DEBUG_LINK STRIP_%_SYMBOLS, $1)
 
 ifeq (${Q},)
     $(info -)
     $(foreach i, ${__VARS__}, \
-        $(eval \
-            $(info \
-                - ${i}: ${$i} \
-                $(if \
-                    $(filter-out CROSS_COMPILE, \
-                    $(filter %_COMPILE %_LINK MAKE_%_LIB D_FLAG EXPORT_DEBUG_INFO ADD_DEBUG_LINK STRIP_%_SYMBOLS, ${i})), \
-                    <-- Might miss "$$@" or/and "$$<" or/and "$$^" on displaying. \
-                ) \
-            ) \
-        ) \
+        $(info - ${i}:$(if $(call __match_special_var, ${i}), $(value ${i}), ${$i})) \
     )
     $(info -)
-    $(info You can override any of variables above to meet your need.)
+    $(info You can override/append/prepend any of variables above to meet your need.)
     $(info -)
 else
     ifeq (${MAKELEVEL}, 0)
@@ -347,6 +350,11 @@ endif
 # >>> 2026-04-27, Man Hung-Coeng <udc577@126.com>:
 #   01. Update RM, and add SYMLINK.
 #   02. Optimize library size, and meanwhile preserve debugging info of
-#   	each library and executable file.
+#       each library and executable file.
+#
+# >>> 2026-05-12, Man Hung-Coeng <udc577@126.com>:
+#   01. Optimize cross compilation.
+#   02. Optimize debugging control.
+#   03. Optimize the printing logic for variables.
 #
 

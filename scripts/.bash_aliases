@@ -29,6 +29,7 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
     alias screen_off='xset dpms force off'
     alias diff="diff --color=auto"
     alias dsk="cd ${HOME}/桌面 2> /dev/null || cd ${HOME}/Desktop"
+    alias ffmpeg="ffmpeg -nostdin"
     alias find="time find -L"
     alias g++_macros="g++ -dM -E - < /dev/null"
     alias gcc_macros="gcc -dM -E - < /dev/null"
@@ -95,5 +96,8 @@ fi
 #
 # >>> 2026-05-06, Man Hung-Coeng <udc577@126.com>:
 #   01. Add screen_off.
+#
+# >>> 2026-06-01, Man Hung-Coeng <udc577@126.com>:
+#   01. Add ffmpeg.
 #
 

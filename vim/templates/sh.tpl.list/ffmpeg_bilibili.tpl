@@ -1,5 +1,9 @@
 #!/bin/bash
 
+shopt -s expand_aliases
+
+alias ffmpeg='ffmpeg -nostdin'
+
 # Cache path: Android/data/tv.danmaku.bili/download
 
 codec_args="-c:v hevc -c:a aac"
@@ -38,19 +42,18 @@ elif [ ${op_type} -eq 3 ]; then # Episodes
         time ffmpeg -i ${cache_dir}/video.m4s -i ${cache_dir}/audio.m4s -c copy ${episode}.mp4
     done
 else
-    # NOTE: Executing a complex ffmpeg command in a for-loop or while-loop might cause some weird bug, like:
-    #       breaking out unexpectedly in the middle of loop, or reporting the invalid-argument error.
-    #time ffmpeg -i c_1558861542/80/video.m4s -i c_1558861542/80/audio.m4s ${codec_args} -ss "00:00:00" -to "00:11:09" ${video_args} ${audio_args} 01.mp4
-    time ffmpeg -i c_1558861542/80/video.m4s -i c_1558861542/80/audio.m4s ${codec_args} -ss "00:00:00" -to "00:11:09" ${video_args} ${audio_args} ${bitstream_filters} 01.ts
-    time ffmpeg -i c_1558873445/80/video.m4s -i c_1558873445/80/audio.m4s ${codec_args} -ss "00:00:00" -to "00:11:09" ${video_args} ${audio_args} ${bitstream_filters} 02.ts
-    time ffmpeg -i c_1558873600/80/video.m4s -i c_1558873600/80/audio.m4s ${codec_args} -ss "00:00:00" -to "00:11:09" ${video_args} ${audio_args} ${bitstream_filters} 03.ts
-    time ffmpeg -i c_1558873658/80/video.m4s -i c_1558873658/80/audio.m4s ${codec_args} -ss "00:00:00" -to "00:11:09" ${video_args} ${audio_args} ${bitstream_filters} 04.ts
-    time ffmpeg -i c_1558873842/80/video.m4s -i c_1558873842/80/audio.m4s ${codec_args} -ss "00:00:00" -to "00:11:09" ${video_args} ${audio_args} ${bitstream_filters} 05.ts
-    time ffmpeg -i c_1558878827/80/video.m4s -i c_1558878827/80/audio.m4s ${codec_args} -ss "00:00:00" -to "00:11:09" ${video_args} ${audio_args} ${bitstream_filters} 06.ts
-    time ffmpeg -i c_1558881233/80/video.m4s -i c_1558881233/80/audio.m4s ${codec_args} -ss "00:00:00" -to "00:11:09" ${video_args} ${audio_args} ${bitstream_filters} 07.ts
-    time ffmpeg -i c_1558884963/80/video.m4s -i c_1558884963/80/audio.m4s ${codec_args} -ss "00:00:00" -to "00:11:09" ${video_args} ${audio_args} ${bitstream_filters} 08.ts
-    time ffmpeg -i c_1558890739/80/video.m4s -i c_1558890739/80/audio.m4s ${codec_args} -ss "00:00:00" -to "00:11:09" ${video_args} ${audio_args} ${bitstream_filters} 09.ts
-    time ffmpeg -i c_1558890764/80/video.m4s -i c_1558890764/80/audio.m4s ${codec_args} -ss "00:00:00" -to "00:07:26" ${video_args} ${audio_args} ${bitstream_filters} 10.ts
+    slice_dirs=(c_1558861542 c_1558873445 c_1558873600 c_1558873658 c_1558873842 c_1558878827 c_1558881233 c_1558884963 c_1558890739 c_1558890764)
+    weird_num=80
+    end_duration="00:11:09"
+
+    for i in $(seq 0 $((${#slice_dirs[@]} - 1)))
+    do
+        slice_dir=${slice_dirs[${i}]}/${weird_num}
+        ii=$(printf "%02d\n" ${i})
+
+        #time ffmpeg -i ${slice_dir}/video.m4s -i ${slice_dir}/audio.m4s ${codec_args} -ss "00:00:00" -to "${end_duration}" ${video_args} ${audio_args} ${ii}.mp4
+        time ffmpeg -i ${slice_dir}/video.m4s -i ${slice_dir}/audio.m4s ${codec_args} -ss "00:00:00" -to "${end_duration}" ${video_args} ${audio_args} ${bitstream_filters} ${ii}.ts
+    done
 
     if [ ${op_type} -gt 4 ]; then
         #ls *.mp4 | awk '{ printf("file '%s'\n", $1); }' > slices.txt

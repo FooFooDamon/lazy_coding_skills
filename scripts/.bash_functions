@@ -94,6 +94,37 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
         fi
     }
 
+    pdf_bookmark_fix_page_scaling()
+    {
+        [ -n "${FUNCNAME}" ] || FUNCNAME="pdf_bookmark_fix_page_scaling"
+
+        if [ $# -lt 1 ]; then
+            (
+                echo "*** Insufficient arguments!"
+                echo "Usage: ${FUNCNAME} <input-pdf>"
+                echo "Example: ${FUNCNAME} my_pdf.pdf"
+            ) >&2
+
+            return 128
+        fi
+
+        local input_pdf="$1"
+
+        if [ "${input_pdf}" != "" -a ! -f "${input_pdf}" ]; then
+            echo "*** Input PDF file does not exist: ${input_pdf}" >&2
+            return 1
+        fi
+
+        local height=$(pdfinfo -box "${input_pdf}" | grep "Page size:" | awk -F x '{ print $2 }' | awk '{ print $1 }')
+
+        cpdf -list-bookmarks-json "${input_pdf}" \
+            | sed "s/{[ ]*\"N\":[ ]*\"\/Fit\"[ ]*}/{ \"N\": \"\/XYZ\" }, { \"F\": 0.0 }, { \"F\": ${height} }, null/" \
+            > "${input_pdf}".bookmarks.json \
+            && cpdf -remove-bookmarks "${input_pdf}" -o "${input_pdf}.tmp" \
+            && cpdf -add-bookmarks-json "${input_pdf}".bookmarks.json "${input_pdf}.tmp" -o "${input_pdf}" \
+            && rm "${input_pdf}".bookmarks.json "${input_pdf}.tmp"
+    }
+
     pdf_bookmark_get()
     {
         [ -n "${FUNCNAME}" ] || FUNCNAME="pdf_bookmark_get"
@@ -265,6 +296,8 @@ if [ -n "${LAZY_CODING_HOME}" ]; then
             # FIXME: Previous settings for page scaling might be lost!
             pdftk "${input_pdf}" update_info_utf8 "${conv_bookmark}" output "${output_pdf}" && rm "${conv_bookmark}"
         fi
+
+        pdf_bookmark_fix_page_scaling "${output_pdf}"
     }
 
     play_abnormal_exit_audio()
@@ -347,5 +380,8 @@ fi
 #
 # >>> 2026-01-21, Man Hung-Coeng <udc577@126.com>:
 #   01. Add pdf_bookmark_{get,set}().
+#
+# >>> 2026-06-24, Man Hung-Coeng <udc577@126.com>:
+#   01. Add pdf_bookmark_fix_page_scaling().
 #
 

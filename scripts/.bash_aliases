@@ -19,6 +19,7 @@
 #
 
 if [ -n "${LAZY_CODING_HOME}" ]; then
+    alias 7z.enc="7z a -t7z -mx9 -ms=on -mmt=on -mhe=on -p"
     alias clang++_macros="clang++ -dM -E - < /dev/null"
     alias clang_macros="clang -dM -E - < /dev/null"
     alias cp="time cp"
@@ -99,5 +100,8 @@ fi
 #
 # >>> 2026-06-01, Man Hung-Coeng <udc577@126.com>:
 #   01. Add ffmpeg.
+#
+# >>> 2026-07-04, Man Hung-Coeng <udc577@126.com>:
+#   01. Add 7z.enc.
 #
 

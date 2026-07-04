@@ -146,7 +146,7 @@ if [ -f "$1" ]; then
     export md5=$(md5sum "${url}" | awk '{ print $1 }')
 else
     export url="$1"
-    export md5=$(printf "${url}" | md5sum | awk '{ print $1 }')
+    export md5=$(printf "${2-${url}}" | md5sum | awk '{ print $1 }')
 fi
 [ -n "$2" ] && video_name="$2" || video_name="${md5}.mp4"
 
@@ -279,5 +279,8 @@ ffmpeg -allowed_extensions ALL -protocol_whitelist "file,http,https,crypto,tcp,t
 # >>> V1.0.7|2026-03-29, Man Hung-Coeng <udc577@126.com>:
 #   01. Fix the URL prefix error after aborting and restarting the script
 #       for a playlist with a secondary list.
+#
+# >>> V1.0.8|2026-07-04, Man Hung-Coeng <udc577@126.com>:
+#   01. Calculate the MD5 hash code based on resulting video name if specified.
 #
 

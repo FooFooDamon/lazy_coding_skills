@@ -154,7 +154,11 @@ if [ -n "${LCS_M3U8_CACHE_DIR}" ]; then
     [ -e "${LCS_M3U8_CACHE_DIR}" ] || eexit "*** Directory not found: ${LCS_M3U8_CACHE_DIR}"
     LCS_M3U8_CACHE_DIR="${LCS_M3U8_CACHE_DIR}/"
 fi
-mkdir -p "${LCS_M3U8_CACHE_DIR}lc-m3u8.${md5}" && cd "${LCS_M3U8_CACHE_DIR}lc-m3u8.${md5}" || exit 1
+if [ -n "$2" ]; then
+    mkdir -p "${LCS_M3U8_CACHE_DIR}lc-m3u8.${md5}.$2" && cd "${LCS_M3U8_CACHE_DIR}lc-m3u8.${md5}.$2" || exit 1
+else
+    mkdir -p "${LCS_M3U8_CACHE_DIR}lc-m3u8.${md5}" && cd "${LCS_M3U8_CACHE_DIR}lc-m3u8.${md5}" || exit 1
+fi
 
 #
 # Download playlist if needed.
@@ -179,12 +183,13 @@ if [ $(grep -c "\.m3u" ${REMOTE_PLAYLIST}) -gt 0 ]; then
     export url_prefix="$(dirname "${url}")"
     echo "${url_prefix}" > url_prefix.txt
 fi
+# In case that script is aborted and restarted.
 [ -e url_prefix.txt ] && export url_prefix="$(cat url_prefix.txt)" || :
 
 make_url()
 {
     if [ $(echo "$1" | grep -c "^http:\|^https:\|^ftp:\|^rtp:") -eq 0 ]; then
-        [ "${1:0:1}" = "/" ] && echo "$(echo "${url_prefix}" | sed 's/\(.*:\/\/[^\/]*\)\/.*/\1/')/$1" || echo "${url_prefix}/$1"
+        [ "${1:0:1}" = "/" ] && echo "$(echo "${url_prefix}" | sed 's/\(.*:\/\/[^\/]*\)\/.*/\1/')$1" || echo "${url_prefix}/$1"
     else
         echo "$1"
     fi
@@ -282,5 +287,9 @@ ffmpeg -allowed_extensions ALL -protocol_whitelist "file,http,https,crypto,tcp,t
 #
 # >>> V1.0.8|2026-07-04, Man Hung-Coeng <udc577@126.com>:
 #   01. Calculate the MD5 hash code based on resulting video name if specified.
+#
+# >>> V1.0.9|2026-08-11, Man Hung-Coeng <udc577@126.com>:
+#   01. Append the specified video name to cache directory name.
+#   02. Fix the bug of conversion from absolute path to full URL in make_url().
 #
 

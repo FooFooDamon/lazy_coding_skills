@@ -1,7 +1,7 @@
 #
 # Makefile wrapper for Buildroot.
 #
-# Copyright (c) 2024 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2024-2026 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,12 +16,12 @@
 # limitations under the License.
 #
 
-__VER__ ?= 123456789abc
+__REVISION__ ?= 123456789abc
 PKG_VERSION ?= 2023.02
 PKG_FILE ?= ./buildroot-${PKG_VERSION}.tar.gz
 PKG_URL ?= https://buildroot.org/downloads/buildroot-${PKG_VERSION}.tar.gz
 PKG_DOWNLOAD ?= wget -c '$(strip ${PKG_URL})' -O ${PKG_FILE}
-MAKE_ARGS ?= $(if ${__VER__},BR2_VERSION=${PKG_VERSION}-${__VER__})
+MAKE_ARGS ?= $(if ${__REVISION__},BR2_VERSION=${PKG_VERSION}-${__REVISION__})
 CP ?= cp -R -P
 DIFF ?= diff --color
 TOUCH ?= touch
@@ -131,7 +131,7 @@ endif
 	$(if $(strip ${USER_HELP_PRINTS}),@printf "\nUser help info:\n"; (${USER_HELP_PRINTS}))
 
 __VARS__ := CP DIFF TOUCH UNCOMPRESS \
-    __VER__ PKG_VERSION MAKE_ARGS  \
+    __REVISION__ PKG_VERSION MAKE_ARGS  \
     PKG_FILE PKG_URL PKG_DOWNLOAD SRC_PARENT_DIR SRC_ROOT_DIR \
     INSTALL_DIR INSTALL_CMD POST_INSTALL_CMD UNINSTALL_CMD \
     BUSYBOX_CONFIG OVERLAY_DIR EXT_TARGETS CUSTOM_FILES USER_HELP_PRINTS
@@ -168,5 +168,8 @@ showvars:
 #
 # >>> 2024-08-08, Man Hung-Coeng <udc577@126.com>:
 #   01. Add variable POST_INSTALL_CMD for post-installation tasks (if any).
+#
+# >>> 2026-09-13, Man Hung-Coeng <udc577@126.com>:
+#   01. Update macro __VER__ to __REVISION__.
 #
 

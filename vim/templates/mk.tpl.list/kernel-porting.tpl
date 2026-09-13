@@ -7,7 +7,7 @@
 #
 
 override undefine LAZY_CODING_MAKEFILES
-LAZY_CODING_MAKEFILES := __ver__.mk linux_kernel.mk
+LAZY_CODING_MAKEFILES := __revision__.mk linux_kernel.mk
 
 ifeq ($(shell [ true $(foreach i, ${LAZY_CODING_MAKEFILES}, -a -s ${i}) ] && echo 1 || echo 0),0)
 

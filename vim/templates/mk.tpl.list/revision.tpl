@@ -9,7 +9,7 @@
 
 LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 
-REV_MKFILE ?= $(abspath __ver__.mk)
+REV_MKFILE ?= $(abspath __revision__.mk)
 
 ifeq ($(shell [ -s ${REV_MKFILE} ] && echo 1 || echo 0),0)
 
@@ -25,9 +25,9 @@ all:
 	@:
 
 revision:
-	@echo "Revision: ${__VER__}"
+	@echo "Revision: ${__REVISION__}"
 
-EVAL_VERSION_ONCE ?= Y
+EVAL_REVISION_ONCE ?= Y
 
 include ${REV_MKFILE}
 

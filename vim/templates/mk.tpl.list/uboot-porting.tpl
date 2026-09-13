@@ -7,7 +7,7 @@
 #
 
 override undefine LAZY_CODING_MAKEFILES
-LAZY_CODING_MAKEFILES := __ver__.mk u-boot.mk
+LAZY_CODING_MAKEFILES := __revision__.mk u-boot.mk
 
 ifeq ($(shell [ true $(foreach i, ${LAZY_CODING_MAKEFILES}, -a -s ${i}) ] && echo 1 || echo 0),0)
 
@@ -63,7 +63,7 @@ include $(word 2, ${LAZY_CODING_MAKEFILES})
 #
 #.revision: .ALWAYS_MAKE
 #	${Q}[ -e $@ ] || touch $@
-#	${Q}[ '$(file < $@)' = '${__VER__}' ] || printf '${__VER__}' > $@
+#	${Q}[ '$(file < $@)' = '${__REVISION__}' ] || printf '${__REVISION__}' > $@
 
 .ALWAYS_MAKE:
 

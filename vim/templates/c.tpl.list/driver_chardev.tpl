@@ -18,8 +18,8 @@
 #include <linux/cdev.h>
 #include <linux/device.h>
 
-#ifndef __VER__
-#define __VER__				"<none>"
+#ifndef __REVISION__
+#define __REVISION__				"<none>"
 #endif
 
 #ifndef DRV_VER_MAJOR
@@ -193,7 +193,7 @@ static __init int ${BASENAME}_init(void)
 	// FIXME: Add some post-initializations if needed, and delete this comment then.
 
 	pr_notice("Initialized %s, driver version: %s-%s, kernel: %#x\n",
-		DEV_NAME, DRIVER_VERSION, __VER__, LINUX_VERSION_CODE);
+		DEV_NAME, DRIVER_VERSION, __REVISION__, LINUX_VERSION_CODE);
 
 	goto lbl_init_end;
 
@@ -228,7 +228,7 @@ module_exit(${BASENAME}_exit);
 
 MODULE_DESCRIPTION("Driver for ${BASENAME}");
 MODULE_LICENSE("GPL");
-MODULE_VERSION(DRIVER_VERSION "-" __VER__);
+MODULE_VERSION(DRIVER_VERSION "-" __REVISION__);
 MODULE_AUTHOR("${LCS_USER} <${LCS_EMAIL}>");
 
 /*

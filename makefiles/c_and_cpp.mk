@@ -71,7 +71,7 @@ FLAGS_FOR_RELEASE ?= -O2 -g -DNDEBUG
 
 DEBUG_FLAGS ?= $(if ${NDEBUG},${FLAGS_FOR_RELEASE},${FLAGS_FOR_DEBUG})
 
-COMMON_COMPILE_FLAGS ?= -D__${ARCH}__ -D__VER__='"${__VER__}"' \
+COMMON_COMPILE_FLAGS ?= -D__${ARCH}__ -D__REVISION__='"${__REVISION__}"' \
     ${DEBUG_FLAGS} -D_REENTRANT -fPIC ${FLAGS_WARN} ${FLAGS_ANSI} # -fstack-protector-strong
 
 DEFAULT_CFLAGS ?= ${COMMON_COMPILE_FLAGS} -std=${C_STD}
@@ -356,5 +356,8 @@ endif
 #   01. Optimize cross compilation.
 #   02. Optimize debugging control.
 #   03. Optimize the printing logic for variables.
+#
+# >>> 2026-09-13, Man Hung-Coeng <udc577@126.com>:
+#   01. Update macro __VER__ to __REVISION__.
 #
 

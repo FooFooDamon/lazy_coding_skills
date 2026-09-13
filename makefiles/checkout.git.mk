@@ -34,7 +34,7 @@ export CHKOUT_STEM ?= main
 export CHKOUT_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 export CHKOUT_TAIL_PARAMS ?=
 export CHKOUT_METHOD ?= partial
-export CHKOUT_PARTIAL_ITEMS ?= main/makefiles/__ver__.mk \
+export CHKOUT_PARTIAL_ITEMS ?= main/makefiles/__revision__.mk \
     e9feea7c26f2afe824d674525deff0fde3a578b6/makefiles/c_and_cpp.mk \
     # Add more items ahead of this line if needed. \
     # Beware that each line should begin with 4 spaces and end with a backslash.
@@ -143,5 +143,8 @@ endif # ifeq ($(strip ${VCS}),git)
 #
 # >>> 2026-03-27, Man Hung-Coeng <udc577@126.com>:
 #   01. Update the git hash code of each *.mk in CHKOUT_PARTIAL_ITEMS.
+#
+# >>> 2026-09-13, Man Hung-Coeng <udc577@126.com>:
+#   01. Update __ver__.mk to __revision__.mk.
 #
 

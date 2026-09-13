@@ -1,7 +1,7 @@
 #
 # Makefile template for Linux driver.
 #
-# Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2026 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -50,7 +50,7 @@
 # (1) Assume you have a formal project like:
 #         /path/to/project/source/code/directory
 #             |-- common
-#             |       `-- __ver__.mk # your definition of __VER__
+#             |       `-- __revision__.mk # your definition of __REVISION__
 #             |-- app
 #             |-- kernel # linux kernel source code
 #             `-- drivers
@@ -74,7 +74,7 @@
 #         export APP_NAME ?= driver1_app
 #         export APP_OBJS ?= driver1_app_main.o driver1_app_utils.o
 #         # Other settings if needed: APP_DEFINES, APP_INCLUDES, OTHER_APP_CFLAGS, etc.
-#         include ${PWD}/../../common/__ver__.mk
+#         include ${PWD}/../../common/__revision__.mk
 #         include ${PWD}/../../common/linux_driver.mk
 #
 # Supported compilation commands:
@@ -154,7 +154,7 @@ obj-m := ${DRVNAME}.o
 
 # CFLAGS is not permitted here, otherwise an error will be triggered with a message below:
 # *** CFLAGS was changed in "...". Fix it to use ccflags-y.
-ccflags-y += -D__VER__=\"${__VER__}\" # Define the version number in another makefile, or just ignore it if not needed.
+ccflags-y += -D__REVISION__=\"${__REVISION__}\" # Define the revision number in another makefile, or just ignore it if not needed.
 ifeq (${NDEBUG},)
     ccflags-y += -O0 -g
 endif
@@ -199,7 +199,7 @@ ifeq (${NDEBUG},)
 else
     APP_DEBUG_FLAGS ?= -O2 -DNDEBUG
 endif
-APP_CFLAGS ?= -D_REENTRANT -D__VER__=\"${__VER__}\" -fPIC -Wall -Wextra \
+APP_CFLAGS ?= -D_REENTRANT -D__REVISION__=\"${__REVISION__}\" -fPIC -Wall -Wextra \
     $(if ${__STRICT__},-Werror) -ansi -Wpedantic \
     -Wno-variadic-macros -Wno-unused-parameter -Wno-missing-field-initializers \
     -Wno-implicit-fallthrough ${APP_DEBUG_FLAGS} ${APP_DEFINES} ${APP_INCLUDES} \
@@ -305,7 +305,7 @@ endif # ifeq (${KERNELRELEASE},)
 # ================
 #
 # >>> 2023-04-07, Man Hung-Coeng <udc577@126.com>:
-#   01. Create.
+#   01. Initial commit.
 #
 # >>> 2023-04-08, Man Hung-Coeng <udc577@126.com>:
 #   01. Fix the bug of ${DRVNAME}.ko not recompiling while it's sources are changed.
@@ -347,5 +347,8 @@ endif # ifeq (${KERNELRELEASE},)
 # >>> 2024-06-17, Man Hung-Coeng <udc577@126.com>:
 #   01. Add CROSS_COMPILE_FOR_aarch64, which should have been done on 2023-11-19.
 #   02. Support arm64 architecture, which is a synonym for aarch64.
+#
+# >>> 2026-09-13, Man Hung-Coeng <udc577@126.com>:
+#   01. Update __ver__.mk/__VER__ to __revision__.mk/__REVISION__.
 #
 

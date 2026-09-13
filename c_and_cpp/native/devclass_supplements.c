@@ -3,7 +3,7 @@
 /*
  * Supplements to device class in linux mainline.
  *
- * Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
+ * Copyright (c) 2023-2026 Man Hung-Coeng <udc577@126.com>
 */
 
 #include "devclass_supplements.h"
@@ -51,8 +51,8 @@ void class_remove_files(struct class *cls, const struct class_attribute *attrs)
 #include <linux/fs.h>
 #include <linux/cdev.h>
 
-#ifndef __VER__
-#define __VER__                         "<none>"
+#ifndef __REVISION__
+#define __REVISION__                    "<none>"
 #endif
 
 #define DEV_NAME                        "class_supp_demo"
@@ -83,7 +83,7 @@ static demo_device_t s_dev = {
 
 static DECLARE_SHOW_FUNC(version)
 {
-    return sprintf(buf, "%s\n", __VER__);
+    return sprintf(buf, "%s\n", __REVISION__);
 }
 
 static DECLARE_SHOW_FUNC(max_node_count)
@@ -206,9 +206,12 @@ MODULE_AUTHOR("Man Hung-Coeng <udc577@126.com>");
  * ================
  *
  * >>> 2023-12-17, Man Hung-Coeng <udc577@126.com>:
- *  01. Create.
+ *  01. Initial commit.
  *
  * >>> 2024-06-16, Man Hung-Coeng <udc577@126.com>:
  *  01. Fix the compilation error of class_create() on kernel 6.4.0 and above.
+ *
+ * >>> 2026-09-13, Man Hung-Coeng <udc577@126.com>:
+ *  01. Update macro __VER__ to __REVISION__.
  */
 

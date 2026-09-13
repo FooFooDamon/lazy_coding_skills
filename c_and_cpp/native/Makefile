@@ -1,7 +1,7 @@
 __STRICT__ := y
-EVAL_VERSION_ONCE := $(if $(filter driver, ${T}), Y, N)
+EVAL_REVISION_ONCE := $(if $(filter driver, ${T}), Y, N)
 
-include ${PWD}/../../makefiles/__ver__.mk
+include ${PWD}/../../makefiles/__revision__.mk
 
 MODULES := chardev_group devclass_supplements test_inline_klogging
 

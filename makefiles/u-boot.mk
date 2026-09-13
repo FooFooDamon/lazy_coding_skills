@@ -1,7 +1,7 @@
 #
 # Makefile wrapper for U-Boot.
 #
-# Copyright (c) 2024 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2024-2026 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -19,8 +19,8 @@
 ARCH ?= arm
 CROSS_COMPILE ?= arm-linux-gnueabihf-
 LOCALVERSION ?= $(if $(wildcard .localversion),-$(shell cat .localversion))
-__VER__ ?= 123456789abc
-MAKE_ARGS ?= ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} $(if ${__VER__},EXTRAVERSION=-${__VER__}) \
+__REVISION__ ?= 123456789abc
+MAKE_ARGS ?= ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} $(if ${__REVISION__},EXTRAVERSION=-${__REVISION__}) \
     $(if ${LOCALVERSION},LOCALVERSION=${LOCALVERSION})
 NTHREADS ?= $(shell nproc)
 CP ?= cp -R -P
@@ -162,7 +162,7 @@ else
 endif
 	$(if $(strip ${USER_HELP_PRINTS}),@printf "\nUser help info:\n"; (${USER_HELP_PRINTS}))
 
-__VARS__ := ARCH CROSS_COMPILE LOCALVERSION __VER__ MAKE_ARGS NTHREADS \
+__VARS__ := ARCH CROSS_COMPILE LOCALVERSION __REVISION__ MAKE_ARGS NTHREADS \
     CP DIFF TOUCH UNCOMPRESS \
     PKG_FILE PKG_URL PKG_DOWNLOAD SRC_PARENT_DIR SRC_ROOT_DIR \
     INSTALL_DIR INSTALL_CMD POST_INSTALL_CMD UNINSTALL_CMD \
@@ -230,5 +230,8 @@ showvars:
 #
 # >>> 2024-08-08, Man Hung-Coeng <udc577@126.com>:
 #   01. Add variable POST_INSTALL_CMD for post-installation tasks (if any).
+#
+# >>> 2026-09-13, Man Hung-Coeng <udc577@126.com>:
+#   01. Update macro __VER__ to __REVISION__.
 #
 

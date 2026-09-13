@@ -11,7 +11,7 @@
 LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 
 # NOTE: Some paths must be absolute paths while some mustn't, and the rest don't care.
-LAZY_CODING_MAKEFILES ?= $(abspath __ver__.mk linux_driver.mk)
+LAZY_CODING_MAKEFILES ?= $(abspath __revision__.mk linux_driver.mk)
 
 override PREREQUISITE_FILES := \
     ${LAZY_CODING_URL}/raw/217ebcbe23a78dacf7491685ef2e121a0721eb62/c_and_cpp/native/klogging.h \
@@ -38,7 +38,7 @@ else
 
 all: dependencies
 
-EVAL_VERSION_ONCE ?= Y
+EVAL_REVISION_ONCE ?= Y
 
 #
 # FIXME: Uncomment and modify lines below according to your needs.
@@ -63,7 +63,7 @@ include ${LAZY_CODING_MAKEFILES}
 #
 #.revision: .ALWAYS_MAKE
 #	${Q}[ -e $@ ] || touch $@
-#	${Q}[ '$(file < $@)' = '${__VER__}' ] || printf '${__VER__}' > $@
+#	${Q}[ '$(file < $@)' = '${__REVISION__}' ] || printf '${__REVISION__}' > $@
 
 .ALWAYS_MAKE:
 

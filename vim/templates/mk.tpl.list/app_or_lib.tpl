@@ -9,7 +9,7 @@
 
 LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 
-LAZY_CODING_MAKEFILES ?= $(abspath __ver__.mk c_and_cpp.mk)
+LAZY_CODING_MAKEFILES ?= $(abspath __revision__.mk c_and_cpp.mk)
 
 override PREREQUISITE_FILES := \
     ${LAZY_CODING_URL}/raw/77d444b429e8ac0166e876834a52e97e0d3b3237/c_and_cpp/native/signal_handling.c \
@@ -81,7 +81,7 @@ include ${LAZY_CODING_MAKEFILES}
 #
 #.revision: .ALWAYS_MAKE
 #	${Q}[ -e $@ ] || touch $@
-#	${Q}[ '$(file < $@)' = '${__VER__}' ] || printf '${__VER__}' > $@
+#	${Q}[ '$(file < $@)' = '${__REVISION__}' ] || printf '${__REVISION__}' > $@
 
 .ALWAYS_MAKE:
 

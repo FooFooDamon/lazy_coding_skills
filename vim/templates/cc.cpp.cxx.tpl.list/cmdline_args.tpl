@@ -191,7 +191,7 @@ cmd_args_t parse_cmdline(int argc, char **argv)
             }
             else if (0 == strcmp(long_opt, "vcs-version"))
             {
-                printf("%s\n", __VER__);
+                printf("%s\n", __REVISION__);
                 exit(EXIT_SUCCESS);
             }
 #ifdef HAS_LOGGER

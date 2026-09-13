@@ -54,8 +54,8 @@ extern "C" {
 #define PRODUCT_VERSION                 CSTR(MAJOR_VER) "." CSTR(MINOR_VER) "." CSTR(PATCH_VER)
 #endif
 
-#ifndef __VER__
-#define __VER__                         "<none>"
+#ifndef __REVISION__
+#define __REVISION__                    "<none>"
 #endif
 
 #ifndef BIZ_TYPE_CANDIDATES
@@ -247,7 +247,7 @@ cmd_args_t parse_cmdline(int argc, char **argv)
             }
             else if (0 == strcmp(long_opt, "vcs-version"))
             {
-                printf("%s\n", __VER__);
+                printf("%s\n", __REVISION__);
                 exit(EXIT_SUCCESS);
             }
 #ifdef HAS_LOGGER

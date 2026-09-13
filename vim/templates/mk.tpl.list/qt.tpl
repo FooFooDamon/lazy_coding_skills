@@ -9,7 +9,7 @@
 
 LAZY_CODING_URL ?= https://github.com/FooFooDamon/lazy_coding_skills
 
-override PREREQUISITE_FILES := ${LAZY_CODING_URL}/raw/main/makefiles/__ver__.mk \
+override PREREQUISITE_FILES := ${LAZY_CODING_URL}/raw/main/makefiles/__revision__.mk \
     ${LAZY_CODING_URL}/raw/01c4299d4858189ba7072789ff2a6842ecbb44d1/c_and_cpp/qt/qt_print.hpp \
     ${LAZY_CODING_URL}/raw/77d444b429e8ac0166e876834a52e97e0d3b3237/c_and_cpp/native/signal_handling.c \
     ${LAZY_CODING_URL}/raw/77d444b429e8ac0166e876834a52e97e0d3b3237/c_and_cpp/native/signal_handling.h \
@@ -38,10 +38,10 @@ endif
 
 all: dependencies
 
-include __ver__.mk
+include __revision__.mk
 include QtMakefile
 
-DEFINES += -D__VER__='"${__VER__}"'
+DEFINES += -D__REVISION__='"${__REVISION__}"'
 CFLAGS += -Wno-unused-parameter
 CXXFLAGS += -Wno-unused-parameter
 INCPATH +=
@@ -62,7 +62,7 @@ PREDEFS_FOR_CPPCHECK ?= $(if $(wildcard moc_predefs.h), --include=moc_predefs.h,
 #
 #.revision: .ALWAYS_MAKE
 #	@[ -e $@ ] || touch $@
-#	@[ '$(file < $@)' = '${__VER__}' ] || printf '${__VER__}' > $@
+#	@[ '$(file < $@)' = '${__REVISION__}' ] || printf '${__REVISION__}' > $@
 
 .ALWAYS_MAKE:
 

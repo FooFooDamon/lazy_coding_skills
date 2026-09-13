@@ -1,7 +1,7 @@
 #
 # Makefile wrapper for Linux kernel.
 #
-# Copyright (c) 2024 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2024-2026 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,10 +49,10 @@ INSTALL_CMD ?= [ -d ${INSTALL_DIR} ] || mkdir -p ${INSTALL_DIR}; \
 POST_INSTALL_CMD ?=
 UNINSTALL_CMD ?= rm -f ${INSTALL_DIR}/${KERNEL_IMAGE} $(if ${__DTB_PATH},${INSTALL_DIR}/$(notdir ${__DTB_PATH}))
 LOCALVERSION ?= $(if $(wildcard .localversion),-$(shell cat .localversion))
-__VER__ ?= 123456789abc
-KBUILD_BUILD_VERSION ?= $(if ${BUILDVERSION},${BUILDVERSION},${__VER__})
-KCFLAGS ?= -DUTS_NODENAME=\\\"`hostname`[${__VER__}]\\\" -DUTS_DOMAINNAME=\\\"${VCS}://ver.${__VER__}.nil/\\\"
-MAKE_ARGS ?= ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} $(if ${__VER__},KCFLAGS="${KCFLAGS}") \
+__REVISION__ ?= 123456789abc
+KBUILD_BUILD_VERSION ?= $(if ${BUILDVERSION},${BUILDVERSION},${__REVISION__})
+KCFLAGS ?= -DUTS_NODENAME=\\\"`hostname`[${__REVISION__}]\\\" -DUTS_DOMAINNAME=\\\"${VCS}://ver.${__REVISION__}.nil/\\\"
+MAKE_ARGS ?= ARCH=${ARCH} CROSS_COMPILE=${CROSS_COMPILE} $(if ${__REVISION__},KCFLAGS="${KCFLAGS}") \
     KBUILD_BUILD_VERSION=${KBUILD_BUILD_VERSION} $(if ${LOCALVERSION},LOCALVERSION=${LOCALVERSION})
 NTHREADS ?= $(shell nproc)
 DEFCONFIG ?= arch/arm/configs/imx_v7_defconfig
@@ -241,7 +241,7 @@ __VARS__ := ARCH CROSS_COMPILE CP DIFF TOUCH UNCOMPRESS \
     PKG_FILE PKG_URL PKG_DOWNLOAD SRC_PARENT_DIR SRC_ROOT_DIR \
     KBUILD_IMAGE KERNEL_IMAGE DTS_PATH INSTALL_DTBS_PATH \
     INSTALL_DIR INSTALL_CMD POST_INSTALL_CMD UNINSTALL_CMD \
-    LOCALVERSION BUILDVERSION __VER__ KBUILD_BUILD_VERSION MAKE_ARGS NTHREADS \
+    LOCALVERSION BUILDVERSION __REVISION__ KBUILD_BUILD_VERSION MAKE_ARGS NTHREADS \
     DEFCONFIG EXT_TARGETS CUSTOM_FILES DEFAULT_USER_HELP_PRINTS USER_HELP_PRINTS
 
 showvars:
@@ -293,5 +293,8 @@ showvars:
 #
 # >>> 2024-08-08, Man Hung-Coeng <udc577@126.com>:
 #   01. Add variable POST_INSTALL_CMD for post-installation tasks (if any).
+#
+# >>> 2026-09-13, Man Hung-Coeng <udc577@126.com>:
+#   01. Update macro __VER__ to __REVISION__.
 #
 

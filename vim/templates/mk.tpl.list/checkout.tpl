@@ -90,7 +90,7 @@ seeds:
 		echo "export CHKOUT_URL := $${CHKOUT_URL}" >> $${MKFILE}; \
 		echo "export CHKOUT_TAIL_PARAMS :=" >> $${MKFILE}; \
 		if [ "$${CHKOUT_ALIAS}" = "${LAZY_CODING_ALIAS}" ]; then \
-			echo "export CHKOUT_PARTIAL_ITEMS := main/makefiles/__ver__.mk \\" >> $${MKFILE}; \
+			echo "export CHKOUT_PARTIAL_ITEMS := main/makefiles/__revision__.mk \\" >> $${MKFILE}; \
 			echo "    053ddeb138883b235d783803fd747fc596349071/c_and_cpp/native/__ver__.h \\" >> $${MKFILE}; \
 		else \
 			echo "export CHKOUT_PARTIAL_ITEMS := \\" >> $${MKFILE}; \

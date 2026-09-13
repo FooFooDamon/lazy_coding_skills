@@ -15,8 +15,8 @@
 #include <linux/module.h>
 #include <linux/i2c.h>
 
-#ifndef __VER__
-#define __VER__				"<none>"
+#ifndef __REVISION__
+#define __REVISION__				"<none>"
 #endif
 
 #ifndef DRV_VER_MAJOR
@@ -68,7 +68,7 @@ static int ${BASENAME}_probe(struct i2c_client *client
 	// TODO: Add your own stuff.
 
 	dev_notice(dev, "Probed %s successfully with driver %s:%s-%s on Linux-%#x\n",
-		client->name, __DRVNAME__, DRIVER_VERSION, __VER__, LINUX_VERSION_CODE);
+		client->name, __DRVNAME__, DRIVER_VERSION, __REVISION__, LINUX_VERSION_CODE);
 
 	return 0;
 }
@@ -118,7 +118,7 @@ module_i2c_driver(${BASENAME}_driver);
 
 MODULE_DESCRIPTION("Driver for ${BASENAME}");
 MODULE_LICENSE("GPL");
-MODULE_VERSION(DRIVER_VERSION "-" __VER__);
+MODULE_VERSION(DRIVER_VERSION "-" __REVISION__);
 MODULE_AUTHOR("${LCS_USER} <${LCS_EMAIL}>");
 
 /*

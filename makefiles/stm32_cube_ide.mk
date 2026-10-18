@@ -3,7 +3,7 @@
 #
 # STM32CubeIDE makefile wrapper.
 #
-# Copyright (c) 2023-2024 Man Hung-Coeng <udc577@126.com>
+# Copyright (c) 2023-2026 Man Hung-Coeng <udc577@126.com>
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,6 +24,11 @@ export DEBUG_DEVICE ?= stlink
 export CPU_SERIES ?= stm32f1x
 export FLASH_ADDR_START ?= 0x08000000
 export RAM_ADDR_START ?= 0x20000000
+# Some series might need to unlock and/or load specific flash driver first.
+# For example: -c "stm32h7x unlock" -c "flash bank ..."
+export PRE_CMDS ?=
+# F7, H7 and some other series with cache might need: -c "cache flush"
+export POST_CMDS ?=
 
 all: build
 
@@ -46,16 +51,20 @@ download: download_to_flash
 download_to_flash:
 	[ $$(ls ${MODE}/*.bin | wc -l) -eq 1 ] && openocd -f /usr/share/openocd/scripts/interface/${DEBUG_DEVICE}.cfg \
 		-f /usr/share/openocd/scripts/target/${CPU_SERIES}.cfg \
-		-c init -c "reset halt" -c wait_halt \
-		-c "flash write_image erase $$(ls ${MODE}/*.bin) ${FLASH_ADDR_START}" \
-		-c reset -c shutdown || :
+		${PRE_CMDS} \
+		-c "program $$(ls ${MODE}/*.bin) verify reset exit ${FLASH_ADDR_START}" || :
 
 download_to_ram:
+	export GCC_BIN_DIR=$$(find ${IDE_PARENT_DIR}/stm32cubeide*/ -name arm-none-eabi-gcc | grep "bin/" | xargs -I {} dirname {}); \
+	[ -z "$${GCC_BIN_DIR}" ] && : || export PATH=$${GCC_BIN_DIR}:$${PATH}; \
+	STACK_ADDR=$$(arm-none-eabi-nm $$(ls ${MODE}/*.elf) | grep -E "(_estack|__StackTop__)" | head -n 1 | awk '{ print $$1 }'); \
 	[ $$(ls ${MODE}/*.bin | wc -l) -eq 1 ] && openocd -f /usr/share/openocd/scripts/interface/${DEBUG_DEVICE}.cfg \
 		-f /usr/share/openocd/scripts/target/${CPU_SERIES}.cfg \
-		-c init -c "reset halt" -c wait_halt \
-		-c "load_image $$(ls ${MODE}/*.bin) ${RAM_ADDR_START}" \
+		-c init -c "reset halt" \
+		-c "load_image $$(ls ${MODE}/*.bin) ${RAM_ADDR_START} bin" \
+		-c "reg msp 0x$${STACK_ADDR}" \
 		-c "reg pc ${RAM_ADDR_START}" \
+		${POST_CMDS} \
 		-c resume -c shutdown || :
 
 gen_ycm_conf:
@@ -104,5 +113,8 @@ endif
 #
 # >>> 2024-07-18, Man Hung-Coeng <udc577@126.com>:
 #   01. Improve the logic of including an extra makefile with more build targets.
+#
+# >>> 2026-10-18, Man Hung-Coeng <udc577@126.com>:
+#   01. Optimize download_to_{flash,ram} to make them more general and robust.
 #
 

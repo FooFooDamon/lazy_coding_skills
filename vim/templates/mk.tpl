@@ -9,3 +9,4 @@ stm32cubeide.tpl
 stm32_init.tpl
 qt.tpl
 revision.tpl
+markdown_to_pdf.tpl

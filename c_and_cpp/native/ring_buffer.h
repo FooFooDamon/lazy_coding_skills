@@ -60,10 +60,9 @@ extern "C" {
         volatile uint16_t handling; \
         volatile uint16_t aux; \
     } len; \
-    union { \
-        volatile uint16_t err_count; \
-        volatile uint16_t flag_bits; \
-        uint16_t padding; \
+    struct { \
+        volatile uint8_t err_count; \
+        volatile uint8_t flag_bits; \
     } extra; \
     uint8_t data[_size_]; \
 }
@@ -123,5 +122,9 @@ typedef RING_BUF_STRUCT_TEMPLATE(small_ring_buffer, RING_BUF_SIZE_SMALL)    smal
  *
  * >>> 2026-11-15, Man Hung-Coeng <udc577@126.com>:
  *  01. Initial commit.
+ *
+ * >>> 2026-11-27, Man Hung-Coeng <udc577@126.com>:
+ *  01. Update RING_BUF_STRUCT_TEMPLATE(): Change the type of "extra" field
+ *      from union to struct.
  */
 

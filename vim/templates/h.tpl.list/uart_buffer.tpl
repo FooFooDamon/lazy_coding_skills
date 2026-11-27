@@ -41,7 +41,7 @@ typedef small_ring_buffer_t                                 uart_small_buffer_t;
 
 typedef RING_BUF_STRUCT_TEMPLATE(uart_empty_buffer, 0)      uart_empty_buffer_t;
 
-#define UART_BUF_INITIALIZER                                RING_BUF_INITIALIZER
+#define UART_BUF_INITIALIZER()                              { 0, 0, { 0 }, { 0, 0x03 } }
 
 #define UART_BUF_CAPACITY                                   RING_BUF_CAPACITY
 
@@ -63,6 +63,16 @@ typedef RING_BUF_STRUCT_TEMPLATE(uart_empty_buffer, 0)      uart_empty_buffer_t;
 #define UART_BUF_CALC_FORWARDED_INDEX                       RING_BUF_CALC_FORWARDED_INDEX
 #define UART_BUF_HEAD_FORWARD                               RING_BUF_HEAD_FORWARD
 #define UART_BUF_TAIL_FORWARD                               RING_BUF_TAIL_FORWARD
+
+#define UART_BUF_RX_IDLE_BIT_MASK                           (1U << 0)
+#define UART_BUF_SET_RX_IDLE_BIT(_buf_ptr_)                 (_buf_ptr_)->extra.flag_bits |= UART_BUF_RX_IDLE_BIT_MASK
+#define UART_BUF_CLEAR_RX_IDLE_BIT(_buf_ptr_)               (_buf_ptr_)->extra.flag_bits &= ~UART_BUF_RX_IDLE_BIT_MASK
+#define UART_BUF_IS_RX_IDLE(_buf_ptr_)                      ((_buf_ptr_)->extra.flag_bits & UART_BUF_RX_IDLE_BIT_MASK)
+
+#define UART_BUF_TX_IDLE_BIT_MASK                           (1U << 1)
+#define UART_BUF_SET_TX_IDLE_BIT(_buf_ptr_)                 (_buf_ptr_)->extra.flag_bits |= UART_BUF_TX_IDLE_BIT_MASK
+#define UART_BUF_CLEAR_TX_IDLE_BIT(_buf_ptr_)               (_buf_ptr_)->extra.flag_bits &= ~UART_BUF_TX_IDLE_BIT_MASK
+#define UART_BUF_IS_TX_IDLE(_buf_ptr_)                      ((_buf_ptr_)->extra.flag_bits & UART_BUF_TX_IDLE_BIT_MASK)
 
 #ifdef __cplusplus
 }
